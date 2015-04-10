@@ -1,0 +1,8 @@
+
+
+exportPattern("^[^\\.]")
+
+#export(struveH, struveL, I0L0, solvePosDef)
+
+useDynLib(RandomFieldsUtils)
+#useDynLib(spam)
