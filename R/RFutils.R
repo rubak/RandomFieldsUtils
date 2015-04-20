@@ -33,7 +33,7 @@ solvePosDef <- function(a, b, logdeterminant=FALSE) {
   if (logdeterminant) {
     logdet <- double(1)
     res <- .Call("solvePosDef", a, b, logdet)
-    return(list(inv=res, logdet=det))
+    return(list(inv=res, logdet=logdet))
   } else {
     .Call("solvePosDef", a, b, double(0))
   }

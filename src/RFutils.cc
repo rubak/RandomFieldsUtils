@@ -22,9 +22,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "utils.h"
   
-char MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG],
-  ERRORSTRING[MAXERRORSTRING], ERRORSTRING_OK[MAXERRORSTRING], 
-  ERRORSTRING_WRONG[MAXERRORSTRING],
-    ERROR_LOC[nErrorLoc]="";
+// local
+char MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG];
+
+// globally needed
+char 
+  ERRORSTRING[MAXERRORSTRING], 
+  ERROR_LOC[nErrorLoc]="";
 
 solve_param SolveParam = solve_param_default;
+
+void getErrorString(char errorstring[MAXERRORSTRING]){
+  strncpy(errorstring, ERRORSTRING, MAXERRORSTRING);
+}
+
+void setErrorLoc(char errorloc[nErrorLoc]){
+  strncpy(ERROR_LOC, errorloc, nErrorLoc);
+}

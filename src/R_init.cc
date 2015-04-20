@@ -21,21 +21,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <R.h>
 #include <Rinternals.h>
-#include <R_ext/Rdynload.h>
 #include "utils.h"
+#include "R_init.h"
 
-#define CALLABLE(FCTN)  R_RegisterCCallable("RFutils", #FCTN, (DL_FUNC)  FCTN)
 
-void R_init_RFutils(DllInfo VARIABLE_IS_NOT_USED *info) {
+extern "C" {
+#include <R_ext/Rdynload.h>
+  
+#define CALLABLE(FCTN)  R_RegisterCCallable("RandomFieldsUtils", #FCTN, (DL_FUNC)  FCTN)
+
+void R_init_RandomFieldsUtils(DllInfo VARIABLE_IS_NOT_USED *info) {
   CALLABLE(solve_DELETE);
   CALLABLE(solve_NULL);
   CALLABLE(solvePosDef_);
   CALLABLE(invertMatrix);
+
   CALLABLE(I0mL0);
-  PRINTF("xxx loaded xxx\n");
-  error("stop here");
+
+  CALLABLE(getErrorString);
+  CALLABLE(setErrorLoc);
 }
 
-void R_unload_RFutils(DllInfo VARIABLE_IS_NOT_USED *info) {
+void R_unload_RandomFieldsUtils(DllInfo VARIABLE_IS_NOT_USED *info) {
   /* Release resources. */
 }
+
+} // end extern C
+
+/*
+
+R
+library("Matrix", lib="~/TMP/matrix")
+
+
+ */

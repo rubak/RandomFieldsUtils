@@ -34,7 +34,7 @@ I0L0(x)
   The two arguments are recycled to that length.  
 }
 \details{
-  \code{I0mL0} returns \code{\link[base]{besselI}(nu=0)}
+  \code{I0L0} returns \code{\link[base]{besselI}(nu=0)}
   minus \code{struveL(nu=0)}.
 }
 
@@ -60,7 +60,7 @@ struveH(x, 0)
 struveH(x, 1)
 
 I0L0(x) - (besselI(x, nu=0) - struveL(x, 0)) 
-besselI(x, nu=1) - struveL(x, 1) ## vgl. Abramovitz & Stegun, table 12.1
+besselI(x, nu=1) - struveL(x, 1) ## cf. Abramovitz & Stegun, table 12.1
 
 }
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}

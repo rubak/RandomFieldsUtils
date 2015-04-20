@@ -495,7 +495,8 @@ int solvePosDef_(double *M, int size, bool posdef,
 	  //printf(" ok %d \n", size);
 	  *logdet = 2.0 * tmp;	  
 	}
-      
+	
+
 	F77_CALL(backsolves)(&size, &nsuper, &RHS_COLS, lindx, xlindx, 
 			     lnz, xlnz, invp, pivot, xsuper, w3, RHS);
 		
@@ -512,7 +513,7 @@ int solvePosDef_(double *M, int size, bool posdef,
 	CERR("'spam' failed");
       }
 
-      MEMCOPY(rhs_cols == 0 ? M : rhs, RHS, totbytes * sizeof(double));
+      if (rhs_cols == 0) MEMCOPY(M, RHS, totbytes * sizeof(double));
       if (PL >=  PL_STRUCTURE) PRINTF("'spam' successful\n");
       
       break;

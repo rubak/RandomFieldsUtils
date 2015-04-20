@@ -8,7 +8,8 @@
   matrix. It is slightly faster than the inversion by the
   \code{\link[base]{chol}}esky decomposition and clearly faster than
   \code{\link[base]{solve}}.
-  It also returns the determinant at no additional computational costs.
+  It also returns the logarithm of the
+  determinant at no additional computational costs.
 }
 
 \usage{
@@ -42,8 +43,9 @@ solvePosDef(a, b, logdeterminant=FALSE)
   If \code{logdeterminant=FALSE} the function returns a vector or a matrix,
   depending on \code{b} which is the solution to the linear equation.
   Else the function returns a list containing both
+  the solution to the linear equation and
   the logarithm of the
-  determinant of \code{a} and the solution to the linear equation.
+  determinant of \code{a}.
 }
 \details{
 %  The values of \code{method} could be:
@@ -60,10 +62,10 @@ If it fails, the LU algorithm is tried.
 }
 
 \references{
-  See \link[spam]{chol.spam}
+  See \link[spam]{chol.spam} of the package \pkg{spam}
 }
 \seealso{
-  \link[spam]{chol.spam}
+  \link[spam]{chol.spam} in the package \pkg{spam}
 }
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}, and
   Reinhard Furrer

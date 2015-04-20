@@ -5,7 +5,7 @@
 #define showfree !true 
 #define DOPRINT true
 // #define SCHLATHERS_MACHINE 1
-// // 1
+// #define RANDOMFIELDS_DEBUGGING 1
 // #define HIDE_UNUSED_VARIABLE 1
 #endif
 
