@@ -1,3 +1,29 @@
+
+
+/*
+ Authors 
+ Martin Schlather, schlather@math.uni-mannheim.de
+
+
+ Copyright (C) 2015 Martin Schlather
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 3
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
+*/
+
+
+
 #ifndef rfutils_error_H
 #define rfutils_error_H 1
 
@@ -17,24 +43,26 @@
 #endif
 
 
+#define LENMSG 250
 #define MAXERRORSTRING 1000
 #define nErrorLoc 1000
 #define LENERRMSG 2000
-extern char MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG],
+extern char MSG[LENERRMSG], BUG_MSG[LENMSG], MSG2[LENERRMSG],
   ERRORSTRING[MAXERRORSTRING], ERRORSTRING_OK[MAXERRORSTRING],
   ERRORSTRING_WRONG[MAXERRORSTRING], ERROR_LOC[nErrorLoc];
 
 
-#define ERR(X) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); error(MSG);}
+#define RFERROR error
+#define ERR(X) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); RFERROR(MSG);}
 #define ERR1(X, Y) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
     sprintf(MSG2, MSG, Y);					 \
-    error(MSG2);}
+    RFERROR(MSG2);}
 #define ERR2(X, Y, Z) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);\
     sprintf(MSG2, MSG, Y, Z);					\
-    error(MSG2);}
+    RFERROR(MSG2);}
 #define ERR3(X, Y, Z, ZZ) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);	\
     sprintf(MSG2, MSG, Y, Z, ZZ);					\
-    error(MSG2);}
+    RFERROR(MSG2);}
 #define FERR(X) strcpy(ERRORSTRING, X); DEBUGINFOERR;
 #define SERR(X) { FERR(X); return ERRORM;}
 #define CERR(X) { FERR(X); err=ERRORM; continue;}
@@ -58,6 +86,7 @@ extern char MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG],
 
 void getErrorString(char errorstring[MAXERRORSTRING]);
 void setErrorLoc(char errorloc[nErrorLoc]);
+
 
 
 #endif

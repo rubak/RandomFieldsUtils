@@ -1,3 +1,29 @@
+
+
+/*
+ Authors 
+ Martin Schlather, schlather@math.uni-mannheim.de
+
+
+ Copyright (C) 2015 Martin Schlather
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 3
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
+*/
+
+
+
 #ifndef rfutils_H
 #define rfutils_H 1
 
@@ -28,7 +54,7 @@
 #define BUG {								\
     sprintf(BUG_MSG, "Severe error occured in function '%s' (file '%s', line %d). Please contact maintainer martin.schlather@math.uni-mannheim.de .", \
 	    __FUNCTION__, __FILE__, __LINE__);				\
-    error(BUG_MSG);							\
+    RFERROR(BUG_MSG);							\
   }									
 #define DO_TESTS false
 #define ERRLINE 
@@ -52,21 +78,21 @@
     sprintf(BUG_MSG,							\
 	    "'assert(%s)' failed in function '%s' (file '%s', line %d).", \
 	    #X,__FUNCTION__, __FILE__, __LINE__);			\
-    error(BUG_MSG);							\
+    RFERROR(BUG_MSG);							\
   }
 #define SHOW_ADDRESSES 1
 #define BUG {								\
     sprintf(BUG_MSG, "BUG in '%s' ('%s', line %d).", \
 	    __FUNCTION__, __FILE__, __LINE__);				\
-    error(BUG_MSG);							\
+    RFERROR(BUG_MSG);							\
   }									
 #define DO_TESTS true
 
 #define MEMCOPY(A,B,C) ({ assert((A)!=NULL && (B)!=NULL); memcpy(A,B,C); })
 //#define MEMCOPY(A,B,C) memory_copy(A, B, C)
-#define MALLOC(X) ({assert(X>0 && X<=668467200);malloc(X);})
-#define CALLOC(X, Y) ({assert((X)>0 && X<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
-#define FREE(X) { if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); if ((X) != NULL) free(X); (X)=NULL;}
+#define MALLOC(X) ({assert((X)>0 && (X)<=668467200);malloc(X);})
+#define CALLOC(X, Y) ({assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
+#define FREE(X) { if ((X) != NULL) {if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}}
 #define UNCONDFREE(X) { if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}
 
 #endif // SCHLATHERS_MACHINE
@@ -76,10 +102,10 @@
 #ifdef RANDOMFIELDS_DEBUGGING
 
 #undef MALLOC
-#define MALLOC(X) ({DOPRINTF("(MALLOC %s, line %d)\n", __FILE__, __LINE__);assert(X>0 && X<=3e9);malloc(X);})
+#define MALLOC(X) ({DOPRINTF("(MALLOC %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9);malloc(X);})
 //
 #undef CALLOC
-#define CALLOC(X, Y) ({DOPRINTF("(CALLOC %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && X<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
+#define CALLOC(X, Y) ({DOPRINTF("(CALLOC %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
 //#define MALLOC malloc
 //#define CALLOC calloc
 

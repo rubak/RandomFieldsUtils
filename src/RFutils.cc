@@ -32,10 +32,21 @@ char
 
 solve_param SolveParam = solve_param_default;
 
+
+
+void strcopyN(char *dest, const char *src, int n) {
+  if (n > 1) {
+    n--; 
+    strncpy(dest, src, n);
+  }
+  dest[n] = '\0';
+}
+
+
 void getErrorString(char errorstring[MAXERRORSTRING]){
-  strncpy(errorstring, ERRORSTRING, MAXERRORSTRING);
+  strcopyN(errorstring, ERRORSTRING, MAXERRORSTRING);
 }
 
 void setErrorLoc(char errorloc[nErrorLoc]){
-  strncpy(ERROR_LOC, errorloc, nErrorLoc);
+  strcopyN(ERROR_LOC, errorloc, nErrorLoc);
 }

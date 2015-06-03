@@ -1,3 +1,24 @@
+## Authors 
+## Martin Schlather, schlather@math.uni-mannheim.de
+##
+##
+## Copyright (C) 2015 Martin Schlather
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 3
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
+
+
 
 .struve <- function(x, nu, sign, expon.scaled) {
   storage.mode(x) <- "double"
@@ -18,18 +39,7 @@ I0L0 <- function(x) {
 }
 
 
-solvePosDef <- function(a, b, logdeterminant=FALSE) {  
-  if (!is.double(a)) storage.mode(a) <- "double"
-  if (ncol(a) != nrow(a)) stop("'a' is not a square matrix")
-
-  if (missing(b)) {
-     b <- NULL
-  } else {
-    if (!is.double(b)) storage.mode(b) <- "double"
-    if (ncol(a) != if (is.vector(b)) length(b) else nrow(b))
-      stop("'a' and 'b' do not match in size")
-  }
-  
+solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
   if (logdeterminant) {
     logdet <- double(1)
     res <- .Call("solvePosDef", a, b, logdet)

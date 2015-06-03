@@ -13,7 +13,7 @@
 }
 
 \usage{
-solvePosDef(a, b, logdeterminant=FALSE)
+solvePosDef(a, b=NULL, logdeterminant=FALSE)
 %, sparse=NA, method=-1)
 }
 \arguments{
@@ -51,8 +51,12 @@ solvePosDef(a, b, logdeterminant=FALSE)
 %  The values of \code{method} could be:
 %  \itemize{
 %    \item \code{<0} :
-first the Cholesky decomposition is tried.
-If it fails, the LU algorithm is tried.
+If the matrix is diagonal direct calculations are performed.
+
+Else if the matrix is sparse the package \pkg{spam} is used.
+
+Else the Cholesky decomposition is tried.
+If it fails, the SVD is tried.
 %    \item \code{0} : Cholesky
 %    \item \code{1} : QR (not programmed yet)
 %    \item \code{2} : SVD
