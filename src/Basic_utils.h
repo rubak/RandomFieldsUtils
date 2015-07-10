@@ -31,9 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef showfree
 #define showfree !true 
 #define DOPRINT true
-// #define SCHLATHERS_MACHINE 1
+// // 1
 // #define RANDOMFIELDS_DEBUGGING 1
-// #define HIDE_UNUSED_VARIABLE 1
+// // 1
 #endif
 
 extern"C" {

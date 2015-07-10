@@ -75,17 +75,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   warning(BUG_MSG)
  
 #define assert(X) if (!__extension__ (X )) {				\
-    sprintf(BUG_MSG,							\
-	    "'assert(%s)' failed in function '%s' (file '%s', line %d).", \
-	    #X,__FUNCTION__, __FILE__, __LINE__);			\
-    RFERROR(BUG_MSG);							\
+    sprintf(BUG_MSG,"'assert(%s)' failed in function '%s'.",#X,__FUNCTION__); \
+    ERR(BUG_MSG);							\
   }
 #define SHOW_ADDRESSES 1
-#define BUG {								\
-    sprintf(BUG_MSG, "BUG in '%s' ('%s', line %d).", \
-	    __FUNCTION__, __FILE__, __LINE__);				\
-    RFERROR(BUG_MSG);							\
-  }									
+#define BUG { PRINTF("BUG in '%s'.",  __FUNCTION__);  ERR(BUG_MSG); }
 #define DO_TESTS true
 
 #define MEMCOPY(A,B,C) ({ assert((A)!=NULL && (B)!=NULL); memcpy(A,B,C); })

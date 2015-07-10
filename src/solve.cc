@@ -685,9 +685,8 @@ SEXP solvePosDef(SEXP M, SEXP rhs, SEXP logdet){
   } else {
     rhs_cols = 1;
   }
-  if (rows != size) RFERROR("not a square matrix");
-  if (rhs_rows > 0 && rhs_rows != size)
-    RFERROR("vector size does not match the matrix size");
+  if (rows != size) ERR("not a square matrix");
+  if (rhs_rows > 0 && rhs_rows != size) ERR("vector size does not match the matrix size");
   
   int 
     new_cols = rhs_cols == 0 ? size : rhs_cols,
@@ -706,7 +705,7 @@ SEXP solvePosDef(SEXP M, SEXP rhs, SEXP logdet){
       REAL(res)[i] = INTEGER(from)[i] == NA_INTEGER 
 	? RF_NA : (double) INTEGER(from)[i];
     }
-  } else RFERROR("numerical matrix and/or vector expected");
+  } else ERR("numerical matrix and/or vector expected");
   
   double *MM;
   if (rhs_cols == 0) {

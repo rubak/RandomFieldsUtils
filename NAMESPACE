@@ -6,3 +6,6 @@ exportPattern("^[^\\.]")
 
 useDynLib(RandomFieldsUtils)
 #useDynLib(spam)
+
+importFrom("utils", "str")
+

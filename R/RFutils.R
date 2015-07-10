@@ -51,6 +51,11 @@ solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
 
 
 Print <- function(..., digits=6, empty.lines=2) { #
+  ## ?"..1"
+#  print(..1)
+#  print(substitute(..1))
+#   print(missing(..100))
+   
   max.elements <- 99
   l <- list(...)
   n <- as.character(match.call())[-1]

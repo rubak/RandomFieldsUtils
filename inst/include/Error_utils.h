@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #ifdef SCHLATHERS_MACHINE
-#define ERRLINE assert({PRINTF("(ERROR in %s, line %d)\n", __FILE__, __LINE__); true;})
+#define ERRLINE PRINTF("(ERROR in %s, line %d)\n", __FILE__, __LINE__);
 #else
 #define ERRLINE 
 #endif
@@ -60,8 +60,20 @@ extern char MSG[LENERRMSG], BUG_MSG[LENMSG], MSG2[LENERRMSG],
 #define ERR2(X, Y, Z) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);\
     sprintf(MSG2, MSG, Y, Z);					\
     RFERROR(MSG2);}
-#define ERR3(X, Y, Z, ZZ) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);	\
-    sprintf(MSG2, MSG, Y, Z, ZZ);					\
+#define ERR3(X, Y, Z, A) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);	\
+    sprintf(MSG2, MSG, Y, Z, A);					\
+    RFERROR(MSG2);}
+#define ERR4(X, Y, Z, A, B) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);	\
+    sprintf(MSG2, MSG, Y, Z, A, B);					\
+    RFERROR(MSG2);}
+#define ERR5(X, Y, Z, A, B, C) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, MSG, Y, Z, A, B, C);					\
+    RFERROR(MSG2);}
+#define ERR6(X, Y, Z, A, B,C,D) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, MSG, Y, Z, A, B, C, D);				\
+    RFERROR(MSG2);}
+#define ERR7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, MSG, Y, Z, A, B, C, D, E);				\
     RFERROR(MSG2);}
 #define FERR(X) strcpy(ERRORSTRING, X); DEBUGINFOERR;
 #define SERR(X) { FERR(X); return ERRORM;}
