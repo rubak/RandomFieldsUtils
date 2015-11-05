@@ -47,33 +47,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAXERRORSTRING 1000
 #define nErrorLoc 1000
 #define LENERRMSG 2000
-extern char MSG[LENERRMSG], BUG_MSG[LENMSG], MSG2[LENERRMSG],
-  ERRORSTRING[MAXERRORSTRING], ERRORSTRING_OK[MAXERRORSTRING],
-  ERRORSTRING_WRONG[MAXERRORSTRING], ERROR_LOC[nErrorLoc];
+extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
+  MSG[LENERRMSG], // used by RandomFields in intermediate steps
+  BUG_MSG[LENMSG],// not much used
+  MSG2[LENERRMSG],// used at the same time with MSG and ERR()
+  ERRORSTRING[MAXERRORSTRING], // used by ERRORM in RandomFields 
+  ERROR_LOC[nErrorLoc];
 
 
 #define RFERROR error
-#define ERR(X) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); RFERROR(MSG);}
-#define ERR1(X, Y) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, MSG, Y);					 \
+#define ERR(X) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); RFERROR(ERRMSG);}
+#define ERR1(X, Y) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, ERRMSG, Y);					 \
     RFERROR(MSG2);}
-#define ERR2(X, Y, Z) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);\
-    sprintf(MSG2, MSG, Y, Z);					\
+#define ERR2(X, Y, Z) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X);\
+    sprintf(MSG2, ERRMSG, Y, Z);					\
     RFERROR(MSG2);}
-#define ERR3(X, Y, Z, A) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);	\
-    sprintf(MSG2, MSG, Y, Z, A);					\
+#define ERR3(X, Y, Z, A) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A);					\
     RFERROR(MSG2);}
-#define ERR4(X, Y, Z, A, B) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X);	\
-    sprintf(MSG2, MSG, Y, Z, A, B);					\
+#define ERR4(X, Y, Z, A, B) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B);					\
     RFERROR(MSG2);}
-#define ERR5(X, Y, Z, A, B, C) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, MSG, Y, Z, A, B, C);					\
+#define ERR5(X, Y, Z, A, B, C) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC,X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B, C);				\
     RFERROR(MSG2);}
-#define ERR6(X, Y, Z, A, B,C,D) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, MSG, Y, Z, A, B, C, D);				\
+#define ERR6(X, Y, Z, A, B,C,D) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D);				\
     RFERROR(MSG2);}
-#define ERR7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(MSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, MSG, Y, Z, A, B, C, D, E);				\
+#define ERR7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
     RFERROR(MSG2);}
 #define FERR(X) strcpy(ERRORSTRING, X); DEBUGINFOERR;
 #define SERR(X) { FERR(X); return ERRORM;}
@@ -95,6 +98,7 @@ extern char MSG[LENERRMSG], BUG_MSG[LENMSG], MSG2[LENERRMSG],
 #define GERR3(X,Y,Z,A) { sprintf(ERRORSTRING, X, Y, Z, A);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
 #define GERR4(X,Y,Z,A,B) { sprintf(ERRORSTRING, X, Y, Z, A, B);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
 #define GERR5(X,Y,Z,A,B,C) { sprintf(ERRORSTRING, X, Y, Z, A, B, C);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
+#define GERR6(X,Y,Z,A,B,C,D) { sprintf(ERRORSTRING, X, Y, Z, A, B, C, D);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
 
 void getErrorString(char errorstring[MAXERRORSTRING]);
 void setErrorLoc(char errorloc[nErrorLoc]);

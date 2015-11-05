@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #ifndef SCHLATHERS_MACHINE
-#define INTERNAL SERR("Sorry. This fxunctionality does not exist currently. There is work in progress at the moment by the maintainer.")
+#define INTERNAL SERR("Sorry. This functionality does not exist currently. There is work in progress at the moment by the maintainer.")
 #define assert(X) {}
 #define BUG {								\
     sprintf(BUG_MSG, "Severe error occured in function '%s' (file '%s', line %d). Please contact maintainer martin.schlather@math.uni-mannheim.de .", \
@@ -57,7 +57,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     RFERROR(BUG_MSG);							\
   }									
 #define DO_TESTS false
-#define ERRLINE 
 #define MEMCOPY(A,B,C) memcpy(A,B,C)
 #define MALLOC malloc
 #define CALLOC calloc

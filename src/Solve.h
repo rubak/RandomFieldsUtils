@@ -38,7 +38,7 @@ InversionMethod;
 #define PIVOT_MMD 1
 #define PIVOT_RCM 2
 
-#define SOLVE_METHODS 2
+#define SOLVE_METHODS 3
 #define solveN 9
 typedef struct solve_param {
   double sparse, spam_tol, spam_min_p, svd_tol;
