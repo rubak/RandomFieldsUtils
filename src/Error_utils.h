@@ -78,27 +78,33 @@ extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
 #define ERR7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
     sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
     RFERROR(MSG2);}
-#define FERR(X) strcpy(ERRORSTRING, X); DEBUGINFOERR;
+#define FERR(X) strcpy(ERRORSTRING, X); DEBUGINFOERR
 #define SERR(X) { FERR(X); return ERRORM;}
 #define CERR(X) { FERR(X); err=ERRORM; continue;}
-#define FERR1(X,Y) sprintf(ERRORSTRING, X, Y); DEBUGINFOERR;  
+#define FERR1(X,Y) sprintf(ERRORSTRING, X, Y); DEBUGINFOERR
 #define SERR1(X,Y) { FERR1(X, Y); return ERRORM;}
 #define CERR1(X,Y) { FERR1(X, Y); err=ERRORM; continue; }
-#define SERR2(X, Y, Z) { sprintf(ERRORSTRING, X, Y, Z);  DEBUGINFOERR; return ERRORM;}
-#define CERR2(X, Y, Z) { sprintf(ERRORSTRING, X, Y, Z);  err=ERRORM; continue;}
-#define SERR3(X, Y, Z, A) { sprintf(ERRORSTRING, X, Y, Z, A); DEBUGINFOERR; return ERRORM;}
-#define CERR3(X, Y, Z, A) { sprintf(ERRORSTRING, X, Y, Z, A); err=ERRORM; continue;}
-#define SERR4(X, Y, Z, A, B) { sprintf(ERRORSTRING, X, Y, Z, A, B); DEBUGINFOERR;  return ERRORM;}
-#define SERR5(X, Y, Z, A, B, C) { sprintf(ERRORSTRING, X, Y, Z, A, B, C); DEBUGINFOERR; return ERRORM;}
-#define SERR6(X, Y, Z, A, B, C, D) { sprintf(ERRORSTRING, X, Y, Z, A, B, C, D);  DEBUGINFOERR; return ERRORM;}
-#define SERR7(X, Y, Z, A, B, C, D, E) { sprintf(ERRORSTRING, X, Y, Z, A, B, C, D, E); DEBUGINFOERR; return ERRORM;}
-#define GERR(X) { strcpy(ERRORSTRING, X); err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
-#define GERR1(X,Y) { sprintf(ERRORSTRING, X, Y); err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
-#define GERR2(X,Y,Z) { sprintf(ERRORSTRING, X, Y, Z); err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
-#define GERR3(X,Y,Z,A) { sprintf(ERRORSTRING, X, Y, Z, A);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
-#define GERR4(X,Y,Z,A,B) { sprintf(ERRORSTRING, X, Y, Z, A, B);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
-#define GERR5(X,Y,Z,A,B,C) { sprintf(ERRORSTRING, X, Y, Z, A, B, C);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
-#define GERR6(X,Y,Z,A,B,C,D) { sprintf(ERRORSTRING, X, Y, Z, A, B, C, D);  err = ERRORM; DEBUGINFOERR; goto ErrorHandling;}
+#define FERR2(X,Y,Z) sprintf(ERRORSTRING, X, Y, Z); DEBUGINFOERR
+#define SERR2(X, Y, Z) { FERR2(X, Y, Z); return ERRORM;}
+#define CERR2(X, Y, Z) { FERR2(X, Y, Z);  err=ERRORM; continue;}
+#define FERR3(X,Y,Z,A) sprintf(ERRORSTRING, X, Y, Z, A); DEBUGINFOERR
+#define SERR3(X, Y, Z, A) { FERR3(X, Y, Z, A); return ERRORM;}
+#define CERR3(X, Y, Z, A) { FERR3(X, Y, Z, A); err=ERRORM; continue;}
+#define FERR4(X,Y,Z,A,B) sprintf(ERRORSTRING, X, Y, Z, A, B); DEBUGINFOERR 
+#define SERR4(X, Y, Z, A, B) {  FERR4(X, Y, Z, A, B); return ERRORM;}
+#define FERR5(X,Y,Z,A,B,C) sprintf(ERRORSTRING,X,Y,Z,A,B,C); DEBUGINFOERR 
+#define SERR5(X, Y, Z, A, B, C) {FERR5(X, Y, Z, A, B, C); return ERRORM;}
+#define FERR6(X,Y,Z,A,B,C,D) sprintf(ERRORSTRING,X,Y,Z,A,B,C,D); DEBUGINFOERR 
+#define SERR6(X, Y, Z, A, B, C, D) {FERR6(X, Y, Z, A, B, C,D);  return ERRORM;}
+#define FERR7(X,Y,Z,A,B,C,D,E) sprintf(ERRORSTRING,X,Y,Z,A,B,C,D,E);DEBUGINFOERR
+#define SERR7(X, Y, Z, A, B, C, D, E) {FERR7(X,Y,Z,A,B,C,D,E);  return ERRORM;}
+#define GERR(X) {FERR(X); err = ERRORM; goto ErrorHandling;}
+#define GERR1(X,Y) {FERR1(X,Y);err = ERRORM; goto ErrorHandling;}
+#define GERR2(X,Y,Z) {FERR2(X,Y,Z); err = ERRORM; goto ErrorHandling;}
+#define GERR3(X,Y,Z,A) {FERR3(X,Y,Z,A);  err = ERRORM; goto ErrorHandling;}
+#define GERR4(X,Y,Z,A,B) {FERR4(X,Y,Z,A,B); err = ERRORM; goto ErrorHandling;}
+#define GERR5(X,Y,Z,A,B,C) {FERR5(X,Y,Z,A,B,C); err=ERRORM; goto ErrorHandling;}
+#define GERR6(X,Y,Z,A,B,C,D) {FERR6(X,Y,Z,A,B,C,D); err=ERRORM; goto ErrorHandling;}
 
 void getErrorString(char errorstring[MAXERRORSTRING]);
 void setErrorLoc(char errorloc[nErrorLoc]);

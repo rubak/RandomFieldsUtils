@@ -36,6 +36,9 @@ int solvePosDef_(double *M, int size, bool posdef,
 		 solve_storage *PT, solve_param *sp,  int PL
 		);
 
+int sqrt_(double *M, int size, solve_storage *pt, solve_param *Sp, int PL);
+int sqrt_RHS_(solve_storage *pt, double* RHS, double *res);
+
 int invertMatrix(double *M, int size);
 
 double I0mL0(double x);

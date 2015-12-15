@@ -35,6 +35,9 @@ void R_init_RandomFieldsUtils(DllInfo VARIABLE_IS_NOT_USED *info) {
   CALLABLE(solve_NULL);
   CALLABLE(solvePosDef_);
   CALLABLE(invertMatrix);
+  
+  CALLABLE(sqrt_);
+  CALLABLE(sqrt_RHS_);
 
   CALLABLE(I0mL0);
 

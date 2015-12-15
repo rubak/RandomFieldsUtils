@@ -44,6 +44,8 @@ extern"C" {
 		    int*, int*, int*, int*);
   void backsolves_(int*, int*, int*, int*, int*, double*, int*, int*, int*,
 		  int*, double*, double*);
+  void calcja_(int*, int*, int*, int*, int*, int*, int*);
+  void amuxmat_(int*, int*, int*, double*, double*, double*, int*, int*);
   //  void transpose_(int *, int *, double *, int * int *, double*, int*, int*);
   //  void spamback_();
   //  void spamforward();

@@ -123,9 +123,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #define PL_IMPORTANT 1 
-#define PL_SUBIMPORTANT 2
-#define PL_RECURSIVE 3
-#define PL_REC_DETAILS 4 
+#define PL_BRANCHING 2
+#define PL_DETAILSUSER 3
+#define PL_RECURSIVE 4
 #define PL_STRUCTURE 5 // see also initNerror.ERROROUTOFMETHOD
 #define PL_ERRORS  6 // only those that are caught internally
 
