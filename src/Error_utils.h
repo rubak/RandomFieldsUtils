@@ -106,9 +106,32 @@ extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
 #define GERR5(X,Y,Z,A,B,C) {FERR5(X,Y,Z,A,B,C); err=ERRORM; goto ErrorHandling;}
 #define GERR6(X,Y,Z,A,B,C,D) {FERR6(X,Y,Z,A,B,C,D); err=ERRORM; goto ErrorHandling;}
 
+#define RFWARNING warning
+#define warn(X) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); RFWARNING(ERRMSG);}
+#define WARN1(X, Y) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, ERRMSG, Y);					 \
+    RFWARNING(MSG2);}
+#define WARN2(X, Y, Z) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X);\
+    sprintf(MSG2, ERRMSG, Y, Z);					\
+    RFWARNING(MSG2);}
+#define WARN3(X, Y, Z, A) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A);					\
+    RFWARNING(MSG2);}
+#define WARN4(X, Y, Z, A, B) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B);					\
+    RFWARNING(MSG2);}
+#define WARN5(X, Y, Z, A, B, C) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC,X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B, C);				\
+    RFWARNING(MSG2);}
+#define WARN6(X, Y, Z, A, B,C,D) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D);				\
+    RFWARNING(MSG2);}
+#define WARN7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
+    RFWARNING(MSG2);}
+
 void getErrorString(char errorstring[MAXERRORSTRING]);
 void setErrorLoc(char errorloc[nErrorLoc]);
-
 
 
 #endif

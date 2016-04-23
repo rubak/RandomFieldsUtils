@@ -29,11 +29,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define rfutils_solve_H 1
 
 
-typedef enum InversionMethod { Cholesky, SVD, Sparse, QR, LU, 
-			       NoFurtherInversionMethod, NoInversionMethod,
-			       Diagonal // always last one!
-} 
-InversionMethod;
+typedef enum usr_bool {
+  // NOTE: if more options are included, change ExtendedBoolean in
+  // userinterface.cc of RandomFields
+  False=false, 
+  True=true, 
+  //Exception=2, // for internal use only
+  Nan=INT_MIN
+} usr_bool;
+
+typedef enum InversionMethod { 
+  Cholesky, SVD, Sparse, QR, LU, 
+  NoFurtherInversionMethod, NoInversionMethod,
+  Diagonal // always last one!
+} InversionMethod;
 extern const char * InversionNames[(int) Diagonal + 1];
 
 #define PIVOT_NONE 0
@@ -44,7 +53,8 @@ extern const char * InversionNames[(int) Diagonal + 1];
 #define SOLVE_METHODS 3
 #define solveN 11
 typedef struct solve_param {
-  double sparse, spam_tol, spam_min_p, svd_tol;
+  usr_bool sparse;
+  double spam_tol, spam_min_p, svd_tol;
   InversionMethod Methods[SOLVE_METHODS];
   int spam_min_n, spam_sample_n, spam_factor,
     pivot, max_chol, max_svd;
@@ -58,13 +68,13 @@ typedef struct solve_param {
 
 
 #define solve_param_default				\
-  { RF_NA, DBL_EPSILON,	0.8, 1e-8,			\
+  { Nan, DBL_EPSILON,	0.8, 1e-8,			\
       {NoInversionMethod, NoInversionMethod},		\
       400, 500, 4294967, PIVOT_MMD, 1000000000, 1000000000}
 
 
 #define solve_param_default_RF				\
-  { RF_NA, DBL_EPSILON,	0.8, 1e-8,			\
+  { Nan, DBL_EPSILON,	0.8, 1e-8,			\
       {NoInversionMethod, NoInversionMethod},		\
       400, 500, 4294967, PIVOT_MMD, 8192, 6555}
 

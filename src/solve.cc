@@ -236,6 +236,9 @@ int solvePosDef_(double *M, int size, bool posdef,
   // printf("size=%d %f %f %f %f\n", size, M[0], M[1], M[2], M[3]);
 
   // http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F01/f01intro.xml#
+  assert(NA_LOGICAL == INT_MIN && NA_LOGICAL == NA_INTEGER); // nur zur sicherheit, wegen usr_bool
+  //          eigentlich sollte usr_bool unabhaengig davon funktionieren
+
   if (size <= 3) return solve2(M, size, posdef, rhs, rhs_cols, logdet);
 
   assert(SOLVE_METHODS >= 2);
@@ -249,14 +252,15 @@ int solvePosDef_(double *M, int size, bool posdef,
     nnzA = 0,
     sizeSq = size * size,
     sizeP1 = size + 1;
-   double 
-    sparse = sp->sparse,
-    spam_tol = sp->spam_tol;
+  usr_bool
+    sparse = sp->sparse;
+  double 
+     spam_tol = sp->spam_tol;
   bool diag  = false;
  
   pt->method = NoFurtherInversionMethod;
   pt->size = size;
-  if ((ISNAN(sparse) || ISNA(sparse)) && (sparse = size > sp->spam_min_n)) {
+  if (sparse == Nan && (sparse = (usr_bool) (size > sp->spam_min_n))) {
     double mean_diag = 0.0;
     for (int i=0; i<sizeSq; i += sizeP1) mean_diag += M[i];
     mean_diag /= (double) size;
@@ -272,13 +276,15 @@ int solvePosDef_(double *M, int size, bool posdef,
       for (int i=0; i<sp->spam_sample_n; i++) {
 	if ((notZero += fabs(M[(i * sp->spam_factor) % sizeSq]) > 
 	     spam_tol) >= threshold){
-	  sparse = false;
+	  sparse = False;
 	  break;
 	}
       }
-      if (PL >= PL_FCTN_DETAILS) PRINTF("random sampling: sparse=%d\n", sparse);
+      if (PL >= PL_FCTN_DETAILS)
+	PRINTF("random sampling: sparse=%d\n", 
+	       sparse == Nan ? NA_INTEGER : (int) sparse);
     }
-    if (!random_sample || sparse) {
+    if (!random_sample || sparse == True) {
       int diag_nnzA = 0;
       for (int i=0; i<size; i++) {
 	int end = i * sizeP1;
@@ -291,12 +297,13 @@ int solvePosDef_(double *M, int size, bool posdef,
       diag = (nnzA == 0);
       if (posdef) nnzA *= 2;
       nnzA += diag_nnzA;
-      sparse = nnzA <= sizeSq * (1.0 - sp->spam_min_p);
+      sparse = (usr_bool) (nnzA <= sizeSq * (1.0 - sp->spam_min_p));
       spam_zaehler = nnzA + 1;
       if (PL >= PL_DETAILSUSER) {
 	if (diag) PRINTF("diagonal matrix detected\n");
-	else if (sparse) PRINTF("sparse matrix detected (%3.2f%% zeros)\n", 
-				100.0 * (1.0 - nnzA / (double) sizeSq));
+	else if (sparse == True) 
+	  PRINTF("sparse matrix detected (%3.2f%% zeros)\n", 
+		 100.0 * (1.0 - nnzA / (double) sizeSq));
 	else PRINTF("full matrix detected (%3.2f%% nonzeros)\n", 
 		    100.0 * nnzA / (double) sizeSq);
       }
@@ -341,7 +348,7 @@ int solvePosDef_(double *M, int size, bool posdef,
 	int idx = i * sizeP1;
 	MM[i] = M[idx] == 0.0 ? 0.0 : 1.0 / M[idx];
       }
-      long j;
+      int j;
       for (int k=j=0; j<rhs_cols; j++)
 	for (int i=0; i<size; i++) rhs[k++] *= MM[i];
     }
@@ -352,9 +359,9 @@ int solvePosDef_(double *M, int size, bool posdef,
   //   printf("Ok vxxx %f\n", (double) sparse);
 
   InversionMethod *Meth;
-  if (sparse || sp->Methods[0] >= NoFurtherInversionMethod) {
+  if (sparse == True || sp->Methods[0] >= NoFurtherInversionMethod) {
     Meth = pt->newMethods;
-    if (sparse) {
+    if (sparse == True) {
       pt->newMethods[0] = Sparse;
       pt->newMethods[1] = 
 	sp->Methods[0] < NoFurtherInversionMethod && sp->Methods[0] != Sparse
@@ -599,11 +606,11 @@ int solvePosDef_(double *M, int size, bool posdef,
 	halfsq = size * (size + 1) / 2,
 	nnzcolindices = 0,
 	nnzR = 0,
-	cache = 512; // to do: CPU cache size
-      double
-	nnzcfact[3] = { 5.0, 1.0, 5.0 }, 
-	nnzRfact[3] = { 5.0, 1.0, 2.0 },
-        cholincrease_nnzcol = 1.25,
+       cache = 512, // to do: CPU cache size
+       nnzcfact[3] = { 5, 1, 5 }, 
+       nnzRfact[3] = { 5, 1, 2 };
+       double
+	 cholincrease_nnzcol = 1.25,
         cholincrease_nnzR = 1.25;
 
       CMALLOC(pivot, size, int);
@@ -648,7 +655,7 @@ int solvePosDef_(double *M, int size, bool posdef,
 	  if (nnzcolindices == 0) {
 	    double rel = nnzA / (double) size;
 	    if (rel < 5) {
-	      nnzcolindices = nnzA * (1.05 * rel - 3.8);
+	      nnzcolindices = (int) ceil(nnzA * (1.05 * rel - 3.8));
 	      if (nnzcolindices < 1000) nnzcolindices = 1000;
 	    } else {
 	      nnzcolindices = nnzA;
@@ -656,7 +663,7 @@ int solvePosDef_(double *M, int size, bool posdef,
 	    nnzcolindices *= nnzcfact[doperm];
 	    if (nnzcolindices < nnzA) nnzcolindices = nnzA;
 	  } else if (err == 5) {
-	    int tmp = ceil(nnzcolindices * cholincrease_nnzcol);
+	    int tmp = (int) ceil(nnzcolindices * cholincrease_nnzcol);
 	    if (PL > PL_RECURSIVE) 
 	      PRINTF("Increased 'nnzcolindices' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
 	    nnzcolindices = tmp;
@@ -665,10 +672,10 @@ int solvePosDef_(double *M, int size, bool posdef,
 
 	  if (nnzR == 0) {
 	    double u = floor(.4 * pow(nnzA, 1.2));
-	    if (u < 4 * nnzA) u = 4 * nnzA;
-	    nnzR = u * nnzRfact[doperm];
+	    u = u < 4 * nnzA ? 4 * nnzA : ceil(u);
+	    nnzR = (int) u * nnzRfact[doperm];
 	  } else if (err == 4) {
-	    int tmp = ceil(nnzR * cholincrease_nnzR);
+	    int tmp = (int) ceil(nnzR * cholincrease_nnzR);
 	    if (PL > PL_RECURSIVE) 
 	      PRINTF("Increased 'nnzR' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
 	    nnzR = tmp;

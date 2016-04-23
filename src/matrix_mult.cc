@@ -2,7 +2,7 @@
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
- Copyright (C) 2015 -- Martin Schlather, Reinhard Furrer
+ Copyright (C) 2015 -- 2016 Martin Schlather, Reinhard Furrer
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -307,3 +307,20 @@ void Xmatmulttransposed(double *A, double *B, double *C, int m, int l, int n) {
   }
 }
 
+
+
+double *matrixmult(double *m1, double *m2, int dim1, int dim2, int dim3) {
+    double dummy, 
+	*m0 = (double*) MALLOC(sizeof(double) * dim1 * dim3);
+  int i,j,k;
+  for (i=0; i<dim1; i++) {
+    for (k=0; k<dim3; k++) {
+      dummy = 0.0;
+      for (j=0; j<dim2; j++) {
+	dummy += m1[i + j * dim1] * m2[j + k * dim2];
+      }
+      m0[i + dim1 * k] = dummy;
+    }
+  }
+  return m0;
+}

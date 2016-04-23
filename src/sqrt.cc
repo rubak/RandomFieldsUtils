@@ -24,16 +24,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 const char * solve[solveN] = SOLVE_NAMES;	
 
-int sqrt_(double *M, int size, // in out
-	  solve_storage *pt, // in out
-	  solve_param *Sp, int PL// in
+int sqrt_(double *M, int size,    // in out
+	  solve_storage *pt,      // in out
+	  solve_param *Sp, int PL // in
 	  ){
   /*
 
     M: positiv definite square matrix (symmetry is not checked) of size x size;
        NOTE THAT THE CONTENTS OF M IS DESTROYED, the sqrt of M is returned here
     pt  : working space. If NULL, internal working spaces are used.
- 
           A non-NULL value gives an advantage only if sqrt_ is called
           repeated. Then
             solve_storage *pt = (solve_storage*) malloc(sizeof(solve_storage);
@@ -59,15 +58,16 @@ int sqrt_(double *M, int size, // in out
     nnzA = 0,
     sizeSq = size * size,
     sizeP1 = size + 1;
+  usr_bool sparse = sp->sparse;
   double  
     svdtol = sp->svd_tol,
-    sparse = sp->sparse,
     spam_tol = sp->spam_tol;
   bool diag  = false;
  
   pt->method = NoFurtherInversionMethod;
   pt->size = size;
-  if ((ISNAN(sparse) || ISNA(sparse)) && (sparse = size > sp->spam_min_n)) {
+
+  if (sparse == Nan && (sparse = (usr_bool) (size > sp->spam_min_n))) {
     double mean_diag = 0.0;
     for (int i=0; i<sizeSq; i += sizeP1) mean_diag += M[i];
     mean_diag /= (double) size;
@@ -83,13 +83,15 @@ int sqrt_(double *M, int size, // in out
       for (int i=0; i<sp->spam_sample_n; i++) {
 	if ((notZero += fabs(M[(i * sp->spam_factor) % sizeSq]) > 
 	     spam_tol) >= threshold){
-	  sparse = false;
+	  sparse = False;
 	  break;
 	}
       }
-      if (PL >= PL_FCTN_DETAILS) PRINTF("random sampling: sparse=%d\n", sparse);
+      if (PL >= PL_FCTN_DETAILS) 
+	PRINTF("random sampling: sparse=%d\n", 
+	       sparse == Nan ? NA_INTEGER : (int) sparse);
     }
-    if (!random_sample || sparse) {
+    if (!random_sample || sparse == True) {
       int diag_nnzA = 0;
       for (int i=0; i<size; i++) {
 	int end = i * sizeP1;
@@ -101,12 +103,13 @@ int sqrt_(double *M, int size, // in out
       diag = (nnzA == 0);
       nnzA *= 2;
       nnzA += diag_nnzA;
-      sparse = nnzA <= sizeSq * (1.0 - sp->spam_min_p);
+      sparse = (usr_bool) (nnzA <= sizeSq * (1.0 - sp->spam_min_p));
       spam_zaehler = nnzA + 1;
       if (PL >= PL_DETAILSUSER) {
 	if (diag) PRINTF("diagonal matrix detected\n");
- 	else if (sparse) PRINTF("sparse matrix detected (%3.2f%% zeros)\n", 
-				100.0 * (1.0 - nnzA / (double) sizeSq));
+ 	else if (sparse == True) 
+	  PRINTF("sparse matrix detected (%3.2f%% zeros)\n", 
+		 100.0 * (1.0 - nnzA / (double) sizeSq));
 	else PRINTF("full matrix detected (%3.2f%% nonzeros)\n", 
 		    100.0 * nnzA / (double) sizeSq);
       }
@@ -138,9 +141,9 @@ int sqrt_(double *M, int size, // in out
   }
   
   InversionMethod *Meth;
-  if (sparse || sp->Methods[0] >= NoFurtherInversionMethod) {
+  if (sparse == True || sp->Methods[0] >= NoFurtherInversionMethod) {
     Meth = pt->newMethods;
-    if (sparse) {
+    if (sparse == True) {
       pt->newMethods[0] = Sparse;
       pt->newMethods[1] = 
 	sp->Methods[0] < NoFurtherInversionMethod && sp->Methods[0] != Sparse
@@ -295,15 +298,15 @@ int sqrt_(double *M, int size, // in out
     case Sparse : {// sparse matrix
 
      int 
-	doperm = sp->pivot,
-	halfsq = size * (size + 1) / 2,
-	nnzcolindices = 0,
-	nnzR = 0,
-	cache = 512; // to do: CPU cache size
+       doperm = sp->pivot,
+       halfsq = size * (size + 1) / 2,
+       nnzcolindices = 0,
+       nnzR = 0,
+       cache = 512, // to do: CPU cache size
+       nnzcfact[3] = { 5, 1, 5 }, 
+       nnzRfact[3] = { 5, 1, 2 };
       double
-	nnzcfact[3] = { 5.0, 1.0, 5.0 }, 
-	nnzRfact[3] = { 5.0, 1.0, 2.0 },
-        cholincrease_nnzcol = 1.25,
+	cholincrease_nnzcol = 1.25,
         cholincrease_nnzR = 1.25;
 
       CMALLOC(pivot, size, int);
@@ -336,7 +339,7 @@ int sqrt_(double *M, int size, // in out
 	if (nnzcolindices == 0) {
 	  double rel = nnzA / (double) size;
 	  if (rel < 5) {
-	    nnzcolindices = nnzA * (1.05 * rel - 3.8);
+	    nnzcolindices = (int) ceil(nnzA * (1.05 * rel - 3.8));
 	    if (nnzcolindices < 1000) nnzcolindices = 1000;
 	  } else {
 	    nnzcolindices = nnzA;
@@ -344,7 +347,7 @@ int sqrt_(double *M, int size, // in out
 	  nnzcolindices *= nnzcfact[doperm];
 	  if (nnzcolindices < nnzA) nnzcolindices = nnzA;
 	} else if (err == 5) {
-	  int tmp = ceil(nnzcolindices * cholincrease_nnzcol);
+	  int tmp = (int) ceil(nnzcolindices * cholincrease_nnzcol);
 	  if (PL > PL_RECURSIVE) 
 	    PRINTF("Increased 'nnzcolindices' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
 	  nnzcolindices = tmp;
@@ -353,10 +356,10 @@ int sqrt_(double *M, int size, // in out
 	
 	if (nnzR == 0) {
 	  double u = floor(.4 * pow(nnzA, 1.2));
-	  if (u < 4 * nnzA) u = 4 * nnzA;
-	  nnzR = u * nnzRfact[doperm];
+	  u = u < 4 * nnzA ? 4 * nnzA : ceil(u);
+	  nnzR = (int) u * nnzRfact[doperm];
 	} else if (err == 4) {
-	  int tmp = ceil(nnzR * cholincrease_nnzR);
+	  int tmp = (int) ceil(nnzR * cholincrease_nnzR);
 	  if (PL > PL_RECURSIVE) 
 	    PRINTF("Increased 'nnzR' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
 	  nnzR = tmp;

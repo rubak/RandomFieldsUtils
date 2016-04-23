@@ -45,7 +45,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef HIDE_UNUSED_VARIABLE
 #define VARIABLE_IS_NOT_USED __attribute__ ((unused))
 #else
+#ifdef __GNUC__
+#define VARIABLE_IS_NOT_USED __attribute__ ((unused))
+#else
 #define VARIABLE_IS_NOT_USED
+#endif
 #endif
 
 #ifndef SCHLATHERS_MACHINE
@@ -71,9 +75,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   sprintf(BUG_MSG, \
 	  "made to be an internal function '%s' ('%s', line %d).", /* // */ \
 	  __FUNCTION__, __FILE__, __LINE__);				\
-  warning(BUG_MSG)
+  /* warning(BUG_MSG) */						\
+  SERR(BUG_MSG)
  
-#define assert(X) if (!__extension__ (X )) {				\
+#define assert(X) if (!__extension__ (X)) {				\
     sprintf(BUG_MSG,"'assert(%s)' failed in function '%s'.",#X,__FUNCTION__); \
     ERR(BUG_MSG);							\
   }
@@ -81,10 +86,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define BUG { PRINTF("BUG in '%s'.",  __FUNCTION__);  ERR(BUG_MSG); }
 #define DO_TESTS true
 
-#define MEMCOPY(A,B,C) ({ assert((A)!=NULL && (B)!=NULL); memcpy(A,B,C); })
+#define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL); memcpy(A,B,C); })
 //#define MEMCOPY(A,B,C) memory_copy(A, B, C)
-#define MALLOC(X) ({assert((X)>0 && (X)<=668467200);malloc(X);})
-#define CALLOC(X, Y) ({assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
+#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=668467200);malloc(X);})
+#define CALLOC(X, Y) __extension__({assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
 #define FREE(X) { if ((X) != NULL) {if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}}
 #define UNCONDFREE(X) { if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}
 
@@ -95,16 +100,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef RANDOMFIELDS_DEBUGGING
 
 #undef MALLOC
-#define MALLOC(X) ({DOPRINTF("(MALLOC %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9);malloc(X);})
+#define MALLOC(X) __extension__({DOPRINTF("(MALLOC %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9);malloc(X);})
 //
 #undef CALLOC
-#define CALLOC(X, Y) ({DOPRINTF("(CALLOC %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
+#define CALLOC(X, Y) __extension__({DOPRINTF("(CALLOC %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
 //#define MALLOC malloc
 //#define CALLOC calloc
 
 #define DEBUGINFOERR {							\
-    char dummy[MAXERRORSTRING]; strcpy(dummy, ERRORSTRING);		\
-    sprintf(ERRORSTRING, "%s (%s, line %d)\n", dummy, __FILE__, __LINE__); \
+    char dummy_[MAXERRORSTRING]; strcpy(dummy_, ERRORSTRING);		\
+    sprintf(ERRORSTRING, "%s (%s, line %d)\n", dummy_, __FILE__, __LINE__); \
   }
 #define DEBUGINFO DOPRINTF("(currently at  %s, line %d)\n", __FILE__, __LINE__)
 
