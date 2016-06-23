@@ -19,34 +19,16 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 
 
-
-.struve <- function(x, nu, sign, expon.scaled) {
-  storage.mode(x) <- "double"
-  storage.mode(nu) <- "double"
-  storage.mode(expon.scaled) <- "logical"
-  storage.mode(sign) <- "double"
-#  res <- double(max(length(x), length(nu)))
- .Call("struve", x, nu, sign, expon.scaled)
-}
+cholPosDef <- function(a) {
+ # return(.Call("CholPosDef", a, PACKAGE="RandomFieldsUtils"))
+  .Call(C_CholPosDef, a)
+ }
 
 
-struveH <- function(x, nu)  .struve(x, nu, -1, FALSE)
-struveL <- function(x, nu, expon.scaled=FALSE)  .struve(x, nu, 1, expon.scaled)
-I0L0 <- function(x) {
+ I0L0 <- function(x) {
   storage.mode(x) <- "double"
 #  res <- double(length(x))
-  .Call("I0ML0", x)
-}
-
-
-solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
-  if (logdeterminant) {
-    logdet <- double(1)
-    res <- .Call("solvePosDef", a, b, logdet)
-    return(list(inv=res, logdet=logdet))
-  } else {
-    .Call("solvePosDef", a, b, double(0))
-  }
+  .Call(C_I0ML0, x)
 }
 
 
@@ -91,4 +73,28 @@ Print <- function(..., digits=6, empty.lines=2) { #
     cat("\n")
   }
 }
+
+
+
+solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
+  if (logdeterminant) {
+    logdet <- double(1)
+    res <- .Call(C_SolvePosDef, a, b, logdet)
+    return(list(inv=res, logdet=logdet))
+  } else {
+    .Call(C_SolvePosDef, a, b, double(0))
+  }
+}
+
+
+.struve <- function(x, nu, sign, expon.scaled) {
+  storage.mode(x) <- "double"
+  storage.mode(nu) <- "double"
+  storage.mode(expon.scaled) <- "logical"
+  storage.mode(sign) <- "double"
+#  res <- double(max(length(x), length(nu)))
+ .Call(C_struve, x, nu, sign, expon.scaled)
+}
+struveH <- function(x, nu)  .struve(x, nu, -1, FALSE)
+struveL <- function(x, nu, expon.scaled=FALSE)  .struve(x, nu, 1, expon.scaled)
 

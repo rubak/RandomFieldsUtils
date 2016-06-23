@@ -27,17 +27,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef basic_rfutils_h
 #define basic_rfutils_h 1
+#include <R.h>
+
+#define DO_PARALLEL 1
 
 #ifndef showfree
 #define showfree !true 
 #define DOPRINT true
 // #define SCHLATHERS_MACHINE 1
-// #define RANDOMFIELDS_DEBUGGING 1
+// // 1
 // #define HIDE_UNUSED_VARIABLE 1
 #endif
 
 extern"C" {
   // Fortran Code by Reinhard Furrer
+  void spamcsrdns_(int*, double *, int *, int*, double*);
   void spamdnscsr_(int*, int*, double *, int*, double*, int*, int*, double*);
   void cholstepwise_(int*, int*, double*, int*, int*, int*, int*, int*,
 		    int*, int*, int*, int*, int*, int*, double*, int*,
@@ -50,6 +54,61 @@ extern"C" {
   //  void spamback_();
   //  void spamforward();
 }
+
+typedef enum usr_bool {
+  // NOTE: if more options are included, change ExtendedBoolean in
+  // userinterface.cc of RandomFields
+  False=false, 
+  True=true, 
+  //Exception=2, // for internal use only
+  Nan=INT_MIN
+} usr_bool;
+
+
+
+#define RF_NA NA_REAL 
+#define RF_NAN R_NaN
+#define RF_NEGINF R_NegInf
+#define RF_INF R_PosInf
+#define T_PI M_2_PI
+
+#define MAXUNITS 4
+#define MAXCHAR 18 // max number of characters for (covariance) names  
+#define OBSOLETENAME "obsolete" 
+#define RFOPTIONS "RFoptions"
+
+#define MAXINT 2147483647
+#define INFDIM MAXINT
+#define INFTY INFDIM
+
+
+#define LENGTH length // safety, in order not to use LENGTH defined by R
+#define complex Rcomplex
+#define DOT "."
+#define GAUSS_RANDOM(SIGMA) rnorm(0.0, SIGMA)
+#define UNIFORM_RANDOM unif_rand()
+#define POISSON_RANDOM(x) rpois(x)
+#define SQRT2 M_SQRT2
+#define SQRTPI M_SQRT_PI
+#define INVPI M_1_PI
+#define PIHALF M_PI_2 
+#define ONETHIRD 0.333333333333333333333333
+#define TWOTHIRD 0.6666666666666666666666667
+#define TWOPI 6.283185307179586476925286766559
+#define INVLOG2 1.442695040888963
+#define INVSQRTTWO 0.70710678118654752440084436210
+#define INVSQRTTWOPI 0.39894228040143270286
+#define SQRTTWOPI 2.5066282746310002416
+#define SQRTINVLOG005 0.5777613700268771079749
+//#define LOG05 -0.69314718055994528623
+#define LOG3 1.0986122886681096913952452369225257046474905578227
+#define LOG2 M_LN2
+
+#define EPSILON     0.00000000001
+#define EPSILON1000 0.000000001
+
+#define MIN(A,B) ((A) < (B) ? (A) : (B))
+#define MAX(A,B) ((A) > (B) ? (A) : (B))
 
 
 #endif

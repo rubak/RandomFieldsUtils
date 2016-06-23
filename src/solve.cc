@@ -19,16 +19,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
+#include <omp.h>
 #include <R_ext/Lapack.h>
 #include "RandomFieldsUtils.h"
+#include "own.h"
 
-const char * InversionNames[(int) Diagonal + 1] = {
-  "Cholesky",  "SVD",  "SPAM", "QR", "LU", "no method left",
-  "method undefined", "Diagonal"};
+const char * InversionNames[nr_InversionMethods] = {
+  "Cholesky",  "SVD",  "SPAM",
+  "method undefined",
+  "QR", "LU", 
+  "no method left", "direct formula", "diagonal"};
 
+
+    //  double *A_= A, *B_= B;				
+     // i_ = N,					
+
+double scalar(double *A, double *B, int N) {
+  double ANS;
+  SCALAR_PROD(A, B, N, ANS);
+  return ANS;
+}
 
 void solve_DELETE0(solve_storage *x) {
-    FREE(x->iwork);
+     FREE(x->iwork);
     FREE(x->ipiv);
 
     FREE(x->pivot);
@@ -51,6 +64,7 @@ void solve_DELETE0(solve_storage *x) {
 
     FREE(x->VT);
     FREE(x->work);
+    FREE(x->w2);
     FREE(x->U);
     FREE(x->D);
 
@@ -58,8 +72,8 @@ void solve_DELETE0(solve_storage *x) {
   
     FREE(x->lnz); 
     FREE(x->DD);
-    FREE(x->RHS);
     FREE(x->w3);
+    FREE(x->result);
 }
 
 void solve_DELETE(solve_storage **S) {
@@ -71,37 +85,36 @@ void solve_DELETE(solve_storage **S) {
 }
 void solve_NULL(solve_storage* x) {
   if (x == NULL) return;
-    x->iwork_n = x->ipiv_n = 
-     x->pivot_n = x->xlnz_n = x->snode_n = x->xsuper_n = x->xlindx_n = 
-      x->invp_n = x->cols_n = x->rows_n =x->lindx_n = x->xja_n =
-      //
+  x->iwork_n = x->ipiv_n = 
+    x->pivot_n = x->xlnz_n = x->snode_n = x->xsuper_n = x->xlindx_n = 
+    x->invp_n = x->cols_n = x->rows_n =x->lindx_n = x->xja_n =
+    //
     x->SICH_n = x->MM_n = x->workspaceD_n = x->workspaceU_n = 
     x->VT_n = x->work_n = x->w2_n = x->U_n = x->D_n = x->workLU_n =
-      x->lnz_n =  x->DD_n = x->RHS_n = x->w3_n =
+    x->lnz_n =  x->DD_n = x->w3_n = x->result_n =
     0;
-
-    x->nsuper = x->nnzlindx = x->size = -1;
-    x->method = NoInversionMethod;
   
-    x->iwork = x->ipiv = 
+  x->nsuper = x->nnzlindx = x->size = -1;
+  x->method = NoInversionMethod;
+  for (int i=0; i<SOLVE_METHODS; x->newMethods[i++] = NoInversionMethod);
+  
+  x->iwork = x->ipiv = 
     x->pivot = x->xlnz = x->snode = x->xsuper = x->xlindx = 
     x->invp = x->cols = x->rows = x->lindx = x->xja =
     NULL;
-
-    x->SICH = x->MM = x->workspaceD = x->workspaceU = 
-    x->VT = x->work = x->w2 = x->U = x->D = x->workLU =
-    x->lnz = x->DD = x->RHS = x->w3 =
-    NULL;
+  
+  x->SICH = x->MM = x->workspaceD = x->workspaceU = 
+    x->VT = x->work = x->w2 = x->U = x->D = x->workLU = 
+     x->lnz = x->DD = x->w3 = x->result = NULL;
 }
 
 
-int solve2(double *M, int size, bool posdef,
-		double *rhs, int rhs_cols,
-		double *logdet 		
+int solve3(double *M, int size, bool posdef,
+	   double *rhs, int rhs_cols,
+	   double *result, double *logdet 		
 		){
   assert(size <= 3);
   if (size <= 0) ERR("matrix in 'solvePosDef' of non-positive size.");
-  int i;
 
   double det;
   switch(size){ // Abfrage nach Groesse der Matrix M + Berechnung der Determinante per Hand
@@ -124,73 +137,71 @@ int solve2(double *M, int size, bool posdef,
   double detinv = 1.0 / det; // determinant of inverse of M
   
   switch(size){
-    case 1: // size of matrix == 1
-      if (rhs_cols == 0) M[0] = detinv;   
-      else for (i=0; i<rhs_cols; rhs[i++] *= detinv);
-      break;
-    case 2: // size of matrix == 2
-      if (rhs_cols == 0) {
-	double swap = M[0] * detinv;
-	M[0] =  M[3] * detinv;
-	M[1] = -M[1] * detinv;
-	M[2] = -M[2] * detinv;
-	M[3] = swap;
-      } else { // rhs_cols != 0
-	double *p = rhs,
-	  a = M[0] * detinv,
+  case 1 : {// size of matrix == 1
+    if (rhs_cols == 0) result[0] = detinv;   
+    else for (int i=0; i<rhs_cols; i++) result[i] = rhs[i] * detinv;
+  }
+    break;
+  case 2 : { // size of matrix == 2
+    double a = M[0] * detinv,
+      d = M[3] * detinv;
+    if (rhs_cols == 0) {
+      result[0] = d;
+      result[1] = -M[1] * detinv;
+      result[2] = -M[2] * detinv;
+      result[3] = a;
+    } else { // rhs_cols != 0
+      double *p = rhs, *q = result;
+      if (M[1] != 0.0 || M[2] != 0.0) {
+	double 
 	  b = M[1] * detinv,
-	  c = M[2] * detinv,
-	  d = M[3] * detinv;
-	if (b != 0.0 || c != 0.0) {
-	  for (i=0; i<rhs_cols; i++, p+=2) {
-	    double swap = d * p[0] - c * p[1];
-	    p[1] = a * p[1] - b * p[0];
-	    p[0] = swap;
-	  }
-	} else {
-	  for (i=0; i<rhs_cols; i++, p+=2) {
-	    double swap = d * p[0];
-	    p[1] = a * p[1];
-	    p[0] = swap;
-	  }
+	  c = M[2] * detinv;
+	for (int i=0; i<rhs_cols; i++, p+=2, q+=2) {
+	  double swap = d * p[0] - c * p[1];
+	  q[1] = a * p[1] - b * p[0];
+	  q[0] = swap;
+	}
+      } else {
+	for (int i=0; i<rhs_cols; i++, p+=2, q+=2) {
+	  double swap = d * p[0];
+	  q[1] = a * p[1];
+	  q[0] = swap;
 	}
       }
-      break;
-  case 3: // size of matrix == 3
+    }
+  }
+    break;
+  case 3 : {// size of matrix == 3   
+    double swap0 = detinv * (M[4] * M[8] - M[5] * M[7]),
+      swap1 = detinv * (M[5] * M[6] - M[3] * M[8]),
+      swap2 = detinv * (M[3] * M[7] - M[4] * M[6]),
+      swap3 = detinv * (M[2] * M[7] - M[1] * M[8]),
+      swap4 = detinv * (M[0] * M[8] - M[2] * M[6]),
+      swap5 = detinv * (M[1] * M[6] - M[0] * M[7]),
+      swap6 = detinv * (M[1] * M[5] - M[2] * M[4]),
+      swap7 = detinv * (M[2] * M[3] - M[0] * M[5]),
+      swap8 = detinv * (M[0] * M[4] - M[1] * M[3]);
     if(rhs_cols == 0){ // invert matrix
-      double swap0 = detinv * (M[4] * M[8] - M[5] * M[7]),
-	swap1 = -detinv * (M[3] * M[8] - M[5] * M[6]),
-	swap2 = detinv * (M[3] * M[7] - M[4] * M[6]),
-	swap3 = -detinv * (M[1] * M[8] - M[2] * M[7]),
-	swap4 = detinv * (M[0] * M[8] - M[2] * M[6]),
-	swap5 = -detinv * (M[0] * M[7] - M[1] * M[6]),
-	swap6 = detinv * (M[1] * M[5] - M[2] * M[4]),
-	swap7 = -detinv * (M[0] * M[5] - M[2] * M[3]);
-	M[8] = detinv * (M[0] * M[4] - M[1] * M[3]);
-	M[0] = swap0;
-	M[1] = swap1;
-	M[2] = swap2;
-	M[3] = swap3;
-	M[4] = swap4;
-	M[5] = swap5;
-	M[6] = swap6;
-	M[7] = swap7;
+      result[0] = swap0;
+      result[1] = swap1;
+      result[2] = swap2;
+      result[3] = swap3;
+      result[4] = swap4;
+      result[5] = swap5;
+      result[6] = swap6;
+      result[7] = swap7;
+      result[8] = swap8;
     } else { // solve system given by M and rhs
-      double *p = rhs;
-      for (i=0; i<rhs_cols; i++, p+=3) {
-	double swap0 = detinv * (   p[0] * (M[4] * M[8] - M[5] * M[7]) 
-				  - p[1] * (M[1] * M[8] - M[2] * M[7])
-				  + p[2] * (M[1] * M[5] - M[2] * M[4]));
-	double swap1 = detinv * (- p[0] * (M[3] * M[8] - M[5] * M[6]) 
-				 + p[1] * (M[0] * M[8] - M[2] * M[6]) 
-				 - p[2] * (M[0] * M[5] - M[2] * M[3]));
-	p[2] = detinv * (   p[0] * (M[3] * M[7] - M[4] * M[6])
-			  - p[1] * (M[0] * M[7] - M[1] * M[6]) 
-			  + p[2] * (M[0] * M[4] - M[1] * M[3]));
-	p[0] = swap0;
-	p[1] = swap1;
+      double *p = rhs, *q = result;
+      for (int i=0; i<rhs_cols; i++, p+=3, q+=3) {
+	double swapA = p[0] * swap0 + p[1] * swap3 + p[2] * swap6;
+	double swapB = p[0] * swap1 + p[1] * swap4 + p[2] * swap7;
+	q[2] = p[0] * swap2 + p[1] * swap5 + p[2] * swap8;
+	q[0] = swapA;
+	q[1] = swapB;
       }
     }
+  }
     break;
   default: BUG;
   }
@@ -198,54 +209,95 @@ int solve2(double *M, int size, bool posdef,
   return NOERROR;
 }
 
+int chol3(double *M, int size, double *res){
+  // UNBEDINGT in sqrtRHS.cc auch aendern
+  assert(size <= 3);
+  if (size <= 0) ERR("matrix in 'solvePosDef' of non-positive size.");
+  //  if (M[0] < 0) return ERRORFAILED;
+  res[0] = sqrt(M[0]);
+  if (size == 1) return NOERROR;
+  res[1] = 0.0;
+  res[size] = M[size] / res[0];
+  res[size + 1] = sqrt(M[size + 1] - res[size] * res[size]);
+  if (size == 2) return NOERROR;
+  res[2] = res[5] = 0.0;
+  res[6] = M[6] / res[0];
+  res[7] = (M[7] - res[3] * res[6]) / res[4];
+  res[8] = sqrt(M[8] - res[6] * res[6] - res[7] * res[7]);
+  return NOERROR;
+} 
 
-int solvePosDef_(double *M, int size, bool posdef,
-		 double *rhs, int rhs_cols,
-		 double *logdet, 
-		 solve_storage *pt, solve_param *Sp, int PL
- 		 ){
+
+int doPosDef(double *M, int size, bool posdef,
+	     double *rhs, int rhs_cols, double *result, double *logdet, 
+	     bool sqrtOnly, solve_storage *Pt, solve_param *Sp
+	     ){
+
   /*
-
-    M: a square matrix (symmetry is not checked) of size x size;
+    M: (in/out) a square matrix (symmetry is not checked) of size x size;
        NOTE THAT THE CONTENTS OF M IS DESTROYED IFF NO RHS IS GIVEN
-       in case rhs is not given, the inverse of M is returned here
-    posdef: whether or not the matrix is positiv (semi)definite --
-            to some extend solvePosDef can deal with non-positiv definite
+       AND result IS NOT GIVEN.
+       In case rhs is not given, the inverse of M is returned here
+       In case of sqrtonly M is expected to be a positive definite matrix
+    posdef (in): whether or not the matrix is positiv (semi)definite --
+            to some extend doPosDef can deal with non-positiv definite
             functions
-    rhs : right hand side of the equality with rhs_cols columns
-          NOTE THAT THE CONTENTS OF rhs WILL BE DESTROYED IF rhs  GIVEN 
-          the solution of the equality is returned in rhs
-    logdet : if not NULL the logarithm of the determinant is returned
-    pt  : working space. If NULL, internal working spaces are used.
+    rhs (in/out) : right hand side of the equality with rhs_cols columns
+          NOTE THAT THE CONTENTS OF rhs WILL BE DESTROYED IF rhs IS GIVEN 
  
-          A non-NULL value gives an advantage only if solvePosDef is called
-          repeated. Then 
+          the solution of the equality is returned in rhs
+    rhs_cols : number of colums of the matrix on the right hand side
+    result (out) : NULL or matrix of the size of the result (inverse matrix or 
+           of size of the matrix on the right hand side); see also 'M' ans 'rhs'
+    logdet (out): if not NULL the logarithm of the determinant is returned
+    pt (in/out) : working space. If NULL, internal working spaces are used.
+ 
+          A non-NULL value gives an advantage only if doPosDef is called
+          repeatedly. Then 
             solve_storage *pt = (solve_storage*) malloc(sizeof(solve_storage);
             solve_NULL(pt);
           prepares pt. Deletion is done only at the very end by
             solve_DELETE(pt);
-          In meanwhile the working space is managed by solvePosDef_;
-     Sp : parameters. If NULL, the behaviour is as described in
-          the R manual for solvePosDef.
+          In meanwhile the working space is managed by doPosDef;
+     Sp (in): parameters. If NULL, the behaviour is as described in
+          the R manual for doPosDef.
           The parameters are described in the package 'RandomFields'
           under ?RFoptions
-     PL : printing level; 1 is standard
 	  
   */
 
-  // printf("size=%d %f %f %f %f\n", size, M[0], M[1], M[2], M[3]);
-
+  
   // http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F01/f01intro.xml#
   assert(NA_LOGICAL == INT_MIN && NA_LOGICAL == NA_INTEGER); // nur zur sicherheit, wegen usr_bool
   //          eigentlich sollte usr_bool unabhaengig davon funktionieren
 
-  if (size <= 3) return solve2(M, size, posdef, rhs, rhs_cols, logdet);
+  double *RESULT = result != NULL ? result : rhs_cols > 0 ? rhs : M;
+
+  //printf("%ld %ld %ld\ %ldn", RESULT, result, rhs, M); BUG;
+
+  if (size <= 3) {
+    if (Pt != NULL) {
+      Pt->method = direct_formula;
+      Pt->size = size;
+    }
+     return sqrtOnly 
+      ? chol3(M, size, RESULT)
+      : solve3(M, size, posdef, rhs, rhs_cols, RESULT, logdet);
+  }
 
   assert(SOLVE_METHODS >= 2);
   solve_param
-    sp_standard = solve_param_default,
-    *sp = Sp == NULL ? &sp_standard : Sp;
-  InversionMethod method = NoInversionMethod;
+    *sp = Sp == NULL ? &(GLOBAL.solve) : Sp;
+
+  solve_storage *pt;
+  if (Pt != NULL) {
+    pt = Pt;
+    //printf("pt : %ld \n", (long) (pt));    BUG;
+ 
+  } else {
+    pt = (solve_storage*) MALLOC(sizeof(solve_storage));
+    solve_NULL(pt);    
+  }
   int  
     err = NOERROR,
     spam_zaehler = 0,
@@ -260,6 +312,7 @@ int solvePosDef_(double *M, int size, bool posdef,
  
   pt->method = NoFurtherInversionMethod;
   pt->size = size;
+ 
   if (sparse == Nan && (sparse = (usr_bool) (size > sp->spam_min_n))) {
     double mean_diag = 0.0;
     for (int i=0; i<sizeSq; i += sizeP1) mean_diag += M[i];
@@ -313,14 +366,16 @@ int solvePosDef_(double *M, int size, bool posdef,
     for (int i=0; i<size && diag; i++) {
       int end = i * sizeP1;
       long j;
-      for (j=i * size; j<end; j++)
+      for (j=i * size; j<end; j++) {
 	if (fabs(M[j]) > spam_tol) {
 	  diag = false;
 	  break;
 	}
+      }
+      if (!diag) break;
       j++;
       end = (i+1) * size;
-      if (diag && !posdef) {
+      if (!posdef) {
 	for (; j<end; j++) {
 	  diag = false;
 	  break;
@@ -328,20 +383,24 @@ int solvePosDef_(double *M, int size, bool posdef,
       }
     }
   }
+
   
-
-  //printf("start vxxx %f\n", (double) sparse);
-
-  if (pt == NULL) BUG;
-
   if (diag) {
+    pt->method = Diagonal;
+    if (PL>=PL_STRUCTURE) PRINTF("dealing with diagonal matrix\n");
     if (logdet != NULL) {
       double tmp = 0.0;
       for (int i=0; i<sizeSq; i+=sizeP1) tmp += log(M[i]);
       *logdet = tmp;
     }
     if (rhs_cols == 0) {
-      for (int i=0; i<sizeSq; i += sizeP1) M[i] = M[i] <= 0.0 ? 0.0 : 1.0/ M[i];
+      MEMCOPY(RESULT, M, sizeSq * sizeof(double));
+      if (sqrtOnly) {
+	for (int i=0; i<sizeSq; i += sizeP1)
+	  RESULT[i] = M[i] > 0.0 ? sqrt(M[i]) : 0.0;	
+      } else 
+	for (int i=0; i<sizeSq; i += sizeP1) 
+	  RESULT[i] = M[i] <= 0.0 ? 0.0 : 1.0 / M[i];
     } else {
       CMALLOC(MM, size, double);
       for (int i=0; i<size; i++) {
@@ -350,118 +409,285 @@ int solvePosDef_(double *M, int size, bool posdef,
       }
       int j;
       for (int k=j=0; j<rhs_cols; j++)
-	for (int i=0; i<size; i++) rhs[k++] *= MM[i];
+	for (int i=0; i<size; i++, k++) RESULT[k] = rhs[k] * MM[i];
     }
     err = NOERROR;
     goto ErrorHandling;
   }
-  
-  //   printf("Ok vxxx %f\n", (double) sparse);
 
+  // size of matrix at least 4 x 4, and not diagonal
   InversionMethod *Meth;
-  if (sparse == True || sp->Methods[0] >= NoFurtherInversionMethod) {
+  if (sparse == True || sp->Methods[0] == NoFurtherInversionMethod ||
+      sp->Methods[0] == NoInversionMethod) {
     Meth = pt->newMethods;
     if (sparse == True) {
-      pt->newMethods[0] = Sparse;
-      pt->newMethods[1] = 
-	sp->Methods[0] < NoFurtherInversionMethod && sp->Methods[0] != Sparse
+      Meth[0] = Sparse;
+      bool given0 =  sp->Methods[0] != NoFurtherInversionMethod &&
+	sp->Methods[0] != NoInversionMethod;
+      Meth[1] = given0 && sp->Methods[0] != Sparse
 	? sp->Methods[0] 
 	: posdef ? Cholesky : LU;  
       if (SOLVE_METHODS > 2) {
-	pt->newMethods[2] = 
-	  sp->Methods[0]<NoFurtherInversionMethod && sp->Methods[0] != Sparse &&
-	  sp->Methods[1]<NoFurtherInversionMethod && sp->Methods[1] != Sparse
+	bool given1 = sp->Methods[1] != NoFurtherInversionMethod &&
+	  sp->Methods[1] != NoInversionMethod;
+	Meth[2] = given0 && sp->Methods[0] != Sparse &&
+	  given1 && sp->Methods[1] != Sparse
 	  ? sp->Methods[1] 
 	  : posdef ? SVD : LU;
       }
       // pt->newMethods[1] = Sparse;
     } else {
-      pt->newMethods[0] = posdef ? Cholesky : LU;  
-      pt->newMethods[1] =  posdef ? SVD : LU;
-      if (SOLVE_METHODS > 2) pt->newMethods[2] = SVD;
+      Meth[0] = posdef ? Cholesky : LU;  
+      Meth[1] =  posdef ? SVD : LU;
+      if (SOLVE_METHODS > 2) Meth[2] = SVD;
     }
+    for (int i=3; i<SOLVE_METHODS; Meth[i++]=NoFurtherInversionMethod);   
   } else Meth = sp->Methods;
-
- //  PL = 10;
 
   if (!posdef && Meth[0] != SVD && Meth[0] != SVD) {
     err = ERRORNOTPROGRAMMEDYET;
     goto ErrorHandling;
   }
- 
-  if (Meth[1] != Meth[0] && rhs_cols==0) { // at least two different Methods in the list
-    CMALLOC(SICH, sizeSq, double);
-    memcpy(SICH, M, sizeSq * sizeof(double));
+
+  // cholesky, QR, SVD, LU always destroy original matrix M
+  bool gesichert;
+  if ((gesichert = rhs_cols==0 && result == NULL)) {
+    if ((gesichert = (SOLVE_METHODS > sparse + 1 &&
+		      Meth[sparse + 1] != Meth[sparse] &&
+		      Meth[sparse + 1] != NoFurtherInversionMethod)
+	 || (Meth[sparse] == SVD && sp->svd_tol >= 0.0 && sqrtOnly)
+	 )) { // at least two different Methods in the list
+      CMALLOC(SICH, sizeSq, double);
+      MEMCOPY(SICH, M, sizeSq * sizeof(double));
+    }
   }
-  double *SICH;
+  double *SICH, *MPT;
   SICH = pt->SICH;
 
+  MPT = M; // also for sparse result
+  if (rhs_cols > 0) {
+    CMALLOC(MM, sizeSq, double);
+    MPT = MM;
+  } else if (result != NULL) MPT = result;
+
+ 
+  //  printf("gesichert %d\n", gesichert);
+  //  int size4; size4 = MIN(5, size);printf("MPT\n"); for (int ii=0; ii<size4; ii++) {for (int jj=0; jj<size4; jj++) printf("%e ", M[ii + jj * size]); printf("\n");}; BUG;
+ // printf("%ld %ld %ld\n", (long) MPT, (long)M, long(result)); BUG;
+ 
+  //  bool del = GLOBAL.solve.tmp_delete;
   for (int m=0; m<SOLVE_METHODS && (m==0 || Meth[m] != Meth[m-1]); m++) {
-    method = Meth[m];
-   if (PL>=PL_STRUCTURE) { 
-     PRINTF("method to calculate inverse : %s\n", InversionNames[method]);
-    }
- 
-    // print("m=%d Method %d chol=%d QR=%d SVD=%d sparse=%d\n", m, method, Cholesky, QR, SVD, Sparse);
-   
-    if (method<0) break;
-    if (m > 0 && rhs_cols == 0) {
-      memcpy(M, SICH, sizeSq * sizeof(double));
-    }
 
-    switch(method) {
- 
-     case Cholesky : // cholesky       
-       if (!posdef) CERR("Cholesky needs positive definite matrix");
-       if (size > sp->max_chol) CERR("matrix too large for Cholesky decomposition.");
-       if (rhs_cols == 0) {
-	 //for (int ii=0; ii<100; ii++) printf("%10.8f ", M[ii]); printf("M\n");
-	 F77_CALL(dpotrf)("U", &size, M, &size, &err);  
-	 //	   for (int ii=0; ii<100; ii++) printf("%10.8f ", M[ii]); printf("Minv\n");
-	 if (err == NOERROR) {
-	   int i;
-	   if (logdet != NULL) {
-	     for (*logdet=0.0, i=0; i < sizeSq; i+=sizeP1) {
-	       *logdet += log(M[i]);
-	     }
-	     *logdet *= 2;
-	   }
-	   F77_CALL(dpotri)("U", &size, M, &size, &err);  
-	   if (rhs_cols == 0) {
-	     long  i2, i3, j;
-	     for (i2=i=0; i<size; i++, i2+=size + 1) {	
-	       for (i3 = i2 + 1, j = i2 + size; j<sizeSq; j+=size) M[i3++]=M[j];
-	     }
-	   }
-	 }
-       } else {
-	 //printf("sizeSq %d %d\n", sizeSq, pt->MM_n); printf("before\n");
- 	 CMALLOC(MM, sizeSq, double);
-	 //	 printf("callo done \n\n");
-	 MEMCOPY(MM, M, sizeSq * sizeof(double));
-	 //	 printf("memco done \n\n");
-	 F77_CALL(dpotrf)("U", &size, MM, &size, &err);  
-	 if (err == NOERROR) {
-	   int i;
-	   if (logdet != NULL) {
-	     for (*logdet=0.0, i=0; i < sizeSq; i+=sizeP1)
-	       *logdet += log(MM[i]);
-	     *logdet *= 2;
-	   }
- 	   F77_CALL(dpotrs)("U", &size, &rhs_cols, MM, &size, rhs, &size, &err);
- 	 }
-       }
-     
-       if (err != NOERROR) {	
-	 CERR1("Cholesky decomposition failed with err=%d of 'dpotr*' in 'solvePosDef'. Probably matrix not strictly positive definite.\n", err);
-       }
+    //printf("%d %s\n", m, InversionNames[Meth[m]]); 
 
-       if (PL >=  PL_DETAILSUSER) PRINTF("Cholesky decomposition successful\n");
+    pt->method = Meth[m];
+    if (pt->method<0) break;
+    if (sqrtOnly) {
+      if (pt->method == NoInversionMethod && m<=sparse) BUG;
+       if (pt->method == NoFurtherInversionMethod) break;
+     if (PL>=PL_STRUCTURE) { 
+	PRINTF("method to calculate the square root : %s\n", 
+	       InversionNames[pt->method]);
+      }
+    } else {
+	if (PL>=PL_STRUCTURE) { 
+	  PRINTF("method to calculate the inverse : %s\n",
+		 InversionNames[pt->method]);
+      }
+    }
      
+    if (rhs_cols == 0 && result == NULL) {
+      if (m > sparse) {      
+	MEMCOPY(MPT, SICH, sizeSq * sizeof(double));
+      }
+    } else if (pt->method != Sparse) {
+      MEMCOPY(MPT, M, sizeSq * sizeof(double));
+      
+      //           int size2 = MIN(5, size);printf("MPT ueberschrieben\n"); for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) printf("%e ", MPT[ii + jj * size]); printf("\n");}//BUG;
+    }
+    
+    switch(pt->method) {
+    case Cholesky : // cholesky       
+      
+      if (!posdef) CERR("Cholesky needs positive definite matrix");
+      if (size > sp->max_chol)
+	CERR("matrix too large for Cholesky decomposition.");
+      
+      //      if (Sp->cores <= 1 && false) {
+      //	F77_CALL(dpotrf)("Upper", &size, MPT, &size, &err);  
+      //      } else 
+      
+      {
+	bool VARIABLE_IS_NOT_USED multicore = (GLOBAL.basic.cores > 1);
+	//#pragma omp parallel for
+        // cmp for instance http://stackoverflow.com/questions/22479258/cholesky-decomposition-with-openmp
+	
+	err = NOERROR;	  	
+	double *A = MPT;
+	for (int i=0; i<size; i++, A += size) {
+	  double scalar;	  
+	  SCALAR_PROD(A, A, i, scalar);
+	  if (A[i] <= scalar) {
+	    err = ERRORFAILED;
+	    break;
+	  }
+	  A[i] = sqrt(A[i] - scalar);
+	  
+	  //	  double invsum = 1.0 / A[i];
+	  double sum = A[i];
+	  double *endB = MPT + sizeSq; 
+#ifdef DO_PARALLEL
+#pragma omp parallel for if (multicore)
+#endif
+	  for (double *B=MPT + (i+1) * size; B<endB; B+=size) {
+	    double scalar2;
+	    SCALAR_PROD(A, B, i, scalar2);
+	    //B[i] = invsum * (B[i] - scalar2);
+	    B[i] = (B[i] - scalar2) / sum;
+	  }
+	}
+      }
+
+
+	// see also http://www.wseas.us/e-library/conferences/2013/Dubrovnik/MATHMECH/MATHMECH-25.pdf
+	// http://ac.els-cdn.com/0024379586901679/1-s2.0-0024379586901679-main.pdf?_tid=bc5f2c8c-3117-11e6-80e1-00000aab0f02&acdnat=1465789050_ebfe7248d7a126bd2a301e97a3dbf914
+	if (false) {
+        //braucht 100 % mehr zeit als aufruf von dpotrf
+	  // laesst sich nicht ohne weiteres 
+	err = NOERROR;	  
+	//	  omp_set_num_threads(Sp->cores);
+	int isize=0;
+	for (int i=0; i<size; i++, isize += size) {
+	  double *A = MPT + isize;
+	  
+	  // #pragma omp parallel for -- warum funktioniert das nicht??
+	  for (int j=0; j<i; j++) {
+	    int jsize = j * size;
+	    double 
+	      *B =  MPT + jsize,
+	      sum = A[j]; 
+	    // printf("a_ij = %f\n", sum);
+	    for (int k=0; k<j; k++) sum -= A[k] * B[k];
+	    // printf("A_ij = %f %f\n", sum, MPT[jsize + j]);
+	    A[j] = sum / B[j];
+	  }
+	  
+
+	  double sum = A[i] - scalar(A, A, i); 
+	  if (sum > 0.0) A[i] = sqrt(sum);
+	  else { err = ERRORFAILED; break;}
+	}
+	}
+
+
+
+	if (false) {
+        //braucht 100 % mehr zeit als aufruf von dpotrf
+	  // laesst sich nicht ohne weiteres 
+	err = NOERROR;	  
+	//	  omp_set_num_threads(Sp->cores);
+	int isize=0;
+	for (int i=0; i<size; i++, isize += size) {
+	  //#pragma omp parallel for
+	  double *A = MPT + isize;
+	  //#pragma omp parallel for
+	  for (int j=0; j<=i; j++) {
+	    int jsize = j * size;
+	    double 
+	      *B =  MPT + jsize,
+	      sum = A[j]; 
+	    // printf("a_ij = %f\n", sum);
+	    for (int k=0; k<j; k++) sum -= A[k] * B[k];
+	    // printf("A_ij = %f %f\n", sum, MPT[jsize + j]);
+	    if (j < i) A[j] = sum / B[j];
+	    else if (sum > 0.0) A[j] = sqrt(sum);
+	    else { err = ERRORFAILED; }
+
+	    // printf("j=%d %f  ", j, MPT[isize + j]);	    
+	  }
+	}
+	}
+
+
+	if (false) {
+	 //https://courses.engr.illinois.edu/cs554/fa2013/notes/07_cholesky.pdf
+// saying that no pivoting necessary. needs 150 % more time 
+	err = NOERROR;	  
+	//	  omp_set_num_threads(Sp->cores);
+
+	for (int k =0; k<size; k++) {
+	  int kspalte = k * size; 
+	  MPT[k + kspalte] = sqrt(MPT[k + kspalte]);
+	  double f = 1.0 / MPT[k + kspalte];
+	  for (int i = k + 1; i<size; i++) {
+	    int ispalte = i * size;
+	    MPT[k + ispalte] *= f;
+	  }
+#pragma omp parallel for
+	  for (int j = k + 1; j<size; j++) {
+	    int jspalte = j * size;
+	    double factor = MPT[k + jspalte];
+	    for (int ispalte=j * size; ispalte<sizeSq; ispalte+=size) {
+	      MPT[j + ispalte] -= MPT[k + ispalte] * factor;
+	    }
+	  }
+	}
+	}
+
+
+	
+	//	   for (int ii=0; ii<100; ii++) printf("%10.8f ", MPT[ii]); printf("Minv\n");
+      if (err == NOERROR) {
+	if (sqrtOnly) {	  
+	  int deltaend = size - 1;
+	  double *end = MPT + sizeSq;
+	  for (double *p=MPT + 1; p<end; p+=sizeP1, deltaend--)
+	    FILL_IN(p, deltaend, 0.0);
+	  
+	  
+
+	  /*
+	  int deltaend = size;
+	  for (int i=0; i<sizeSq; i+=sizeP1) {
+	    int end = i + (deltaend--);
+	    //	      printf("%d %d\n", i, end);
+	    for (int j=i + 1; j<end; MPT[j++]=0.0); // untere Dreiecksmatrix 0
+	  }
+	  */
+	} else {
+	  int i;
+	  if (logdet != NULL) {
+	    for (*logdet=0.0, i=0; i < sizeSq; i+=sizeP1) {
+	      *logdet += log(MPT[i]);
+	    }
+	    *logdet *= 2;
+	  }
+	  if (rhs_cols == 0) {
+	    long  i2, i3, j;
+	    F77_CALL(dpotri)("U", &size, MPT, &size, &err);  
+	    for (i2=i=0; i<size; i++, i2+=size + 1) {	
+	      for (i3 = i2 + 1, j = i2 + size; j<sizeSq; j+=size) 
+		MPT[i3++] = MPT[j];
+	    }
+	  } else {
+	    int totalRHS = size * rhs_cols;
+	    if (result != NULL) MEMCOPY(RESULT, rhs, sizeof(double) * totalRHS);
+	    F77_CALL(dpotrs)("U", &size, &rhs_cols, MPT, &size, RESULT, &size,
+			     &err);
+	  }
+	} // sqrt only
+      } // err == NOERROR
+      
+      if (err != NOERROR) {	
+	CERR1("Cholesky decomposition failed with err=%d of 'dpotr*'. Probably matrix not strictly positive definite.\n", err);
+      }
+      
+      if (PL >=  PL_DETAILSUSER) PRINTF("Cholesky decomposition successful\n");
+      
       break;
-
+       
     case QR : {// QR returns transposed of the inverse !!
-      if (rhs_cols > 0 || logdet != NULL) {
+      if (rhs_cols > 0 || logdet != NULL || !sqrtOnly) {
 	err = ERRORFAILED;
 	continue;
       }
@@ -472,15 +698,12 @@ int solvePosDef_(double *M, int size, bool posdef,
       CMALLOC(workspaceD, size, double);
       CMALLOC(workspaceU, size, double);
 
-      // PseudoInverse:
-      //    F77_CALL(f01blf)(&size, &size, &(GLOBAL.general.matrixtolerance),
-       //		       M, &size, aijmax, &irank, inc, workspaceD, 
-      //		       workspaceU, &size, workspaceDU, &err);
       F77_CALL(dgeqrf)(&size, &size,
-		       M, &size, // aijmax, &irank, inc, workspaceD, 
-		       workspaceU, workspaceD,  &size, &err);     
+		       MPT, &size, // aijmax, &irank, inc, workspaceD, 
+		       workspaceU, workspaceD, &size, &err);     
       
-      if (err != NOERROR) {	
+      //if (GLOBAL.solve.tmp_delete) {FREEING(workspaceD); FREEING(workspaceU);}
+     if (err != NOERROR) {	
 	CERR1("'dgeqrf' failed with err=%d\n", err);
       }
       if (PL >=  PL_DETAILSUSER) PRINTF("QR successful\n");
@@ -489,82 +712,130 @@ int solvePosDef_(double *M, int size, bool posdef,
 
     case SVD : {// SVD : M = U D VT
       if (size > sp->max_svd) CERR("matrix too large for SVD decomposition.");
-      double  optim_lwork;
-      int k,  
+      double  optim_lwork, 
+        //*Uloc = result,
+	*pt_work = &optim_lwork;
+      int k = 0,  
 	size8 = size * 8,
 	lwork = -1;
-      double *M0 = M;
-      CMALLOC(MM, rhs_cols == 0 ? 0 : sizeSq, double);
-      if (rhs_cols > 0) {
-	MEMCOPY(MM, M, sizeSq * sizeof(double));
-	M0 = MM;
-      }
 
       CMALLOC(VT, sizeSq, double);
       CMALLOC(U, sizeSq, double);
+#define Uloc U
       CMALLOC(D, size, double); 
       CMALLOC(iwork, size8, int);
-  
-      F77_CALL(dgesdd)("A", &size, &size, M0, &size, D, U, &size, VT, &size, 
-		       &optim_lwork, &lwork, iwork, &err);
+ 
+// int size3 = MIN(9, size);printf("MPT\n"); for (int ii=0; ii<size3; ii++) {for (int jj=0; jj<size3; jj++) printf("%e ", MPT[ii + jj * size]); printf("\n");};
+ 
+      for (int i=0; i<=1; i++) {
+	F77_CALL(dgesdd)("A", &size, &size, MPT, &size, D, Uloc, &size, VT, &size, 
+			 pt_work, &lwork, iwork, &err);
+	if (err != NOERROR || ISNAN(D[0])) break;
+	lwork = (int) optim_lwork;
+	CMALLOC(work, lwork, double);
+	pt_work = work;
+      }
       if (err != NOERROR) {
+	if (PL>PL_ERRORS)
+	  PRINTF("Error code F77_CALL(dgesdd) = %d\n", err);
 	CERR1("'dgesdd' failed with err=%d\n", err);
 	break;
       }
-
-      lwork = (int) optim_lwork;
-      CMALLOC(work, lwork, double);
-
-      F77_CALL(dgesdd)("A",  &size,  &size, M0, &size, D, U, &size, VT, &size, 
-		       work, &lwork, iwork, &err);
       
-      if (err!=NOERROR || ISNAN(D[0])) {
-	if (PL>PL_ERRORS) PRINTF("Error code F77_CALL(dgesdd) = %d\n", err); 
-	CERR1("'dgesdd' failed with err=%d\n", err);
-	break;
-      }
+//      printf("MPT (%d x %d, %ld %ld M=%ld %ld)=\n", size, size, (long) MPT, (long) Uloc, (long) M, (long) result);int size2 = MIN(5, size);for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%e ", MPT[ii + jj * size]);}printf("\n");}
+// printf("Uloc=\n");for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%e ", Uloc[ii + jj * size]);}printf("\n");}printf("\n");
+//for (int ii=0; ii<size; ii++) { printf("%e ", D[ii]); }printf("\n");
 
-      // calculate determinant 
-      if (logdet != NULL) {
-	int i;
-	for (*logdet=0.0, i = 0; i < size; *logdet += log(D[i++]));
-      }
-
-      double svd_tol = sp->svd_tol;
-      for (int j=0; j<size; j++) D[j] = fabs(D[j]) < svd_tol ? 0.0 : 1.0 / D[j];
-
-      if (rhs_cols > 0) {
-	int tot = size * rhs_cols;
-	CMALLOC(w2, tot, double);	
-	matmulttransposed(U, rhs, w2, size, size, rhs_cols);
-	for (k=0; k<tot; )
-	  for (int i=0; i<size; i++) w2[k++] *= D[i];
-	matmulttransposed(VT, w2, rhs, size, size, rhs_cols);
-      } else {
-	// calculate inverse of covariance matrix
-	int j;
-	for (k=0, j=0; j<size; j++) {
-	  double dummy = D[j];
-	  for (int i=0; i<size; i++) U[k++] *= dummy;
+     if (sqrtOnly) {
+	double svdtol = sp->svd_tol;
+	/* calculate SQRT of covariance matrix */
+	for (int j=0; j<size; j++) {
+	  double dummy;
+	  dummy = fabs(D[j]) < svdtol ? 0.0 : sqrt(D[j]);
+	  for (int i=0; i<size; i++, k++) RESULT[k] = Uloc[k] * dummy;
 	}
-	matmult_tt(U, VT, M, size, size, size); // V * U^T
-      } 
+ 
+//printf("M=\n");for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%f ", M[ii + jj * size]);}printf("\n");}
+
+// printf("sqrt=\n");for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%f ", RESULT[ii + jj * size]);}printf("\n svdtol=%e\n", svdtol);}
+
+	
+	/* check SVD */
+ 	if (svdtol >= 0.0) {
+	  double *Morig = gesichert ? SICH : M;
+	  for (int i=0; i<size; i++) {
+	    double *Ui = RESULT + i;
+	    for (k=i; k<size; k++) {
+	       double *Uk = RESULT + k,
+		sum = 0.0;
+	       for (int j=0; j<sizeSq; j+=size) {
+		 sum += Ui[j] * Uk[j];
+		 //		 printf("%d %d %d sum=%f %f %f\n", i, k, j, sum, Ui[j], Uk[j]);
+	       }
+	      
+	       //	      printf("i=%d j=%d %f %f\n", i, k, sum, Morig[i * size + k]);
+	      
+	      if (fabs(Morig[i * size + k] - sum) > svdtol) {
+		if (PL > PL_ERRORS) {
+		  PRINTF("difference %e at (%d,%d) between the value (%e) of the covariance matrix and the square of its root (%e).\n", 
+			 Morig[i * size +k] - sum, i, k, Morig[i*size+k], sum);
+		}
+		FERR3("required precision not attained  (%e > %e): probably invalid model. See also '%s'\n", fabs(Morig[i * size + k] - sum), svdtol,
+		      solve[SOLVE_SVD_TOL]);
+
+		err=ERRORM;
+		break;
+	      } //else printf("ok (%d,%d) %f %f\n", i, k, Morig[i*size+k],sum);
+	    }
+	    if (err != NOERROR) break;		
+	  }
+	  if (err != NOERROR) break;		
+	}
+  	
+      } else {
+	// calculate determinant 
+	if (logdet != NULL) {
+	  double dummy = 0.0;
+	  for (int i = 0; i < size; dummy += log(D[i++]));
+	  *logdet = dummy;
+	}
+	
+	double svd_tol = sp->svd_tol;
+	for (int j=0; j<size; j++) 
+	  D[j] = fabs(D[j]) < svd_tol ? 0.0 : 1.0 / D[j];
+
+	if (rhs_cols > 0) {
+	  int tot = size * rhs_cols;
+	  CMALLOC(w2, tot, double);	
+	  matmulttransposed(Uloc, rhs, w2, size, size, rhs_cols);
+	  for (k=0; k<tot; )
+	    for (int i=0; i<size; i++) w2[k++] *= D[i];
+	  matmulttransposed(VT, w2, RESULT, size, size, rhs_cols);
+	} else {
+	  // calculate inverse of covariance matrix
+	  int j;
+	  for (k=0, j=0; j<size; j++) {
+	    double dummy = D[j];
+	    for (int i=0; i<size; i++) Uloc[k++] *= dummy;
+	  }
+	  matmult_tt(Uloc, VT, RESULT, size, size, size); // V * U^T
+	}
+      }
 
       if (PL >=  PL_DETAILSUSER) PRINTF("svd successful\n");
+      //      if (GLOBAL.solve.tmp_delete) {FREEING(VT);FREEING(U);FREEING(D);
+      //FREEING_INT(iwork);FREEING(work);FREEING(w2);}
       break;
     }
 
-
     case LU : {// LU
-      double *M0 = M;
-      CMALLOC(MM, rhs_cols == 0 ? 0 : sizeSq, double);
-      if (rhs_cols > 0) {
-	MEMCOPY(MM, M, sizeSq * sizeof(double));
-	M0 = MM;
+      if (!sqrtOnly) {
+	err = ERRORFAILED;
+	continue;
       }
       
       CMALLOC(ipiv, size, int);		    
-      F77_CALL(dgetrf)(&size, &size, M0, &size, ipiv, &err);
+      F77_CALL(dgetrf)(&size, &size, MPT, &size, ipiv, &err);
       if (err != NOERROR) {
 	CERR1("'dgetrf' (LU) failed with err=%d\n", err);
       }
@@ -572,48 +843,49 @@ int solvePosDef_(double *M, int size, bool posdef,
       if (logdet != NULL) {
 	CERR("logdet cannot be determined for 'LU'");
 	int i;
-	for (*logdet=0.0, i = 0; i < sizeSq; i += sizeP1) *logdet += log(M0[i]);
+	for (*logdet=0.0, i = 0; i < sizeSq; i += sizeP1) *logdet +=log(MPT[i]);
       }
 
       if (rhs_cols > 0) {
-	F77_CALL(dgetrs)("N", &size, &rhs_cols, M0, &size, ipiv, 
-			 rhs, &size, &err);
+	int totalRHS = size * rhs_cols;
+	if (result != NULL) MEMCOPY(RESULT, rhs, sizeof(double) * totalRHS);
+	F77_CALL(dgetrs)("N", &size, &rhs_cols, MPT, &size, ipiv, 
+			 RESULT, &size, &err);
 	if (err != NOERROR) {	
 	  CERR1("'dgetrs' (LU) failed with err=%d\n", err);
 	}
       } else {
 	int lwork = -1;
-	double dummy;
-	F77_CALL(dgetri)(&size, M0, &size, ipiv, &dummy, &lwork, &err);	
-	if (err != NOERROR) {	
-	  CERR1("'dgetri' (LU) failed with err=%d\n", err);
+	double dummy,
+	  *p = &dummy;
+	for (int i=0; i<=1; i++) { 
+	  F77_CALL(dgetri)(&size, MPT, &size, ipiv, p, &lwork, &err);	
+	  if (err != NOERROR) break;
+	  lwork = (int) dummy;
+	  CMALLOC(workLU, lwork, double);
+	  p = workLU;
 	}
- 	lwork = (int) dummy;
-	CMALLOC(workLU, lwork, double);
-	F77_CALL(dgetri)(&size, M0, &size, ipiv, workLU, &lwork, &err);	//M0=M
- 	if (err !=  NOERROR) {	
-	  CERR1("'dgetri' (LU) failed with err=%d.\n", err);
-	}
-      }
-      
+      }      
       if (PL >=  PL_DETAILSUSER) PRINTF("LU decomposition successful\n");
+      //if (GLOBAL.solve.tmp_delete) {FREEING_INT(ipiv);FREEING(workLU);}
       break;
     }
-     
+	
     case Sparse : {// sparse matrix
-     int nnzlindx, RHS_COLS, 	
-	doperm = sp->pivot,
-	halfsq = size * (size + 1) / 2,
-	nnzcolindices = 0,
-	nnzR = 0,
+     int nnzlindx, 
+       doperm = sp->pivot,
+       halfsq = size * (size + 1) / 2,
+       nnzcolindices = 0,
+       nnzR = 0,
        cache = 512, // to do: CPU cache size
        nnzcfact[3] = { 5, 1, 5 }, 
        nnzRfact[3] = { 5, 1, 2 };
        double
 	 cholincrease_nnzcol = 1.25,
-        cholincrease_nnzR = 1.25;
+	 cholincrease_nnzR = 1.25;
 
-      CMALLOC(pivot, size, int);
+       if (!posdef) CERR("'spam' needs a positive definite matrix");
+       CMALLOC(pivot, size, int);
       if (!doperm) for (int i=0; i<size; i++) pivot[i] = i + 1;
 
       if (spam_zaehler == 0) {
@@ -631,88 +903,103 @@ int solvePosDef_(double *M, int size, bool posdef,
       CMALLOC(cols, spam_zaehler, int);
       CMALLOC(rows, sizeP1, int);
    
-      CMALLOC(DD, spam_zaehler, double);
+      int nDD = spam_zaehler;
+      if (nDD < size) nDD = size;
+      CMALLOC(DD, nDD, double);
      // prepare spam
 
-      F77_CALL(spamdnscsr)(&size, &size, M, &size, DD, cols, rows, 
+      F77_CALL(spamdnscsr)(&size, &size, M, &size, DD,
+			   cols, // ja
+			   rows, // ia
 			   &spam_tol); // create spam object
      
-      // spam solve
-      if (rhs_cols <= 0) { // UNBEDINGT VOR double *RHS;
-	CMALLOC(RHS, sizeSq, double); // pt->RHS !!	
-	RHS_COLS = size;
-	for (int i=0; i<sizeSq; i += sizeP1) RHS[i] = 1.0; // pt->RHS !!
-      } else RHS_COLS = rhs_cols;	
-      int totbytes = size * RHS_COLS;
-      double *RHS = rhs_cols > 0 ? rhs : pt->RHS;
-      
-
       pt->nsuper = 0;
-      if (posdef) {
-	// calculate spam_cholesky
-	err = 4; // to get into the while loop
-	while (err == 4 || err == 5) {
-	  if (nnzcolindices == 0) {
-	    double rel = nnzA / (double) size;
-	    if (rel < 5) {
-	      nnzcolindices = (int) ceil(nnzA * (1.05 * rel - 3.8));
-	      if (nnzcolindices < 1000) nnzcolindices = 1000;
-	    } else {
-	      nnzcolindices = nnzA;
-	    }
-	    nnzcolindices *= nnzcfact[doperm];
-	    if (nnzcolindices < nnzA) nnzcolindices = nnzA;
-	  } else if (err == 5) {
-	    int tmp = (int) ceil(nnzcolindices * cholincrease_nnzcol);
-	    if (PL > PL_RECURSIVE) 
-	      PRINTF("Increased 'nnzcolindices' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
-	    nnzcolindices = tmp;
+ 	// calculate spam_cholesky
+      err = 4; // to get into the while loop
+      while (err == 4 || err == 5) {
+	if (nnzcolindices == 0) {
+	  double rel = nnzA / (double) size;
+	  if (rel < 5) {
+	    nnzcolindices = (int) ceil(nnzA * (1.05 * rel - 3.8));
+	    if (nnzcolindices < 1000) nnzcolindices = 1000;
+	  } else {
+	    nnzcolindices = nnzA;
 	  }
-	  if (nnzcolindices < pt->lindx_n) nnzcolindices = pt->lindx_n;
-
-	  if (nnzR == 0) {
-	    double u = floor(.4 * pow(nnzA, 1.2));
-	    u = u < 4 * nnzA ? 4 * nnzA : ceil(u);
-	    nnzR = (int) u * nnzRfact[doperm];
-	  } else if (err == 4) {
-	    int tmp = (int) ceil(nnzR * cholincrease_nnzR);
-	    if (PL > PL_RECURSIVE) 
-	      PRINTF("Increased 'nnzR' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
-	    nnzR = tmp;
-	  }
-	  if (nnzR < pt->lnz_n) nnzR = pt->lnz_n;
-	  else if (nnzR > halfsq) nnzR = halfsq;	
+	  nnzcolindices *= nnzcfact[doperm];
+	  if (nnzcolindices < nnzA) nnzcolindices = nnzA;
+	} else if (err == 5) {
+	  int tmp = (int) ceil(nnzcolindices * cholincrease_nnzcol);
+	  if (PL > PL_RECURSIVE) 
+	    PRINTF("Increased 'nnzcolindices' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
+	  nnzcolindices = tmp;
+	}
+	if (nnzcolindices < pt->lindx_n) nnzcolindices = pt->lindx_n;
 	
-	  CMALLOC(lindx, nnzcolindices, int);	
-	  CMALLOC(lnz, nnzR, double);
+	if (nnzR == 0) {
+	  double u = floor(.4 * pow(nnzA, 1.2));
+	  u = u < 4 * nnzA ? 4 * nnzA : ceil(u);
+	  nnzR = (int) u * nnzRfact[doperm];
+	} else if (err == 4) {
+	  int tmp = (int) ceil(nnzR * cholincrease_nnzR);
+	  if (PL > PL_RECURSIVE) 
+	    PRINTF("Increased 'nnzR' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
+	  nnzR = tmp;
+	}
+	if (nnzR < pt->lnz_n) nnzR = pt->lnz_n;
+	else if (nnzR > halfsq) nnzR = halfsq;	
 	
-	  F77_CALL(cholstepwise)(&size, &nnzA, DD, cols, rows, &doperm,
-				 invp, pivot, 
-				 &nnzlindx, &nnzcolindices, 
-				 lindx, // 
-				 xlindx,// 
-				 &(pt->nsuper), // length of lindx
-				 &nnzR,  // physical length of lindx
-				 lnz,   // output:result
-				 xlnz,  // cols of lnz
-				 snode,  // supernode membership ??
-				 xsuper, // supernode partioning
-				 &cache, // cache size of the CPU
-				 &err
-				 );       
-	  
-	  if (err != NOERROR) {
-	    CERR1("'cholstepwise' failed with err=%d\n", err);
-	    break;
-	  }	 
-	} // while
-   
-	if (err != NOERROR) CERR("'spam' failed");
+	CMALLOC(lindx, nnzcolindices, int);	
+	CMALLOC(lnz, nnzR, double);
+	 	
+	F77_CALL(cholstepwise)(&size, &nnzA, DD, cols, rows, &doperm,
+			       invp, pivot, 
+			       &nnzlindx, &nnzcolindices, 
+			       lindx, // 
+			       xlindx,// 
+			       &(pt->nsuper), // length of lindx
+			       &nnzR,  // physical length of lindx
+			       lnz,   // output:result
+			       xlnz,  // cols of lnz "ja"
+			       snode,  // supernode membership ??
+			       xsuper, // supernode partioning
+			       &cache, // cache size of the CPU
+			       &err
+			       );       
+	
+	if (err != NOERROR) {
+	  CERR1("'cholstepwise' failed with err=%d\n", err);
+	  break;
+	}	 
+      } // while
       
+      if (err != NOERROR) CERR("'spam' failed");
+      if (PL >=  PL_DETAILSUSER) PRINTF("'spam' successful\n");
+      
+      // spam solve
+      
+      if (sqrtOnly) {
+	
+	//BUG; // unexpected behaviour in spam
+	
+	nnzR = xlnz[size] - 1;
+	CMALLOC(xja, nnzR, int);
+	F77_CALL(calcja)(&size, &(pt->nsuper), pt->xsuper, 
+			 pt->lindx, pt->xlindx, pt->xlnz, xja);
+	for (int i=0; i<size; invp[i++]--); 
+	F77_CALL(spamcsrdns)(&size, pt->lnz, xja, pt->xlnz, RESULT);
+	for (int i=0; i<size; i++) {
+	  int endfor = (i + 1) * size;
+	  for (int j = i * (size + 1) + 1; j<endfor; RESULT[j++]=0.0);
+	}
+	//if (GLOBAL.solve.tmp_delete) {FREEING_INT(pivot); FREEING_INT(xlnz);
+	//FREEING_INT(snode); FREEING_INT(xsuper); FREEING_INT(xlindx);
+	//FREEING_INT(invp);FREEING(w3);FREEING_INT(cols);FREEING_INT(rows);
+	//FREEING(DD);FREEING_INT(lindx);FREEING(lnz);FREEING_INT(xja);}
+      } else {     
 	double *lnz = pt->lnz;
-	int *lindx = pt->lindx;
-      
-
+	int RHS_COLS, 	
+	  *lindx = pt->lindx;
+	
 	// spam determinant
 	if (logdet != NULL) {
 	  double tmp = 0.0;
@@ -721,8 +1008,55 @@ int solvePosDef_(double *M, int size, bool posdef,
 	  }
 	  *logdet = 2.0 * tmp;	  
 	}
-
-
+	
+	/*   z = .Fortran("backsolves", m = nrow,
+	     nsuper, p, a@colindices,
+	     a@colpointers, as.double(a@entries),
+	     a@rowpointers, a@invpivot, a@pivot,
+	     a@supernodes, vector("double",nrow),
+	     sol = vector("double",nrow*p),
+	     as.vector(b,"double"),
+	     NAOK = .Spam$NAOK,PACKAGE = "spam")$sol
+	*/
+	if (rhs_cols <= 0) { // UNBEDINGT VOR double *RHS;
+	  RHS_COLS = size;	
+	  FILL_IN(RESULT, sizeSq, 0.0);
+	  for (int i=0; i<sizeSq; i += sizeP1) RESULT[i] = 1.0; 
+	  
+	  // for (int i=0; i<sizeSq; i++) printf("%f ",RESULT[i]); printf("\n");
+	  //printf(">> %d %d \n", sizeSq, sizeP1);
+	  
+	} else {
+	  RHS_COLS = rhs_cols;	
+	  if (result != NULL) 
+	    MEMCOPY(RESULT, rhs, size * rhs_cols * sizeof(double));
+	}
+	
+	//printf("nsuper=%d\n", pt->nsuper);
+	//	  for (int ii=0; ii<size; ii++) 
+	//printf("%d %d %d %d %e\n", ii, pt->nsuper, sizeP1, xsuper[ii],
+	//	   w3[ii]);
+	
+	//	  if (false)
+	//	  for (int jsub=0; jsub<=pt->nsuper; jsub++) {
+	//	    int fj = xsuper[1 - 1],
+	//	      Lj = xsuper[jsub + 1 - 1] -1;
+	//	    printf("%d %d %d\n", jsub, fj, Lj);
+	//	    for (int jcol=fj; jcol <= Lj; jcol++) {
+	//	      printf("%d,%f  ", jcol, w3[jcol -  1]);
+	//	    }	    
+	//	  }
+	
+	//	  for (int jcol=1; jcol <= 600; jcol++) {
+	//	    w3[jcol - 1] = jcol;
+	//   printf("%d,%f  ", jcol, w3[jcol -  1]);
+	//  }	    
+	
+	
+	//	  printf("%ld %ld %d\n", RESULT, rhs, rhs_cols);
+	//	  for (int ii=0; ii<size; ii++) printf("%d %e\n", ii, RESULT[ii]);
+	//	  BUG;
+	
 	F77_CALL(backsolves)(&size, &(pt->nsuper), &RHS_COLS, 
 			     lindx, // colindices
 			     xlindx, //colpointers
@@ -730,19 +1064,20 @@ int solvePosDef_(double *M, int size, bool posdef,
 			     xlnz, //  rowpointers
 			     invp, pivot,
 			     xsuper, // supernodes
-			     w3, RHS);
-		
-      } else CERR("'spam' needs a positive definite matrix");
-
-      if (rhs_cols == 0) MEMCOPY(M, RHS, totbytes * sizeof(double));
-      if (PL >=  PL_DETAILSUSER) PRINTF("'spam' successful\n");
-      
+			     w3, RESULT);	
+	if (PL >=  PL_DETAILSUSER) PRINTF("'spam' successful\n");
+	//if (GLOBAL.solve.tmp_delete) {FREEING_INT(pivot);FREEING_INT(xlnz);
+	  //FREEING_INT(snode);FREEING_INT(xsuper);FREEING_INT(xlindx);
+	  //FREEING_INT(invp);FREEING(w3);FREEING_INT(cols);FREEING_INT(rows);
+	  //FREEING(DD);FREEING_INT(lindx);FREEING(lnz);FREEING_INT(xja);}   
+     }
+         
       break;
-    }
+    } // Sparse
    
-    default :
-      GERR("unknown method for 'solvePosDef'");
-      
+    default : BUG;
+    GERR("unknown method in 'RandomFieldsUtils'");
+
     } // switch
 
     if (err==NOERROR) break;
@@ -750,21 +1085,34 @@ int solvePosDef_(double *M, int size, bool posdef,
 
 
  ErrorHandling:
-   return err; //  -method;
+  if (Pt == NULL) solve_DELETE(&pt);
+  //else if (GLOBAL.solve.tmp_delete) {FREEING(SICH); FREEING(MM);}
+	  
+  return err; //  -method;
 }
   
-
-SEXP solvePosDef(SEXP M, SEXP rhs, SEXP logdet){
-  solve_storage pt;
+ 
+SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, bool sqrtOnly, 
+		 solve_param *Sp){
   int 
     rhs_rows, rhs_cols,
     err = NOERROR,
     size = ncols(M), 
     rows = nrows(M);
-  bool deleteMM = false;
+  bool deleteMM = false,
+    deleteRHS = false;
   SEXP res;
+  
+  /*
+ res = PROTECT(allocMatrix(REALSXP, size, size));
+   //  printf("%d %d %d %ld\n", rows, rows*rows, total, (long int) REAL(res)); 
+MEMCOPY(REAL(res), REAL(M), size * size * sizeof(double)); F77_CALL(dpotrf)("Upper", &rows, REAL(res), &rows, &err);UNPROTECT(1); return res;
+  */
 
-  if (isMatrix(rhs)) {
+
+  if (rhs == R_NilValue) {
+    rhs_rows = rhs_cols = 0;
+  } else if (isMatrix(rhs)) {
     rhs_rows = nrows(rhs);
     rhs_cols = ncols(rhs);
   } else if ((rhs_rows = length(rhs)) == 0) {
@@ -773,60 +1121,95 @@ SEXP solvePosDef(SEXP M, SEXP rhs, SEXP logdet){
     rhs_cols = 1;
   }
   if (rows != size) ERR("not a square matrix");
-  if (rhs_rows > 0 && rhs_rows != size) ERR("vector size does not match the matrix size");
+  if (rhs_rows > 0 && rhs_rows != size)
+    ERR("vector size does not match the matrix size");
   
   int 
     new_cols = rhs_cols == 0 ? size : rhs_cols,
     total = size * new_cols;
-  if (isMatrix(rhs) || rhs_cols==0) {
-    PROTECT(res = allocMatrix(REALSXP, size, new_cols));
+
+  //  res =  PROTECT(isReal(M) ? duplicate(M): coerceVector(M, REALSXP)); UNPROTECT(1); return res;
+
+  if (rhs_cols==0 || isMatrix(rhs)) {
+    res = PROTECT(allocMatrix(REALSXP, size, new_cols));
   } else {
-    PROTECT(res = allocVector(REALSXP, total));
+   res =  PROTECT(allocVector(REALSXP, total));
   }
 
-  SEXP from = rhs_cols == 0 ? M : rhs;  
-  if (TYPEOF(from) == REALSXP) {
-    MEMCOPY(REAL(res), REAL(from), total * sizeof(double));
-  } else if (TYPEOF(from) == INTSXP) {
-    for (int i=0; i<total; i++) {
-      REAL(res)[i] = INTEGER(from)[i] == NA_INTEGER 
-	? RF_NA : (double) INTEGER(from)[i];
-    }
-  } else ERR("numerical matrix and/or vector expected");
+
+  double *MM=NULL, 
+    *RHS = NULL;
+  if (TYPEOF(M) != REALSXP) {
+    if (TYPEOF(M) != INTSXP && TYPEOF(M) != LGLSXP) 
+      GERR("numerical matrix expected");
+    if ((deleteMM = rhs_cols != 0))
+      MM = (double*) MALLOC(total * sizeof(double));
+    else MM = REAL(res);
+    if (TYPEOF(M) == INTSXP) {
+      for (int i=0; i<total; i++) 
+	MM[i] = INTEGER(M)[i] == NA_INTEGER ? RF_NA : (double) INTEGER(M)[i];
+    } else {
+      for (int i=0; i<total; i++) 
+	MM[i] = LOGICAL(M)[i] == NA_LOGICAL ? RF_NA : (double) LOGICAL(M)[i];
+    } 
+  } else MM = REAL(M); 
+
+  if (rhs_cols > 0) {
+    if ((deleteRHS = TYPEOF(rhs) != REALSXP)) {
+      if (TYPEOF(res) != INTSXP && TYPEOF(rhs) != LGLSXP) 
+	GERR("numerical matrix expected");
+      int totalRHS = rhs_cols * rhs_rows; 
+      RHS = (double*) MALLOC(totalRHS * sizeof(double));
+      if (TYPEOF(rhs) == INTSXP) {
+	for (int i=0; i<totalRHS; i++) 
+	  RHS[i] = INTEGER(rhs)[i] == NA_INTEGER 
+	    ? RF_NA : (double) INTEGER(rhs)[i];
+      } else if (TYPEOF(rhs) == LGLSXP) {
+	for (int i=0; i<totalRHS; i++) 
+	  RHS[i] = LOGICAL(rhs)[i] == NA_LOGICAL
+	    ? RF_NA : (double) LOGICAL(rhs)[i];
+      } 
+    } else RHS = REAL(rhs);
+  }
   
-  double *MM;
-  if (rhs_cols == 0) {
-    MM = REAL(res);
-  } else {
-    MM = REAL(M);
-    if ((deleteMM = TYPEOF(M) != REALSXP)) {
-      if (TYPEOF(from) == INTSXP) {
-        MM = (double*) MALLOC(total * sizeof(double));
-        for (int i=0; i<total; i++) 
-          REAL(M)[i] = INTEGER(M)[i] == NA_INTEGER 
-	    ? RF_NA : (double) INTEGER(M)[i];
-      }
-    }  
-  }
+  err = doPosDef(MM, size, true, rhs_cols == 0 ? NULL : RHS, rhs_cols, 
+		 (rhs_cols == 0 && TYPEOF(M) == REALSXP) ||
+		 (rhs_cols > 0 && TYPEOF(rhs) == REALSXP) ? REAL(res) : NULL, 
+		 length(logdet) == 0 ? NULL : REAL(logdet),
+		 sqrtOnly, NULL, Sp);
 
-  if (size <= 3) {
-     err = solve2(MM, size, true, rhs_cols == 0 ? NULL : REAL(res),  rhs_cols, 
-      length(logdet) == 0 ? NULL : REAL(logdet));
-  } else {
-    solve_NULL(&pt);     
-    err = solvePosDef_(MM, size, true, rhs_cols == 0 ? NULL : REAL(res), 
-                       rhs_cols, length(logdet) == 0 ? NULL : REAL(logdet),
-		       &pt, &SolveParam, PL_IMPORTANT);
-    solve_DELETE0(&pt);
-  }
-
+ ErrorHandling:
   if (deleteMM) FREE(MM);
-    
+  if (deleteRHS) FREE(RHS);
+  
   UNPROTECT(1);
-  
-  if (err != NOERROR) ERR("'solvePosDef' failed.");
-  
-  return(res);
+  if (err != NOERROR) {
+    if (sqrtOnly) {ERR("'cholPosDef' failed");}
+    else { ERR("'solvePosDef' failed.");}
+  }
+
+  return res;
+}
+
+
+SEXP SolvePosDef(SEXP M, SEXP rhs, SEXP logdet){
+  return doPosDef(M, rhs, logdet, false, &(GLOBAL.solve));
+}
+
+int solvePosDefResult(double *M, int size, bool posdef, 
+		      double *rhs, int rhs_cols, double *result,
+		      double *logdet, solve_storage *PT) {
+ return doPosDef(M, size, posdef, rhs, rhs_cols, result, logdet, false,
+		     PT, &(GLOBAL.solve));
+}
+
+int solvePosDef(double *M, int size, bool posdef, 
+		 double *rhs, int rhs_cols, 
+		 double *logdet, 
+		 solve_storage *PT) {
+  // printf("solve : %ld %ld %ld %ld\n", (long) (PT), long(M), (long) logdet, (long) rhs); BUG;
+  return doPosDef(M, size, posdef, rhs, rhs_cols, NULL, logdet, false,
+		  PT, &(GLOBAL.solve));
 }
 
 
@@ -834,8 +1217,8 @@ int invertMatrix(double *M, int size) {
   solve_storage *pt = (solve_storage*) MALLOC(sizeof(solve_storage));
   int err;
   // to do
-  err =  solvePosDef_(M, size, false, NULL, 0, NULL, pt, &SolveParam,
-		     PL_IMPORTANT);
+  err =  doPosDef(M, size, false, NULL, 0, NULL, NULL, false,
+		  pt, &(GLOBAL.solve));
   solve_DELETE(&pt);
   return err;
 }

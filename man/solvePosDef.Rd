@@ -17,7 +17,7 @@ solvePosDef(a, b=NULL, logdeterminant=FALSE)
 %, sparse=NA, method=-1)
 }
 \arguments{
-  \item{a}{a square numeric or complex matrix containing the
+  \item{a}{a square real-valued matrix containing the
           coefficients of the linear system.  Logical matrices are
           coerced to numeric.
   }
@@ -52,7 +52,7 @@ solvePosDef(a, b=NULL, logdeterminant=FALSE)
 %  \itemize{
 %    \item \code{<0} :
 If the matrix is diagonal direct calculations are performed.
-
+ 
 Else if the matrix is sparse the package \pkg{spam} is used.
 
 Else the Cholesky decomposition is tried.
@@ -71,8 +71,7 @@ If it fails, the SVD is tried.
 \seealso{
   \link[spam]{chol.spam} in the package \pkg{spam}
 }
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}, and
-  Reinhard Furrer
+\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
 }
 \keyword{math}
 \examples{
@@ -93,6 +92,7 @@ b <- seq(0, 1, len=size)
 unix.time(inv2 <- solve(M, b))
 unix.time(inv1 <- solvePosDef(M, b)) ## much faster in this case
 range(inv2 - inv1)
+stopifnot(all(abs(inv2 - inv1) < 10^{-9}))
 
 }
 

@@ -1106,8 +1106,12 @@ C       ------------------------
             LJCOL  = XSUPER(JSUP+1) - 1
             IXSTRT = XLNZ(FJCOL)
             JPNT   = XLINDX(JSUP)
+C            print *, "JSUP", JSUP, FJCOL, LJCOL
             DO  200  JCOL = FJCOL, LJCOL
                 IXSTOP    = XLNZ(JCOL+1) - 1
+
+C                print *, JSUP, JCOL
+C                print *, RHS(JCOL)
 
                 IF(RHS(JCOL) .NE. 0.D0) THEN
                    T         = RHS(JCOL)/LNZ(IXSTRT)

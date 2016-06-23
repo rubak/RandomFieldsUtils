@@ -1,6 +1,5 @@
 
 
-
 /*
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
@@ -17,34 +16,31 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
 
-#ifndef RFutils_public_H
-#define RFutils_public_H 1
 
-#include <R_ext/Rdynload.h>
-#include "General_utils.h"
-
+#ifndef rfutils_own_H
+#define rfutil_own_H 1
+#include "Options_utils.h"
 
 
 
-extern "C" {
-  void R_init_RandomFieldsUtils(DllInfo *info);
-  void R_unload_RandomFieldsUtils(DllInfo *info);
+void setparameterUtils(int i, int j, SEXP el, char name[200], bool isList);
+void getparameterUtils(SEXP *sublist);
 
-  SEXP struve(SEXP X, SEXP Nu, SEXP Factor_Sign, SEXP Expscaled);
-  SEXP I0ML0(SEXP X);
-  SEXP SolvePosDef(SEXP M, SEXP rhs, SEXP logdet);
-  SEXP CholPosDef(SEXP M);
 
-  SEXP RFoptions(SEXP options);
-  void RelaxUnknownRFoption(int *relax);
-}
+extern utilsparam GLOBAL;
+#define ownprefixN 2
+extern const char * ownprefixlist[ownprefixN],
+  **ownall[ownprefixN];
+extern int ownallN[ownprefixN];
 
-#endif 
- 
+
+#endif
+
+

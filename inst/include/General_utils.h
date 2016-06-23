@@ -16,7 +16,7 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
@@ -33,9 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include "Basic_utils.h"
 #include "Error_utils.h"
-#include "Matrix_mult.h"
+#include "kleinkram.h"
 #include "Solve.h"
 #include "Struve.h"
+
 
 
 #define DOPRINTF if (DOPRINT) Rprintf
@@ -61,12 +62,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     RFERROR(BUG_MSG);							\
   }									
 #define DO_TESTS false
+//#define MEMCOPY(A,B,C) {memcpy(A,B,C); printf("memcpy %s %d\n", __FILE__, __LINE__);}
 #define MEMCOPY(A,B,C) memcpy(A,B,C)
 #define MALLOC malloc
 #define CALLOC calloc
 #define FREE(X) if ((X) != NULL) {free(X); (X)=NULL;}
 #define UNCONDFREE(X) {free(X); (X)=NULL;}
-
 
 #else // SCHLATHERS_MACHINE
 
@@ -119,14 +120,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-#define RF_NA NA_REAL 
-#define RF_NAN R_NaN
-#define RF_NEGINF R_NegInf
-#define RF_INF R_PosInf
-#define T_PI M_2_PI
-
-
-
 #define PL_IMPORTANT 1 
 #define PL_BRANCHING 2
 #define PL_DETAILSUSER 3
@@ -141,6 +134,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PL_DIRECT_SEQU 8
 #define PL_DETAILS 9
 #define PL_SUBDETAILS 10
+
+
+
+#define SCALAR_PROD(A, B, N, ANS) {			\
+    int  k_ =0,				\
+    end_ = N - 5;				\
+  ANS = 0.0;					\
+  for (; k_<end_; k_+=5) {				\
+    ANS += A[k_] * B[k_]				\
+      + A[k_ + 1] * B[k_ + 1]				\
+      + A[k_ + 2] * B[k_ + 2]				\
+      + A[k_ + 3] * B[k_ + 3]				\
+      + A[k_ + 4] * B[k_ + 4];				\
+  }							\
+  for (; k_<N; k_++) ANS += A[k_] * B[k_];		\
+  }
+
+
+#define FILL_IN(A, N, VALUE) {				\
+    int end_ = N;					\
+    for (int k_=0; k_<end_; (A)[k_++]=VALUE);		\
+}
+
 
 #endif
 

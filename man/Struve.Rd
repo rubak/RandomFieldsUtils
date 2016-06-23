@@ -5,6 +5,7 @@
 \alias{struveL}
 \alias{bessel}
 \alias{I0L0}
+\alias{I0ML0}
 \title{Modified Struve functions and related functions}
 \description{
   These functions return the values of the modified Struve functions

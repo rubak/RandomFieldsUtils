@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ERRORM 3           /* a single error message */
 #define ERRORNOTPROGRAMMEDYET 4
 
-
+ 
 
 #ifdef SCHLATHERS_MACHINE
 #define ERRLINE PRINTF("(ERROR in %s, line %d)\n", __FILE__, __LINE__);

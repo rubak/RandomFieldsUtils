@@ -3,7 +3,7 @@
 # Urversion vo 2.0.66
 # ab 2.0.67 geaendert.
 
-AC_INIT([RandomFieldsUtils], 0.0) dnl package name, version
+AC_INIT([RandomFieldsUtils], 0.2) dnl package name, version
         
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then

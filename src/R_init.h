@@ -26,18 +26,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef rfutils_init_H
 #define rfutils_init_H 1
 
+#include "Options_utils.h"
+
 
 void solve_DELETE(solve_storage **S); 
 void solve_NULL(solve_storage* x);
 
-int solvePosDef_(double *M, int size, bool posdef, 
-		double *rhs, int rhs_cols,
-		double *logdet, 
-		 solve_storage *PT, solve_param *sp,  int PL
+int solvePosDef(double *M, int size, bool posdef, 
+		 double *rhs, int rhs_cols, 
+		 double *logdet, 
+		 solve_storage *PT
+		);
+int solvePosDefResult(double *M, int size, bool posdef, 
+		 double *rhs, int rhs_cols, double *result,
+		 double *logdet, 
+		 solve_storage *PT
 		);
 
-int sqrt_(double *M, int size, solve_storage *pt, solve_param *Sp, int PL);
-int sqrt_RHS_(solve_storage *pt, double* RHS, double *res);
+int sqrtPosDef(double *M, int size, solve_storage *pt);
+int sqrtRHS(solve_storage *pt, double* RHS, double *res);
 
 int invertMatrix(double *M, int size);
 
@@ -45,7 +52,14 @@ double I0mL0(double x);
 
 void getErrorString(char errorstring[MAXERRORSTRING]);
 void setErrorLoc(char errorloc[nErrorLoc]);
+void attachRFoptions(const char **prefixlist, int N, 
+		  const char ***all, int *allN,
+		  setparameterfct set, finalsetparameterfct final, 
+		  getparameterfct get);
+void detachRFoptions(const char **prefixlist, int N);
+void relaxUnknownRFoption(bool relax);
+
+void getUtilsParam(utilsparam **);
 
 
 #endif
-

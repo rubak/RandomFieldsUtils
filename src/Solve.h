@@ -1,6 +1,3 @@
-
-
-
 /*
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
@@ -28,64 +25,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef rfutils_solve_H
 #define rfutils_solve_H 1
 
-
-typedef enum usr_bool {
-  // NOTE: if more options are included, change ExtendedBoolean in
-  // userinterface.cc of RandomFields
-  False=false, 
-  True=true, 
-  //Exception=2, // for internal use only
-  Nan=INT_MIN
-} usr_bool;
-
-typedef enum InversionMethod { 
-  Cholesky, SVD, Sparse, QR, LU, 
-  NoFurtherInversionMethod, NoInversionMethod,
-  Diagonal // always last one!
-} InversionMethod;
-extern const char * InversionNames[(int) Diagonal + 1];
-
-#define PIVOT_NONE 0
-#define PIVOT_MMD 1
-#define PIVOT_RCM 2
-
-#define SOLVE_SVD_TOL 3
-#define SOLVE_METHODS 3
-#define solveN 11
-typedef struct solve_param {
-  usr_bool sparse;
-  double spam_tol, spam_min_p, svd_tol;
-  InversionMethod Methods[SOLVE_METHODS];
-  int spam_min_n, spam_sample_n, spam_factor,
-    pivot, max_chol, max_svd;
-} solve_param;
-
-#define SOLVE_NAMES \
-  { "use_spam", "spam_tol", "spam_min_p", "svdtol",			\
-    "matrix_methods", "spam_min_n", "spam_sample_n", "spam_factor",	\
-      "spam_pivot", "max_chol", "max_svd"				\
-  }
+#include "Options_utils.h"
 
 
-#define solve_param_default				\
-  { Nan, DBL_EPSILON,	0.8, 1e-8,			\
-      {NoInversionMethod, NoInversionMethod},		\
-      400, 500, 4294967, PIVOT_MMD, 1000000000, 1000000000}
-
-
-#define solve_param_default_RF				\
-  { Nan, DBL_EPSILON,	0.8, 1e-8,			\
-      {NoInversionMethod, NoInversionMethod},		\
-      400, 500, 4294967, PIVOT_MMD, 8192, 6555}
-
-extern solve_param SolveParam;
 
 typedef struct solve_storage {
   int SICH_n, MM_n, workspaceD_n, workspaceU_n, VT_n, U_n, D_n, 
     iwork_n, work_n, w2_n, ipiv_n, workLU_n, pivot_n,
     xlnz_n, snode_n, xsuper_n, xlindx_n, invp_n, 
     cols_n, rows_n, DD_n, lindx_n, xja_n,
-    lnz_n, RHS_n, w3_n;
+    lnz_n, w3_n, result_n;
   //t_cols_n, t_rows_n, t_DD_n;
   InversionMethod method, newMethods[SOLVE_METHODS];
   int nsuper, nnzlindx, size,
@@ -94,7 +43,7 @@ typedef struct solve_storage {
     *invp, *cols, *rows, *lindx, *xja; //*t_cols, *t_rows;
   double *SICH, *MM, *workspaceD, *workspaceU,
     *VT, *work, *w2, *U, *D, *workLU, 
-    *lnz, *DD, *w3, *RHS; //, *t_DD;
+    *lnz, *DD, *w3, *result; //, *t_DD;
 } solve_storage;
 
 
@@ -112,8 +61,32 @@ typedef struct solve_storage {
       for (int iii=0; iii<_N_; pt->WHICH[iii++] = 0);			\
     }									\
   }									\
-    TYPE VARIABLE_IS_NOT_USED *WHICH = pt->WHICH			
+    TYPE VARIABLE_IS_NOT_USED *WHICH = pt->WHICH
 
 
+//  sqrtPosDef nutzt pt->U fuer das Ergebnis		
+#define FREEING(WHICH)						\
+  assert(int VARIABLE_IS_UNUSED *_i = WHICH);	\
+  if (pt->WHICH != NULL && pt->WHICH != result) {	\
+    UNCONDFREE(pt->WHICH);						\
+    pt->WHICH##_n = 0;						\
+  }						
+ 					       
+#define FREEING_INT(WHICH)			\
+  assert(int VARIABLE_IS_UNUSED *_i = WHICH);	\
+  if (pt->WHICH != NULL) {			\
+    UNCONDFREE(pt->WHICH);				\
+    pt->WHICH##_n = 0;				\
+  }						
+ 
+
+SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, bool sqrtOnly, solve_param *);
+
+int doPosDef(double *M, int size, bool posdef,
+		double *rhs, int rhs_cols, double *result,
+		double *logdet, 
+		bool sqrtOnly,
+		solve_storage *pt, solve_param *
+		);
 
 #endif
