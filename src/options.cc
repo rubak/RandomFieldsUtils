@@ -21,7 +21,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include "own.h"
 #include "Basic_utils.h"
 #include "General_utils.h"
@@ -77,7 +79,9 @@ void setparameterUtils(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
     case 3: gp->seed = Integer(el, name, 0, true); break;
     case 4: gp->asList = LOG; break;
     case 5: gp->cores = POSINT; 
+#ifdef _OPENMP
       omp_set_num_threads(gp->cores);
+#endif
       break;
     default: BUG;
     }}

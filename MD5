@@ -1,4 +1,4 @@
-66f86aa23497e70f0585fad79146d616 *DESCRIPTION
+39c85835853a640171c02d86b5d9142e *DESCRIPTION
 d0d9866c021e2c8866ceccbb5ffa651c *NAMESPACE
 3a0538ffc7c955ac53b7c89c163827c7 *R/RFutils.R
 a5be528f08fdbabae5090e147cb8f1d5 *R/getNset.R
@@ -24,7 +24,7 @@ f07b1788380736f5c9cd2676bff75106 *man/RFoptions.Rd
 0e0c2409b63093bcf2b26f892b20b0ec *src/Basic_utils.h
 f935516b82cd62d447c8e264e923c256 *src/Error_utils.h
 fa6ad0dce4efc4513cd2c882183fda32 *src/General_utils.h
-bbead477a60efd21f2274ceda8262428 *src/Makevars.in
+c89d6b95d18721894ab45341d0fbc7a6 *src/Makevars.in
 f705d983ddaa60dafef8e34000943b66 *src/Makevars.win
 a0650a94043bd25418a35832900e49ec *src/Options_utils.h
 74232aa7d0b7f2406b7599a16d29ae67 *src/RFoptions.cc
@@ -37,9 +37,9 @@ ccb0e2a6db3bd02db9d2eccafc65d99d *src/Struve.h
 a5c48f8a775c6412570599ddc7e5ac7e *src/cholmodified.f
 418c1b5d4fef8551b067f6255d9796d5 *src/kleinkram.cc
 2013ad700d64866c9eb71ccff5be0330 *src/kleinkram.h
-4e972e3cee69bf585a43c945a56cd4c3 *src/options.cc
+1b101c4264ad207495b9ac83ff07eb7e *src/options.cc
 d116e41a8305132770dbb36e8cdef776 *src/own.h
-c903d99317f62fa191fee6578a96530e *src/solve.cc
+6f790bdc36aa2a54821db73553cd8429 *src/solve.cc
 4377fb69c994dabae60fa03cbf3c5353 *src/spamown.f
 440020d80e6cdcea34d8c99d1e66f589 *src/sqrt.cc
 a6f3e0b2e37488e9a57773d518d4f72c *src/struve.cc
