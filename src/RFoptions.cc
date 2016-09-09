@@ -22,10 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "RandomFieldsUtils.h"
-#include "own.h"
 #include "General_utils.h"
 #include "kleinkram.h"
 #include "own.h"
+#include "init_RandomFieldsUtils.h"
 
 
 
@@ -50,7 +50,7 @@ void RelaxUnknownRFoption(int *relax){ relaxUnknownRFoption((bool) *relax); }
 
 
 #define MAXNLIST 5
-int NList = 1;
+int NList = 0; // originally 1
 int AllprefixN[MAXNLIST] = {ownprefixN, 0, 0, 0, 0},
   *AllallN[MAXNLIST] = {ownallN, NULL, NULL, NULL, NULL};
 const char **Allprefix[MAXNLIST] = {ownprefixlist, NULL, NULL, NULL, NULL},
@@ -82,7 +82,6 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList) {
   if (strcmp(prefix, "")) {
     for (ListNr=0; ListNr<NList; ListNr++) {
       i = Match(prefix, Allprefix[ListNr], AllprefixN[ListNr]);
-      // printf("Nr=%d i=%d \n", ListNr, i);
       if (i != NOMATCHING) break;
     }
     if (i == NOMATCHING) ERR1("option prefix name '%s' not found.", prefix); 
@@ -97,7 +96,6 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList) {
 	  break;
 	} // ii >0
       } // for k
-      //printf("ii=%d %d %d\n", ii, NOMATCHING, i);
       if (i == MULTIPLEMATCHING) 
 	ERR1("option prefix name '%s' is ambiguous.", prefix);   
     } // prefix == List
@@ -148,7 +146,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList) {
   if (j<0) ERR1("Multiple matching for '%s'.", name); 
  
 
-  //  printf("%s %d %d %d \n", name, ListNr, i, j);
+  // printf("%s %d %d %d %ld \n", name, ListNr, i, j,  (long) setparam[ListNr]);
   
   setparam[ListNr](i, j, el, name, isList); 
 }
@@ -166,7 +164,6 @@ SEXP getRFoptions() {
   for (totalN=ListNr=0; ListNr<NList; ListNr++) {
     trueprefixN = AllprefixN[ListNr];
     for (i=0; i<trueprefixN; i++) {
-      //printf("ListNr=%d i=%d %s\n", ListNr, i, Allprefix[ListNr][i]);
       totalN += strcmp(Allprefix[ListNr][i], OBSOLETENAME) != 0;
     }
   }
@@ -198,7 +195,6 @@ SEXP getRFoptions() {
   }
   setAttrib(list, R_NamesSymbol, names);
    
-  assert(N == totalN);
   UNPROTECT(2 + 2 * totalN);
   FREE(sublist);
   FREE(subnames);
@@ -223,7 +219,7 @@ void splitAndSet(SEXP el, char *name, bool isList) {
   }
 
   // 
-  //printf("i=%d %d %s %s\n", i, len, prefix, mainname);
+  //  printf("i=%d %d %s %s\n", i, len, prefix, mainname);
   setparameter(el, prefix, mainname, isList && GLOBAL.basic.asList);
   //   printf("ende\n");
 }
@@ -289,7 +285,7 @@ SEXP RFoptions(SEXP options) {
   } else {
     for(i = 0; options != R_NilValue; i++, options = CDR(options)) {
 
-      //printf("set opt i=%d\n", i);
+      //      printf("set opt i=%d\n", i);
 
       el = CAR(options);
       name = (char*) (isNull(TAG(options)) ? "" :CHAR(PRINTNAME(TAG(options))));
@@ -298,7 +294,12 @@ SEXP RFoptions(SEXP options) {
     //       print("end2 %f\n", GLOBAL.gauss.exactness);
   }
 
-  for (i=0; i<NList; i++) if (finalparam[i] != NULL) finalparam[i]();
+
+  //printf("Nlist = %d\n", NList);
+  for (i=0; i<NList; i++) if (finalparam[i] != NULL) {
+      //printf("%d %ld \n", i, (long) finalparam[i]);
+      finalparam[i]();
+    }
 
   GLOBAL.basic.asList = true;
   return(R_NilValue);
@@ -357,6 +358,7 @@ void detachRFoptions(const char **prefixlist, int N) {
 }
 
 void getUtilsParam(utilsparam **global) { 
+  // printf("GLO %ld\n", &GLOBAL);
   *global = &GLOBAL; 
 }
 

@@ -21,13 +21,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
-#ifdef _OPENMP
+#include "Basic_utils.h" // must be before anything else
+#ifdef DO_PARALLEL
 #include <omp.h>
 #endif
-#include "own.h"
-#include "Basic_utils.h"
 #include "General_utils.h"
 #include "kleinkram.h"
+#include "init_RandomFieldsUtils.h"
 
 // IMPORTANT: all names of general must be at least 3 letters long !!!
 const char *basic[basicN] =
@@ -36,7 +36,7 @@ const char *basic[basicN] =
 const char * solve[solveN] = 
   { "use_spam", "spam_tol", "spam_min_p", "svdtol",			
     "solve_method", "spam_min_n", "spam_sample_n", "spam_factor",	
-    "spam_pivot", "max_chol", "max_svd"
+    "spam_pivot", "max_chol", "max_svd", "eigen2zero"
     //, "tmp_delete"
   };
 
@@ -79,8 +79,11 @@ void setparameterUtils(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
     case 3: gp->seed = Integer(el, name, 0, true); break;
     case 4: gp->asList = LOG; break;
     case 5: gp->cores = POSINT; 
-#ifdef _OPENMP
+#ifdef DO_PARALLEL      
       omp_set_num_threads(gp->cores);
+#else
+      if (gp->cores != 1) 
+	ERR("The system does not allow for OpenMP: the value 1 is kept for'cores'.");
 #endif
       break;
     default: BUG;
@@ -97,7 +100,7 @@ void setparameterUtils(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
     }
     case 1: so->spam_tol = POS0NUM; break;      
     case 2: so->spam_min_p = POS0NUM; break;      
-    case SOLVE_SVD_TOL: so->svd_tol = NUM; break;        
+    case SOLVE_SVD_TOL: so->svd_tol = POS0NUM; break;        
     case 4: GetName(el, name, InversionNames, nr_user_InversionMethods,
 		    (int) NoInversionMethod, (int) NoFurtherInversionMethod, 
 		    (int *)so->Methods, SOLVE_METHODS);
@@ -111,6 +114,7 @@ void setparameterUtils(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
     case 9: so->max_chol = POSINT; break;      
     case 10: so->max_svd = POSINT; break;    
       //    case 11: so->tmp_delete = LOG; break;    
+    case 11: so->eigen2zero = POS0NUM; break;        
     default: BUG;
     }}
     break;
@@ -153,10 +157,12 @@ void getparameterUtils(SEXP *sublist) {
     ADD(ScalarInteger(p->pivot));    
     ADD(ScalarInteger(p->max_chol));    
     ADD(ScalarInteger(p->max_svd)); 
+    ADD(ScalarReal(p->eigen2zero)); 
     //    ADD(ScalarLogical(p->tmp_delete));
   }
  
  
  assert (i == ownprefixN - 1); 
 }
+
 

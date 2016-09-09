@@ -56,13 +56,7 @@ If the matrix is diagonal direct calculations are performed.
 Else if the matrix is sparse the package \pkg{spam} is used.
 
 Else the Cholesky decomposition is tried.
-If it fails, the SVD is tried.
-%    \item \code{0} : Cholesky
-%    \item \code{1} : QR (not programmed yet)
-%    \item \code{2} : SVD
-%    \item \code{3} : LU
-%    \item \code{4} : sparse matrix algorithm by \pkg{spam}
-% }
+If it fails, the eigen value decomposition is tried.
 }
 
 \references{
@@ -75,7 +69,7 @@ If it fails, the SVD is tried.
 }
 \keyword{math}
 \examples{
-
+if (FALSE) {
 ## This examples shows that 'solvePosDef' can be much faster
 ## than 'solve'
 
@@ -93,6 +87,8 @@ unix.time(inv2 <- solve(M, b))
 unix.time(inv1 <- solvePosDef(M, b)) ## much faster in this case
 range(inv2 - inv1)
 stopifnot(all(abs(inv2 - inv1) < 10^{-9}))
+
+}
 
 }
 

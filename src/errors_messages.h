@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 
+// Datei wi
 
 #ifndef rfutils_error_H
 #define rfutils_error_H 1
@@ -47,12 +48,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAXERRORSTRING 1000
 #define nErrorLoc 1000
 #define LENERRMSG 2000
+typedef char errorstring_type[MAXERRORSTRING];
+typedef char errorloc_type[nErrorLoc];
 extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
   MSG[LENERRMSG], // used by RandomFields in intermediate steps
   BUG_MSG[LENMSG],// not much used
-  MSG2[LENERRMSG],// used at the same time with MSG and ERR()
-  ERRORSTRING[MAXERRORSTRING], // used by ERRORM in RandomFields 
-  ERROR_LOC[nErrorLoc];
+  MSG2[LENERRMSG];// used at the same time with MSG and ERR()
+extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields 
+extern errorloc_type ERROR_LOC;
 
 
 #define RFERROR error
@@ -129,9 +132,5 @@ extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
 #define WARN7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
     sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
     RFWARNING(MSG2);}
-
-void getErrorString(char errorstring[MAXERRORSTRING]);
-void setErrorLoc(char errorloc[nErrorLoc]);
-
 
 #endif

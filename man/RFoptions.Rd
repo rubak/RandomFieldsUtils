@@ -94,7 +94,7 @@
      
   \item{seed}{integer (currently only used by the package RandomFields).
     If \code{NULL} or \code{NA}
-    \command{\link{set.seed}} is \bold{not} called.
+    \command{\link[base]{set.seed}} is \bold{not} called.
     Otherwise, \code{\link[base]{set.seed}(seed)} is set
     before any simulations are performed.
     
@@ -152,9 +152,9 @@
   \item{\code{solve_method}}{
     vector of at most 3 integers that gives the sequence of methods
     in order to inverse a matrix or to calculate its square root:
-    \code{"Cholesky"}, \code{"SVD"}, \code{"Sparse"},
+    \code{"cholesky"}, \code{"svd"}, \code{"eigen"} \code{"sparse"},
     \code{"method undefined"}. In the latter case, the algorithm decides
-    which method might suit best.
+    which method might suit best. 
 
     Note that if \code{use_spam} is not \code{false} the algorithm
     checks whether a sparse matrix algorithm should be used and which is
@@ -200,18 +200,21 @@
     largest absolute value being considered as zero.
     Default: \code{DBL_EPSILON}
   }
-  \item{\code{svdtol}}{
+  \item{\code{svdtol}}{Internal.
     When the svd decomposition is used for calculating the square root of
     a matrix then the absolute componentwise difference between
     this matrix and the square of the square root must be less
     than \code{svdtol}. No check is performed if
-    \code{svdtol} is negative.
- 
-    When the svd decomposition is used for calculating the inverse of
-    a matrix then a diagonal value is set to zero if it is less than
-    \code{svdtol}.
+    \code{svdtol} is not positive.
+     
+    Default: \code{0}
+  }
+  \item{\code{eigen2zero}}{
+    When the svd or eigen decomposition is calculated,
+    all values with modulus less than or equal to \code{eigen2zero}
+    are set to zero.
     
-    Default: \code{1e-8}
+    Default: \code{1e-12}
   }
   \item{\code{use_spam}}{
     Should the package \code{spam} (sparse matrices)
@@ -271,6 +274,8 @@
 
 
 \examples{
+
+if (FALSE) {
   n <- 500
   M <- matrix(rnorm(n * n), nc=n)
   M <- M \%*\% t(M)
@@ -278,6 +283,8 @@
   unix.time(cholPosDef(M))
   RFoptions(cores = 2)
   unix.time(cholPosDef(M))
+}
+
 }
 
 \keyword{spatial}

@@ -6,7 +6,7 @@
 
       implicit none
       integer m,nnzd
-      integer nsuper,nnzl,iwsiz,tmpsiz,
+      integer nsuper,tmpsiz,
      &        ierr,
      &        jd(nnzd),cachesize,
      &        id(m+1),lindx(*),xlindx(*),
@@ -427,14 +427,14 @@ C
 C
 C***********************************************************************
 C
-        INTEGER*4           BROTHR(*)     , FSON(*)       ,
+        INTEGER(4)           BROTHR(*)     , FSON(*)       ,
      &                      PARENT(*)
 C
-        INTEGER*4           NEQNS
+        INTEGER(4)           NEQNS
 C
 C***********************************************************************
 C
-        INTEGER*4           LROOT , NODE  , NDPAR
+        INTEGER(4)           LROOT , NODE  , NDPAR
 C
 C***********************************************************************
 C
@@ -837,7 +837,7 @@ C           APPLY PARTIAL CHOLESKY TO THE COLUMNS OF JSUP.
 C           ----------------------------------------------
 CxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPC
             CALL CHLSUP ( JLEN, NJCOLS, SPLIT(FJCOL), XLNZ(FJCOL), LNZ,
-     &                    MXDIAG, NTINY, IFLAG )
+     &                    MXDIAG, NTINY )
             IF  ( IFLAG .NE. 0 )  THEN
                 IFLAG = -1
                 RETURN
@@ -865,7 +865,7 @@ C 699    FORMAT(1X,' FOUND ',I6,' TINY DIAGONALS; REPLACED WITH INF')
 C
 C SET IFLAG TO -1 TO INDICATE PRESENCE OF TINY DIAGONALS
 C
-	IF(NTINY .NE. 0) IFLAG = -1
+        IF(NTINY .NE. 0) IFLAG = -1
 CxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPCxPC
         RETURN
       END
@@ -1220,7 +1220,7 @@ C
 C
 C***********************************************************************
 C
-        INTEGER*4           LROOT , NODE  , NDLSON, NDPAR
+        INTEGER(4)           LROOT , NODE  , NDLSON, NDPAR
 C
 C***********************************************************************
 C
@@ -1309,8 +1309,8 @@ C                 =1 IF NONPOSITIVE DIAGONAL ENTRY IS ENCOUNTERED.
 C
 C***********************************************************************
 C
-      SUBROUTINE  CHLSUP  ( M, N, SPLIT, XPNT, X, MXDIAG, NTINY, 
-     &                      IFLAG )
+      SUBROUTINE  CHLSUP  ( M, N, SPLIT, XPNT, X, MXDIAG, NTINY
+     &                      )
 C
 C***********************************************************************
 C
@@ -1320,7 +1320,7 @@ C     -----------
 C
       EXTERNAL            MMPY8
 C
-      INTEGER             M, N, IFLAG
+      INTEGER             M, N
 C
       INTEGER             XPNT(*), SPLIT(*)
 C
@@ -1336,6 +1336,7 @@ C
 C
 C***********************************************************************
 C
+        
         JBLK = 0
         FSTCOL = 1
         MM = M
@@ -1548,15 +1549,15 @@ C
 C
 C***********************************************************************
 C
-        INTEGER*4           BROTHR(*)     , COLCNT(*)     , 
+        INTEGER(4)           BROTHR(*)     , COLCNT(*)     , 
      &                      FSON(*)       , INVPOS(*)     , 
      &                      PARENT(*)     , STACK(*)
 C
-        INTEGER*4           ROOT
+        INTEGER(4)           ROOT
 C
 C***********************************************************************
 C
-        INTEGER*4           ITOP  , NDPAR , NODE  , NUM   , NUNODE
+        INTEGER(4)           ITOP  , NDPAR , NODE  , NUM   , NUNODE
 C
 C***********************************************************************
 C
@@ -1670,13 +1671,13 @@ C
 C
 C***********************************************************************
 C
-        INTEGER*4           ADJNCY(*)     , BROTHR(*)     ,
+        INTEGER(4)           ADJNCY(*)     , BROTHR(*)     ,
      &                      FSON(*)       , INVP(*)       ,
      &                      INVPOS(*)     , PARENT(*)     ,
      &                      PERM(*)
 C
-        INTEGER*4           XADJ(*)
-        INTEGER*4           NEQNS
+        INTEGER(4)           XADJ(*)
+        INTEGER(4)           NEQNS
 C
 C***********************************************************************
 C
@@ -1748,15 +1749,15 @@ C
 C
 C***********************************************************************
 C
-        INTEGER*4           BROTHR(*)     , FSON(*)       ,
+        INTEGER(4)           BROTHR(*)     , FSON(*)       ,
      &                      INVPOS(*)     , PARENT(*)     ,
      &                      STACK(*)
 C
-        INTEGER*4           ROOT
+        INTEGER(4)           ROOT
 C
 C***********************************************************************
 C
-        INTEGER*4           ITOP  , NDPAR , NODE  , NUM   , NUNODE
+        INTEGER(4)           ITOP  , NDPAR , NODE  , NUM   , NUNODE
 C
 C***********************************************************************
 C
@@ -1845,16 +1846,16 @@ C
 C
 C***********************************************************************
 C
-        INTEGER*4           ADJNCY(*)     , ANCSTR(*)     ,
+        INTEGER(4)           ADJNCY(*)     , ANCSTR(*)     ,
      &                      INVP(*)       , PARENT(*)     ,
      &                      PERM(*)
 C
-        INTEGER*4           NEQNS
-        INTEGER*4           XADJ(*)
+        INTEGER(4)           NEQNS
+        INTEGER(4)           XADJ(*)
 C
 C***********************************************************************
 C
-        INTEGER*4           I     , J     , JSTOP , JSTRT , NBR   ,
+        INTEGER(4)           I     , J     , JSTOP , JSTRT , NBR   ,
      &                      NEXT  , NODE
 C
 C***********************************************************************
@@ -2190,7 +2191,7 @@ C       --------------------------------------------
         IF  ( CACHSZ .LE. 0 )  THEN
             CACHE = 2 000 000 000
         ELSE
-            CACHE = ( FLOAT(CACHSZ) * 1024. / 8. ) * 0.9
+           CACHE = INT(( FLOAT(CACHSZ) * 1024. / 8. ) * 0.9)
         ENDIF
 C
 C       ---------------
@@ -2859,14 +2860,14 @@ C
 C
 C***********************************************************************
 C
-        INTEGER*4           INVP(*)       , INVP2(*)      ,
+        INTEGER(4)           INVP(*)       , INVP2(*)      ,
      &                      PERM(*)
 C
-        INTEGER*4           NEQNS
+        INTEGER(4)           NEQNS
 C
 C***********************************************************************
 C
-        INTEGER*4           I     , INTERM, NODE
+        INTEGER(4)           I     , INTERM, NODE
 C
 C***********************************************************************
 C
@@ -3044,8 +3045,10 @@ C            -----------------------------------------------------
                      DO  800  J = JSTRT, JSTOP
                          NODE = ADJNCY(J)
                          LINK = - NODE
-                         IF  ( NODE )  400, 900, 500
-  500                    CONTINUE
+C                         IF  ( NODE )  400, 900, 500
+                         if ( NODE .LT. 0) GO TO 400
+                         if ( NODE .EQ. 0) GO TO 900
+C  500                    CONTINUE
                          IF  ( MARKER(NODE) .GE. TAG  .OR.
      1                         DFORW(NODE) .LT. 0 )  GO TO 800
                              MARKER(NODE) = TAG
@@ -3078,8 +3081,10 @@ C        --------------------------------------------------------
              DO  1700  I = ISTRT, ISTOP
                  RNODE = ADJNCY(I)
                  LINK = - RNODE
-                 IF  ( RNODE )  1100, 1800, 1200
- 1200            CONTINUE
+C                 IF  ( RNODE )  1100, 1800, 1200
+                 if ( RNODE .LT. 0) GO TO 1100
+                 if ( RNODE .EQ. 0) GO TO 1800
+C 1200            CONTINUE
 C                --------------------------------------------
 C                IF RNODE IS IN THE DEGREE LIST STRUCTURE ...
 C                --------------------------------------------
@@ -3395,9 +3400,11 @@ C            ---------------------------------------------
                  DO  700  I = ISTRT, ISTOP
                      ENODE = ADJNCY(I)
                      LINK = - ENODE
-                     IF  ( ENODE )  400, 800, 500
+C                     IF  ( ENODE )  400, 800, 500
+                         if ( ENODE .LT. 0) GO TO 400
+                         if ( ENODE .EQ. 0) GO TO 800
 C
-  500                CONTINUE
+C 500                 CONTINUE
                      IF  ( QSIZE(ENODE) .EQ. 0 )  GO TO 700
                          DEG0 = DEG0 + QSIZE(ENODE)
                          MARKER(ENODE) = MTAG
@@ -3452,9 +3459,12 @@ C                        --------------------------------------------
                              NODE = ADJNCY(I)
                              LINK = - NODE
                              IF  ( NODE .EQ. ENODE )  GO TO 1400
-                             IF  ( NODE )  1000, 2100, 1100
+C                             IF  ( NODE )  1000, 2100, 1100
+                             if ( NODE .LT. 0 ) GO TO 1000
+                             if ( NODE .EQ. 0 ) GO TO 2100
+
 C
- 1100                        CONTINUE
+C 1100                        CONTINUE
                              IF  ( QSIZE(NODE) .EQ. 0 )  GO TO 1400
                              IF  ( MARKER(NODE) .GE. TAG )  GO TO 1200
 C                                -------------------------------------
@@ -3526,9 +3536,11 @@ C                                    -------------------------------
                                      DO  1900  J = JSTRT, JSTOP
                                          NODE = ADJNCY(J)
                                          LINK = - NODE
-                                         IF  ( NODE )  1700, 2000, 1800
+C                                         IF  ( NODE )  1700, 2000, 1800
+                                         if ( NODE .LT. 0) GO TO 1700
+                                         if ( NODE .EQ. 0) GO TO 2000
 C
- 1800                                    CONTINUE
+C 1800                                    CONTINUE
                                          IF  ( MARKER(NODE) .GE. TAG )
      1                                         GO TO 1900
                                              MARKER(NODE) = TAG
@@ -3821,10 +3833,17 @@ C           -----------------------------
 C           BOUNDARY CODE FOR THE K LOOP.
 C           -----------------------------
 C
-            GO TO ( 2000, 1700, 1500, 1300,
-     &              1100,  900,  700,  500  ), N-K+2
+C             GO TO ( 2000, 1700, 1500, 1300,
+C     &              1100,  900,  700,  500  ), N-K+2
+             if (N .LT. K) go to 2000
+             if (N .EQ. K) go to 1700
+             if (N .EQ. K + 1) go to 1500
+             if (N .EQ. K + 2) go to 1300
+             if (N .EQ. K + 3) go to 1100
+             if (N .EQ. K + 4) go to 900
+             if (N .EQ. K + 5) go to 700
 C
-  500       CONTINUE
+C  500       CONTINUE
 C
 C               -----------------------------------
 C               SEVEN COLUMNS UPDATING TWO COLUMNS.
@@ -4365,7 +4384,7 @@ C     -----------
 C
       EXTERNAL            SMXPY8
 C
-      INTEGER             M, N, IFLAG
+      INTEGER             M, N
 C
       INTEGER             XPNT(*)
 C
@@ -4612,10 +4631,18 @@ C***********************************************************************
 C
       REMAIN = MOD ( N, LEVEL )
 C
-      GO TO ( 2000, 100, 200, 300,
-     &         400, 500, 600, 700  ), REMAIN+1
+C      GO TO ( 2000, 100, 200, 300,
+C     &         400, 500, 600, 700  ), REMAIN+1
+      if (REMAIN .eq. 0) go to 2000
+C      if (REMAIN .eq. 1) go to 100
+      if (REMAIN .eq. 2) go to 200
+      if (REMAIN .eq. 3) go to 300
+      if (REMAIN .eq. 4) go to 400
+      if (REMAIN .eq. 5) go to 500
+      if (REMAIN .eq. 6) go to 600
+      if (REMAIN .eq. 7) go to 700
 C
-  100 CONTINUE
+C  100 CONTINUE
       I1 = APNT(1+1) - M
       A1 = - A(I1)
       DO  150  I = 1, M

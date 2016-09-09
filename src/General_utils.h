@@ -32,10 +32,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <Rmath.h>
 #include <string.h>
 #include "Basic_utils.h"
-#include "Error_utils.h"
+#include "errors_messages.h"
 #include "kleinkram.h"
 #include "Solve.h"
-#include "Struve.h"
 
 
 
@@ -71,6 +70,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #else // SCHLATHERS_MACHINE
 
+
 // __extension__ unterdrueckt Fehlermeldung wegen geklammerter Argumente
 #define INTERNAL  \
   sprintf(BUG_MSG, \
@@ -89,13 +89,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL); memcpy(A,B,C); })
 //#define MEMCOPY(A,B,C) memory_copy(A, B, C)
-#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=668467200);malloc(X);})
+#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=668467200); malloc(X);})
 #define CALLOC(X, Y) __extension__({assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
+
+//#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=668467200); PRINTF("malloc for '"#X"' needs %ld bytes in %s, line %d\n", (long) (X), __FILE__, __LINE__);malloc(X);})
+//#define CALLOC(X,Y) __extension__ ({assert((X)>0 && (X)<=668467200); PRINTF("calloc for '"#X"' and '"#Y"' needs %ld * %ld = %ld bytes in %s, line %d \n", (long) (X), (long) (Y), (long)((X) * (Y)), __FILE__, __LINE__);calloc(X,Y);})
+
+
 #define FREE(X) { if ((X) != NULL) {if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}}
 #define UNCONDFREE(X) { if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}
 
 #endif // SCHLATHERS_MACHINE
-
 
 
 #ifdef RANDOMFIELDS_DEBUGGING
@@ -109,7 +113,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#define CALLOC calloc
 
 #define DEBUGINFOERR {							\
-    char dummy_[MAXERRORSTRING]; strcpy(dummy_, ERRORSTRING);		\
+    errorstring_type dummy_; strcpy(dummy_, ERRORSTRING);		\
     sprintf(ERRORSTRING, "%s (%s, line %d)\n", dummy_, __FILE__, __LINE__); \
   }
 #define DEBUGINFO DOPRINTF("(currently at  %s, line %d)\n", __FILE__, __LINE__)
@@ -135,27 +139,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PL_DETAILS 9
 #define PL_SUBDETAILS 10
 
-
-
-#define SCALAR_PROD(A, B, N, ANS) {			\
-    int  k_ =0,				\
-    end_ = N - 5;				\
-  ANS = 0.0;					\
-  for (; k_<end_; k_+=5) {				\
-    ANS += A[k_] * B[k_]				\
-      + A[k_ + 1] * B[k_ + 1]				\
-      + A[k_ + 2] * B[k_ + 2]				\
-      + A[k_ + 3] * B[k_ + 3]				\
-      + A[k_ + 4] * B[k_ + 4];				\
-  }							\
-  for (; k_<N; k_++) ANS += A[k_] * B[k_];		\
-  }
-
-
-#define FILL_IN(A, N, VALUE) {				\
-    int end_ = N;					\
-    for (int k_=0; k_<end_; (A)[k_++]=VALUE);		\
-}
+#define MATERN_NU_THRES 100
 
 
 #endif

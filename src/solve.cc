@@ -18,29 +18,60 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
-
-#ifdef _OPENMP
+ 
+#include "Basic_utils.h"  // must be before anything else
+#ifdef DO_PARALLEL
 #include <omp.h>
 #endif
 #include <R_ext/Lapack.h>
 #include "RandomFieldsUtils.h"
 #include "own.h"
+#include "init_RandomFieldsUtils.h"
 
 const char * InversionNames[nr_InversionMethods] = {
-  "Cholesky",  "SVD",  "SPAM",
+  "cholesky",  "svd", "eigen", "sparse",
   "method undefined",
-  "QR", "LU", 
+  "qr", "lu", 
   "no method left", "direct formula", "diagonal"};
 
 
     //  double *A_= A, *B_= B;				
      // i_ = N,					
 
-double scalar(double *A, double *B, int N) {
-  double ANS;
-  SCALAR_PROD(A, B, N, ANS);
-  return ANS;
-}
+
+
+
+#define CMALLOC(WHICH, N, TYPE)	{				 \
+    int _N_ = N;						 \
+    if (pt->WHICH##_n < _N_) {					 \
+      if (pt->WHICH##_n < 0) BUG;				 \
+      FREE(pt->WHICH);						 \
+      pt->WHICH##_n = _N_;						\
+	if ((pt->WHICH = (TYPE *) CALLOC(_N_, sizeof(TYPE))) == NULL)	\
+	  return ERRORMEMORYALLOCATION;					\
+    } else {								\
+      assert( (_N_ > 0 && pt->WHICH != NULL) || _N_ == 0);		\
+      for (int iii=0; iii<_N_; pt->WHICH[iii++] = 0);			\
+    }									\
+  }									\
+    TYPE VARIABLE_IS_NOT_USED *WHICH = pt->WHICH
+
+
+//  sqrtPosDef nutzt pt->U fuer das Ergebnis		
+#define FREEING(WHICH)						\
+  assert(int VARIABLE_IS_UNUSED *_i = WHICH);	\
+  if (pt->WHICH != NULL && pt->WHICH != result) {	\
+    UNCONDFREE(pt->WHICH);						\
+    pt->WHICH##_n = 0;						\
+  }						
+ 					       
+#define FREEING_INT(WHICH)			\
+  assert(int VARIABLE_IS_UNUSED *_i = WHICH);	\
+  if (pt->WHICH != NULL) {			\
+    UNCONDFREE(pt->WHICH);				\
+    pt->WHICH##_n = 0;				\
+  }						
+ 
 
 void solve_DELETE0(solve_storage *x) {
      FREE(x->iwork);
@@ -116,7 +147,7 @@ int solve3(double *M, int size, bool posdef,
 	   double *result, double *logdet 		
 		){
   assert(size <= 3);
-  if (size <= 0) ERR("matrix in 'solvePosDef' of non-positive size.");
+  if (size <= 0) SERR("matrix in 'solvePosDef' of non-positive size.");
 
   double det;
   switch(size){ // Abfrage nach Groesse der Matrix M + Berechnung der Determinante per Hand
@@ -214,7 +245,7 @@ int solve3(double *M, int size, bool posdef,
 int chol3(double *M, int size, double *res){
   // UNBEDINGT in sqrtRHS.cc auch aendern
   assert(size <= 3);
-  if (size <= 0) ERR("matrix in 'solvePosDef' of non-positive size.");
+  if (size <= 0) SERR("matrix in 'solvePosDef' of non-positive size.");
   //  if (M[0] < 0) return ERRORFAILED;
   res[0] = sqrt(M[0]);
   if (size == 1) return NOERROR;
@@ -256,7 +287,7 @@ int doPosDef(double *M, int size, bool posdef,
  
           A non-NULL value gives an advantage only if doPosDef is called
           repeatedly. Then 
-            solve_storage *pt = (solve_storage*) malloc(sizeof(solve_storage);
+            solve_storage *pt = (solve_storage*) m alloc(sizeof(solve_storage);
             solve_NULL(pt);
           prepares pt. Deletion is done only at the very end by
             solve_DELETE(pt);
@@ -294,7 +325,6 @@ int doPosDef(double *M, int size, bool posdef,
   solve_storage *pt;
   if (Pt != NULL) {
     pt = Pt;
-    //printf("pt : %ld \n", (long) (pt));    BUG;
  
   } else {
     pt = (solve_storage*) MALLOC(sizeof(solve_storage));
@@ -435,29 +465,29 @@ int doPosDef(double *M, int size, bool posdef,
 	Meth[2] = given0 && sp->Methods[0] != Sparse &&
 	  given1 && sp->Methods[1] != Sparse
 	  ? sp->Methods[1] 
-	  : posdef ? SVD : LU;
+	  : posdef ? Eigen : LU;
       }
       // pt->newMethods[1] = Sparse;
     } else {
       Meth[0] = posdef ? Cholesky : LU;  
-      Meth[1] =  posdef ? SVD : LU;
-      if (SOLVE_METHODS > 2) Meth[2] = SVD;
+      Meth[1] =  posdef ? Eigen : LU;
+      if (SOLVE_METHODS > 2) Meth[2] = Eigen;
     }
     for (int i=3; i<SOLVE_METHODS; Meth[i++]=NoFurtherInversionMethod);   
   } else Meth = sp->Methods;
 
-  if (!posdef && Meth[0] != SVD && Meth[0] != SVD) {
+  if (!posdef && Meth[0] != Eigen && Meth[0] != Eigen) {
     err = ERRORNOTPROGRAMMEDYET;
     goto ErrorHandling;
   }
 
-  // cholesky, QR, SVD, LU always destroy original matrix M
+  // cholesky, QR, SVD, Eigen, LU always destroy original matrix M
   bool gesichert;
   if ((gesichert = rhs_cols==0 && result == NULL)) {
     if ((gesichert = (SOLVE_METHODS > sparse + 1 &&
 		      Meth[sparse + 1] != Meth[sparse] &&
 		      Meth[sparse + 1] != NoFurtherInversionMethod)
-	 || (Meth[sparse] == SVD && sp->svd_tol >= 0.0 && sqrtOnly)
+	 || (Meth[sparse] == SVD && sp->svd_tol > 0.0 && sqrtOnly)
 	 )) { // at least two different Methods in the list
       CMALLOC(SICH, sizeSq, double);
       MEMCOPY(SICH, M, sizeSq * sizeof(double));
@@ -479,9 +509,6 @@ int doPosDef(double *M, int size, bool posdef,
  
   //  bool del = GLOBAL.solve.tmp_delete;
   for (int m=0; m<SOLVE_METHODS && (m==0 || Meth[m] != Meth[m-1]); m++) {
-
-    //printf("%d %s\n", m, InversionNames[Meth[m]]); 
-
     pt->method = Meth[m];
     if (pt->method<0) break;
     if (sqrtOnly) {
@@ -504,8 +531,6 @@ int doPosDef(double *M, int size, bool posdef,
       }
     } else if (pt->method != Sparse) {
       MEMCOPY(MPT, M, sizeSq * sizeof(double));
-      
-      //           int size2 = MIN(5, size);printf("MPT ueberschrieben\n"); for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) printf("%e ", MPT[ii + jj * size]); printf("\n");}//BUG;
     }
     
     switch(pt->method) {
@@ -518,12 +543,14 @@ int doPosDef(double *M, int size, bool posdef,
       //      if (Sp->cores <= 1 && false) {
       //	F77_CALL(dpotrf)("Upper", &size, MPT, &size, &err);  
       //      } else 
+
       
       {
 	bool VARIABLE_IS_NOT_USED multicore = (GLOBAL.basic.cores > 1);
-	//#pragma omp parallel for
         // cmp for instance http://stackoverflow.com/questions/22479258/cholesky-decomposition-with-openmp
-	
+
+	//printf("multicore = %d cores=%d\n", multicore, GLOBAL.basic.cores);	
+
 	err = NOERROR;	  	
 	double *A = MPT;
 	for (int i=0; i<size; i++, A += size) {
@@ -538,6 +565,7 @@ int doPosDef(double *M, int size, bool posdef,
 	  //	  double invsum = 1.0 / A[i];
 	  double sum = A[i];
 	  double *endB = MPT + sizeSq; 
+
 #ifdef DO_PARALLEL
 #pragma omp parallel for if (multicore)
 #endif
@@ -551,26 +579,25 @@ int doPosDef(double *M, int size, bool posdef,
       }
 
 
+ 
+  
 	// see also http://www.wseas.us/e-library/conferences/2013/Dubrovnik/MATHMECH/MATHMECH-25.pdf
 	// http://ac.els-cdn.com/0024379586901679/1-s2.0-0024379586901679-main.pdf?_tid=bc5f2c8c-3117-11e6-80e1-00000aab0f02&acdnat=1465789050_ebfe7248d7a126bd2a301e97a3dbf914
 	if (false) {
         //braucht 100 % mehr zeit als aufruf von dpotrf
 	  // laesst sich nicht ohne weiteres 
 	err = NOERROR;	  
-	//	  omp_set_num_threads(Sp->cores);
 	int isize=0;
 	for (int i=0; i<size; i++, isize += size) {
 	  double *A = MPT + isize;
 	  
-	  // #pragma omp parallel for -- warum funktioniert das nicht??
+	  // #pragma o mp parallel for -- warum funktioniert das nicht??
 	  for (int j=0; j<i; j++) {
 	    int jsize = j * size;
 	    double 
 	      *B =  MPT + jsize,
 	      sum = A[j]; 
-	    // printf("a_ij = %f\n", sum);
 	    for (int k=0; k<j; k++) sum -= A[k] * B[k];
-	    // printf("A_ij = %f %f\n", sum, MPT[jsize + j]);
 	    A[j] = sum / B[j];
 	  }
 	  
@@ -587,25 +614,21 @@ int doPosDef(double *M, int size, bool posdef,
         //braucht 100 % mehr zeit als aufruf von dpotrf
 	  // laesst sich nicht ohne weiteres 
 	err = NOERROR;	  
-	//	  omp_set_num_threads(Sp->cores);
+	//	  o mp_set_num_threads(Sp->cores);
 	int isize=0;
 	for (int i=0; i<size; i++, isize += size) {
-	  //#pragma omp parallel for
+	  //#pragma o mp parallel for
 	  double *A = MPT + isize;
-	  //#pragma omp parallel for
+	  //#pragma o mp parallel for
 	  for (int j=0; j<=i; j++) {
 	    int jsize = j * size;
 	    double 
 	      *B =  MPT + jsize,
 	      sum = A[j]; 
-	    // printf("a_ij = %f\n", sum);
 	    for (int k=0; k<j; k++) sum -= A[k] * B[k];
-	    // printf("A_ij = %f %f\n", sum, MPT[jsize + j]);
 	    if (j < i) A[j] = sum / B[j];
 	    else if (sum > 0.0) A[j] = sqrt(sum);
 	    else { err = ERRORFAILED; }
-
-	    // printf("j=%d %f  ", j, MPT[isize + j]);	    
 	  }
 	}
 	}
@@ -615,7 +638,6 @@ int doPosDef(double *M, int size, bool posdef,
 	 //https://courses.engr.illinois.edu/cs554/fa2013/notes/07_cholesky.pdf
 // saying that no pivoting necessary. needs 150 % more time 
 	err = NOERROR;	  
-	//	  omp_set_num_threads(Sp->cores);
 
 	for (int k =0; k<size; k++) {
 	  int kspalte = k * size; 
@@ -625,7 +647,9 @@ int doPosDef(double *M, int size, bool posdef,
 	    int ispalte = i * size;
 	    MPT[k + ispalte] *= f;
 	  }
-#pragma omp parallel for
+#ifdef DO_PARALLEL
+#pragma omp parallel for 
+#endif
 	  for (int j = k + 1; j<size; j++) {
 	    int jspalte = j * size;
 	    double factor = MPT[k + jspalte];
@@ -637,9 +661,7 @@ int doPosDef(double *M, int size, bool posdef,
 	}
 
 
-	
-	//	   for (int ii=0; ii<100; ii++) printf("%10.8f ", MPT[ii]); printf("Minv\n");
-      if (err == NOERROR) {
+	if (err == NOERROR) {
 	if (sqrtOnly) {	  
 	  int deltaend = size - 1;
 	  double *end = MPT + sizeSq;
@@ -711,59 +733,148 @@ int doPosDef(double *M, int size, bool posdef,
       if (PL >=  PL_DETAILSUSER) PRINTF("QR successful\n");
       break;
     }
-
-    case SVD : {// SVD : M = U D VT
-      if (size > sp->max_svd) CERR("matrix too large for SVD decomposition.");
-      double  optim_lwork, 
-        //*Uloc = result,
-	*pt_work = &optim_lwork;
-      int k = 0,  
-	size8 = size * 8,
-	lwork = -1;
-
-      CMALLOC(VT, sizeSq, double);
+      
+    case Eigen : { //  M = U D UT
+      int max_eigen = sp->max_svd;
+      double eigen2zero = sp->eigen2zero;
+      if (size > max_eigen) CERR("matrix too large for eigen value decomposition.");
+      
+      double 
+	optimal_work,
+	*pt_work = &optimal_work;
+      int k=0,
+	  optimal_intwork,
+	  *pt_iwork = &optimal_intwork, 
+	  lwork = -1,
+	  lintwork = -1;
+      
       CMALLOC(U, sizeSq, double);
-#define Uloc U
       CMALLOC(D, size, double); 
-      CMALLOC(iwork, size8, int);
- 
-// int size3 = MIN(9, size);printf("MPT\n"); for (int ii=0; ii<size3; ii++) {for (int jj=0; jj<size3; jj++) printf("%e ", MPT[ii + jj * size]); printf("\n");};
- 
+      CMALLOC(xja, 2 * size, int);
+      
       for (int i=0; i<=1; i++) {
-	F77_CALL(dgesdd)("A", &size, &size, MPT, &size, D, Uloc, &size, VT, &size, 
+	double dummy = 0.0,
+	  abstol = 0.0;
+	int dummy_nr;
+	//	printf("i = %d\n", i);
+
+	F77_CALL(dsyevr)("V", "A", "U", &size, MPT, &size, &dummy, &dummy, &k, &k, 
+			 &abstol,// or DLAMCH
+			 &dummy_nr, D, U, &size, 
+			 xja, // 2 * size * sizeof(integer); nonzeros_idx
+			 pt_work, &lwork,
+			 pt_iwork, &lintwork,
+			 &err
+			 );
+	//	printf("i=%d, %d %d size=%d err=%d\n", i, lwork, lintwork, size, err);
+	if (i==1 || err != NOERROR || ISNAN(D[0])) break;
+	lwork = (int) optimal_work;
+	lintwork = (int) optimal_intwork;
+	CMALLOC(work, lwork, double);
+	CMALLOC(iwork, lintwork, int);
+	pt_iwork = iwork;
+	pt_work = work; 
+      }
+
+      
+      //     if (!false) {
+      //	int end = MIN(5, size);
+      //	for(int ii=0; ii<end; ii++) {
+      //  for (int jj=0; jj<end; jj++) printf("%f ", MPT[ii + jj * size]); printf("\n");
+      //	}
+      //  printf("\n"); for (int ii=0; ii<size; ii++) printf("%e ", D[ii]); printf("\n");
+      // }
+
+  
+     if (err != NOERROR) {
+	if (PL>PL_ERRORS)
+	  PRINTF("Error code F77_CALL(dsyevr) = %d\n", err);
+	CERR1("'dsyevr' failed with err=%d\n", err);
+	break;
+      }
+      
+      for (int i=0; i<size; i++) if (D[i] < -eigen2zero) {
+	  //print("negative eigen values!!!! %f\n", D[i]);
+	  GERR("negative eigenvalues found");
+	} //else print("%f ", D[i]);
+      
+      if (sqrtOnly) {
+	for (int j=0; j<size; j++) {
+	  double dummy;
+	  dummy = D[j] < eigen2zero ? 0.0 : sqrt(D[j]);
+	  for (int i=0; i<size; i++, k++) RESULT[k] = U[k] * dummy;
+	}
+      } else {
+	// calculate determinant 
+	if (logdet != NULL) {
+	  double dummy = 0.0;
+	   for (int i = 0; i < size; dummy += log(D[i++]));
+	   *logdet = dummy;
+	}
+	
+	for (int j=0; j<size; j++) D[j] = D[j] < eigen2zero ? 0.0 : 1.0 / D[j];
+	if (rhs_cols > 0) {
+	  int tot = size * rhs_cols;
+	  CMALLOC(w2, tot, double);	
+	  matmulttransposed(U, rhs, w2, size, size, rhs_cols);
+	  for (k=0; k<tot; )
+	    for (int i=0; i<size; i++) w2[k++] *= D[i];
+	  matmult(U, w2, RESULT, size, size, rhs_cols);
+	} else {
+	  int j;
+	  CMALLOC(w2, sizeSq, double);
+	  for (k=0, j=0; j<size; j++) {
+	    double dummy = D[j];
+	    for (int i=0; i<size; i++, k++) w2[k] = U[k] * dummy;
+	  }
+	  matmult_2ndtransp(w2, U, RESULT, size, size, size); // V * U^T
+	}
+      }
+      if (PL >=  PL_DETAILSUSER) PRINTF("eigen value decomposition successful\n");
+      break;
+    }
+
+   case SVD : {// SVD : M = U D VT
+     if (size > sp->max_svd) CERR("matrix too large for SVD decomposition.");
+     int k = 0,  
+       lwork = -1,
+       size8 = size * 8;
+     double  optim_lwork,
+       eigen2zero = sp->eigen2zero,
+       *pt_work = &optim_lwork;
+
+     CMALLOC(VT, sizeSq, double);
+     CMALLOC(U, sizeSq, double);
+     CMALLOC(D, size, double); 
+     CMALLOC(iwork, size8, int);
+
+     for (int i=0; i<=1; i++) {
+	F77_CALL(dgesdd)("A", &size, &size, MPT, &size, D, U, &size, VT, &size, 
 			 pt_work, &lwork, iwork, &err);
-	if (err != NOERROR || ISNAN(D[0])) break;
+	if (i==1 || err != NOERROR || ISNAN(D[0])) break;
 	lwork = (int) optim_lwork;
 	CMALLOC(work, lwork, double);
 	pt_work = work;
-      }
+     }
       if (err != NOERROR) {
 	if (PL>PL_ERRORS)
 	  PRINTF("Error code F77_CALL(dgesdd) = %d\n", err);
 	CERR1("'dgesdd' failed with err=%d\n", err);
 	break;
       }
-      
-//      printf("MPT (%d x %d, %ld %ld M=%ld %ld)=\n", size, size, (long) MPT, (long) Uloc, (long) M, (long) result);int size2 = MIN(5, size);for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%e ", MPT[ii + jj * size]);}printf("\n");}
-// printf("Uloc=\n");for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%e ", Uloc[ii + jj * size]);}printf("\n");}printf("\n");
-//for (int ii=0; ii<size; ii++) { printf("%e ", D[ii]); }printf("\n");
 
      if (sqrtOnly) {
-	double svdtol = sp->svd_tol;
+       double svdtol = sp->svd_tol;
 	/* calculate SQRT of covariance matrix */
 	for (int j=0; j<size; j++) {
 	  double dummy;
-	  dummy = fabs(D[j]) < svdtol ? 0.0 : sqrt(D[j]);
-	  for (int i=0; i<size; i++, k++) RESULT[k] = Uloc[k] * dummy;
+	  if (D[j] < -eigen2zero) CERR("negative eigenvalues found");
+	  dummy = D[j] < eigen2zero ? 0.0 : sqrt(D[j]);
+	  for (int i=0; i<size; i++, k++) RESULT[k] = U[k] * dummy;
 	}
  
-//printf("M=\n");for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%f ", M[ii + jj * size]);}printf("\n");}
-
-// printf("sqrt=\n");for (int ii=0; ii<size2; ii++) {for (int jj=0; jj<size2; jj++) {printf("%f ", RESULT[ii + jj * size]);}printf("\n svdtol=%e\n", svdtol);}
-
-	
 	/* check SVD */
- 	if (svdtol >= 0.0) {
+ 	if (svdtol > 0.0) {
 	  double *Morig = gesichert ? SICH : M;
 	  for (int i=0; i<size; i++) {
 	    double *Ui = RESULT + i;
@@ -772,10 +883,7 @@ int doPosDef(double *M, int size, bool posdef,
 		sum = 0.0;
 	       for (int j=0; j<sizeSq; j+=size) {
 		 sum += Ui[j] * Uk[j];
-		 //		 printf("%d %d %d sum=%f %f %f\n", i, k, j, sum, Ui[j], Uk[j]);
 	       }
-	      
-	       //	      printf("i=%d j=%d %f %f\n", i, k, sum, Morig[i * size + k]);
 	      
 	      if (fabs(Morig[i * size + k] - sum) > svdtol) {
 		if (PL > PL_ERRORS) {
@@ -792,9 +900,9 @@ int doPosDef(double *M, int size, bool posdef,
 	    if (err != NOERROR) break;		
 	  }
 	  if (err != NOERROR) break;		
-	}
+	} // end if svdtol > 0
   	
-      } else {
+     } else {
 	// calculate determinant 
 	if (logdet != NULL) {
 	  double dummy = 0.0;
@@ -802,25 +910,24 @@ int doPosDef(double *M, int size, bool posdef,
 	  *logdet = dummy;
 	}
 	
-	double svd_tol = sp->svd_tol;
 	for (int j=0; j<size; j++) 
-	  D[j] = fabs(D[j]) < svd_tol ? 0.0 : 1.0 / D[j];
+	  D[j] = fabs(D[j]) < eigen2zero ? 0.0 : 1.0 / D[j];
 
 	if (rhs_cols > 0) {
 	  int tot = size * rhs_cols;
 	  CMALLOC(w2, tot, double);	
-	  matmulttransposed(Uloc, rhs, w2, size, size, rhs_cols);
+	  matmulttransposed(U, rhs, w2, size, size, rhs_cols);
 	  for (k=0; k<tot; )
 	    for (int i=0; i<size; i++) w2[k++] *= D[i];
 	  matmulttransposed(VT, w2, RESULT, size, size, rhs_cols);
 	} else {
 	  // calculate inverse of covariance matrix
-	  int j;
+	  int j;	  
 	  for (k=0, j=0; j<size; j++) {
 	    double dummy = D[j];
-	    for (int i=0; i<size; i++) Uloc[k++] *= dummy;
+	    for (int i=0; i<size; i++) U[k++] *= dummy;
 	  }
-	  matmult_tt(Uloc, VT, RESULT, size, size, size); // V * U^T
+	  matmult_tt(U, VT, RESULT, size, size, size); // V * U^T
 	}
       }
 
@@ -828,7 +935,7 @@ int doPosDef(double *M, int size, bool posdef,
       //      if (GLOBAL.solve.tmp_delete) {FREEING(VT);FREEING(U);FREEING(D);
       //FREEING_INT(iwork);FREEING(work);FREEING(w2);}
       break;
-    }
+   }
 
     case LU : {// LU
       if (!sqrtOnly) {
@@ -1025,9 +1132,6 @@ int doPosDef(double *M, int size, bool posdef,
 	  FILL_IN(RESULT, sizeSq, 0.0);
 	  for (int i=0; i<sizeSq; i += sizeP1) RESULT[i] = 1.0; 
 	  
-	  // for (int i=0; i<sizeSq; i++) printf("%f ",RESULT[i]); printf("\n");
-	  //printf(">> %d %d \n", sizeSq, sizeP1);
-	  
 	} else {
 	  RHS_COLS = rhs_cols;	
 	  if (result != NULL) 
@@ -1105,12 +1209,6 @@ SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, bool sqrtOnly,
     deleteRHS = false;
   SEXP res;
   
-  /*
- res = PROTECT(allocMatrix(REALSXP, size, size));
-   //  printf("%d %d %d %ld\n", rows, rows*rows, total, (long int) REAL(res)); 
-MEMCOPY(REAL(res), REAL(M), size * size * sizeof(double)); F77_CALL(dpotrf)("Upper", &rows, REAL(res), &rows, &err);UNPROTECT(1); return res;
-  */
-
 
   if (rhs == R_NilValue) {
     rhs_rows = rhs_cols = 0;
@@ -1186,8 +1284,9 @@ MEMCOPY(REAL(res), REAL(M), size * size * sizeof(double)); F77_CALL(dpotrf)("Upp
   
   UNPROTECT(1);
   if (err != NOERROR) {
-    if (sqrtOnly) {ERR("'cholPosDef' failed");}
-    else { ERR("'solvePosDef' failed.");}
+    const char *methname[] = {"solvePosDef", "cholPosDef"};
+    if (err != ERRORM) strcpy(ERRORSTRING, "");
+    ERR2("'%s' failed: %s\n", methname[sqrtOnly], ERRORSTRING);
   }
 
   return res;
@@ -1209,7 +1308,6 @@ int solvePosDef(double *M, int size, bool posdef,
 		 double *rhs, int rhs_cols, 
 		 double *logdet, 
 		 solve_storage *PT) {
-  // printf("solve : %ld %ld %ld %ld\n", (long) (PT), long(M), (long) logdet, (long) rhs); BUG;
   return doPosDef(M, size, posdef, rhs, rhs_cols, NULL, logdet, false,
 		  PT, &(GLOBAL.solve));
 }
@@ -1223,4 +1321,108 @@ int invertMatrix(double *M, int size) {
 		  pt, &(GLOBAL.solve));
   solve_DELETE(&pt);
   return err;
+}
+
+
+
+
+
+
+/*
+
+## extrem wichter check -- folgendes funktioniert bislang bei spam nicht:
+library(RandomFields, lib="~/TMP")
+RFoptions(printlevel = 3, pch="", seed=999, use_spam = TRUE)
+z = RFsimulate(RMspheric(), x, max_variab=10000, n=10000, spC=FALSE)
+C = cov(t(z))
+c = RFcovmatrix(RMspheric(), x)
+print(summary(as.double(c - C))) ##//
+stopifnot(max(abs(c-C)) < 0.05)
+
+ */
+
+
+int sqrtPosDef(double *M, int size,    // in out
+	  solve_storage *pt     // in out
+	       ){
+  int err, sizeSq = size * size;
+  //  InversionMethod Methods[SOLVE_METHODS] = { GLOBAL.solve.Methods[0], 
+  //					     GLOBAL.solve.Methods[1] };
+  //  GLOBAL.solve.Methods[0] = GLOBAL.solve.Methods[1] = 
+ 
+  if (GLOBAL.solve.sparse == True) 
+    warning("package 'spam' is currently not used for simulation");
+  usr_bool sparse = GLOBAL.solve.sparse;
+  GLOBAL.solve.sparse = False;
+  assert(pt != NULL);
+  CMALLOC(result, sizeSq, double);
+  err = doPosDef(M, size, true, NULL, 0, result, NULL, true, pt,
+		 &(GLOBAL.solve));
+  GLOBAL.solve.sparse = sparse;
+  return err;
+}
+
+SEXP CholPosDef(SEXP M) {
+  solve_param chol_param = GLOBAL.solve;
+  chol_param.Methods[0] = chol_param.Methods[1] = Cholesky;
+  chol_param.sparse = False; // currently does not work, waiting for Reinhard
+  chol_param.pivot = PIVOT_NONE;
+  return doPosDef(M, R_NilValue, R_NilValue, true, &chol_param);
+}
+
+int sqrtRHS(solve_storage *pt, double* RHS, double *result){
+  assert(pt != NULL);
+  int k = 0,
+    size = pt->size;
+  switch (pt->method) { 
+  case direct_formula : 
+  case Cholesky : {
+    double *U = pt->result;
+    assert(U != NULL);
+
+    for (int i=0; i<size; i++, k+=size) {
+      double *Uk = U + k,
+	dummy = 0.0;
+      for (int j=0; j<=i; j++) dummy += RHS[j] * Uk[j];
+      result[i] = (double) dummy; 
+    }
+  }
+    break;
+
+  case SVD : case Eigen : {  
+    double *U = pt->result;
+    assert(U != NULL);
+    for (int i=0; i<size; i++){
+      double dummy = 0.0;
+      k = i;
+      for (int j=0; j<size; j++, k+=size) dummy += U[k] * RHS[j];
+      result[i] = (double) dummy; 
+    }
+  }
+    break;
+
+
+  case Sparse : {
+    BUG; // SEE ALSO solve, sqrtOnly, tmp_delete !!
+    int one = 1;
+    assert(pt->DD != NULL);
+   F77_CALL(amuxmat)(&size, &size, &one, RHS, pt->DD, pt->lnz, 
+		      pt->xja, pt->xlnz);
+    for (int i=0; i<size; i++) result[i] = pt->DD[pt->invp[i]];
+  }
+    break;
+
+  case Diagonal : {  
+    int  i, j,
+      sizeP1 = size + 1;
+    double *D = pt->result;
+    assert(D != NULL);
+    for (i=j=0; j<size; j++, i+=sizeP1) result[j] = RHS[j] * D[i];
+  }
+    break;
+  default : 
+    BUG;
+  }
+  
+  return NOERROR;
 }

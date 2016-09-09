@@ -21,38 +21,55 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <R.h>
 #include <Rinternals.h>
-#include "General_utils.h"
-#include "R_init.h"
 #include <R_ext/Rdynload.h>
+#include "General_utils.h"
+#include "init_RandomFieldsUtils.h"
 #include "RandomFieldsUtils.h"
+#include "own.h"
 
 
-// local
-char ERRMSG[LENERRMSG], MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG];
-
-// globally needed
-char 
-  ERRORSTRING[MAXERRORSTRING], 
-  ERROR_LOC[nErrorLoc]="";
-
-
-void getErrorString(char errorstring[MAXERRORSTRING]){
+void getErrorString(errorstring_type errorstring){
   strcopyN(errorstring, ERRORSTRING, MAXERRORSTRING);
 }
 
-void setErrorLoc(char errorloc[nErrorLoc]){
+void setErrorLoc(errorloc_type errorloc){
   strcopyN(ERROR_LOC, errorloc, nErrorLoc);
 }
 
  
+SEXP attachRFoptionsUtils() {
+  //  NList = 0;
+  
+  // printf("UTx %ld\n", (long) getUtilsParam);
+
+  attachRFoptions(ownprefixlist, ownprefixN, ownall, ownallN,
+  		  setparameterUtils, NULL, getparameterUtils);
+  return R_NilValue;
+}
+
+SEXP detachRFoptionsUtils() {
+  detachRFoptions(ownprefixlist, ownprefixN);
+  return R_NilValue;
+}
 
 extern "C" {
+
 #include <R_ext/Rdynload.h>
 
-static R_NativePrimitiveArgType RelaxRFoption_t[] = { LGLSXP };
+  static R_NativePrimitiveArgType Relax_t[] = { LGLSXP },
+    int_arg[] = { INTSXP },
+    host_arg[] = { STRSXP, INTSXP};
+  static R_NativeArgStyle argin[] = {R_ARG_IN},
+    argout[] = {R_ARG_OUT},
+    hostarg[] = {R_ARG_OUT, R_ARG_OUT};
 static const R_CMethodDef cMethods[]  = {
-  {"RelaxUnknownRFoption", (DL_FUNC) &RelaxUnknownRFoption, 1, RelaxRFoption_t},
-  {NULL, NULL, 0}
+  {"RelaxUnknownRFoption", (DL_FUNC) &RelaxUnknownRFoption, 1, Relax_t,argin}, {"sleepMilli", (DL_FUNC) &sleepMilli, 1, int_arg, argin},
+ {"sleepMicro", (DL_FUNC) &sleepMicro, 1, int_arg, argin},
+ {"pid", (DL_FUNC) &pid, 1, int_arg, argout},
+ {"hostname", (DL_FUNC) &hostname, 2, host_arg, hostarg},
+  // {"attachRFoptionsUtils", (DL_FUNC) &attachRFoptionsUtils, 0, NULL, NULL},
+  // {"detachRFoptionsUtils", (DL_FUNC) &detachRFoptionsUtils, 0, NULL, NULL},
+  {NULL, NULL, 0, NULL, NULL}
 };
 
 
@@ -63,6 +80,14 @@ static R_CallMethodDef callMethods[]  = {
   CALLDEF_DO(SolvePosDef, 3),
   CALLDEF_DO(struve, 4),
   CALLDEF_DO(I0ML0, 1),
+  CALLDEF_DO(gaussr, 2),
+  CALLDEF_DO(WMr, 4),
+  CALLDEF_DO(logWMr, 4),
+  CALLDEF_DO(attachRFoptionsUtils, 0),
+  CALLDEF_DO(detachRFoptionsUtils, 0),
+  CALLDEF_DO(sortX, 4),
+  CALLDEF_DO(orderX, 4),
+  CALLDEF_DO(getChar, 0), 
   //  CALLDEF_DO(),
   {NULL, NULL, 0}
 };
@@ -88,7 +113,24 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
   CALLABLE(sqrtPosDef); 
   CALLABLE(sqrtRHS);
 
+  CALLABLE(StruveH);
+  CALLABLE(StruveL);
   CALLABLE(I0mL0);
+
+  CALLABLE(WM);
+  CALLABLE(DWM);
+  CALLABLE(DDWM);
+  CALLABLE(D3WM);
+  CALLABLE(D4WM);
+  CALLABLE(logWM);
+  
+  CALLABLE(Gauss);
+  CALLABLE(DGauss);
+  CALLABLE(DDGauss);
+  CALLABLE(D3Gauss);
+  CALLABLE(D4Gauss);
+  CALLABLE(logGauss);
+  
 
   CALLABLE(getErrorString);
   CALLABLE(setErrorLoc);
@@ -96,6 +138,11 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
   CALLABLE(attachRFoptions);
   CALLABLE(detachRFoptions);
   CALLABLE(relaxUnknownRFoption);
+
+  CALLABLE(ordering);
+  CALLABLE(orderingInt);
+  CALLABLE(sorting);
+  CALLABLE(sortingInt);
 
   R_registerRoutines(dll, cMethods, callMethods, NULL, // .Fortran
 		     extMethods);
@@ -106,7 +153,7 @@ void R_unload_RandomFieldsUtils(DllInfo VARIABLE_IS_NOT_USED *info) {
   /* Release resources. */
 }
 
-} // end extern C
+}
 
 /*
 

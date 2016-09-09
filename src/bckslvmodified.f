@@ -163,7 +163,7 @@ c          X'a = (1-tau)X'e in the rq setting
 
       integer m,nsuper,nrhs,lindx(*),xlindx(m+1),
      &        invp(m),perm(m),xlnz(m+1), xsuper(m+1)
-      double precision lnz(*),b(m,nrhs),newrhs(m),sol(m,nrhs)
+      double precision lnz(*),b(m,nrhs),newrhs(m)
 
       integer i,j
       do j = 1,nrhs

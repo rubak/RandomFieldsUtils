@@ -30,21 +30,41 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <R_ext/Rdynload.h>
 #include "General_utils.h"
 
-
-
-
 extern "C" {
   void R_init_RandomFieldsUtils(DllInfo *info);
   void R_unload_RandomFieldsUtils(DllInfo *info);
 
   SEXP struve(SEXP X, SEXP Nu, SEXP Factor_Sign, SEXP Expscaled);
   SEXP I0ML0(SEXP X);
+  SEXP gaussr(SEXP X, SEXP Derivative); 
+  SEXP WMr(SEXP X, SEXP Nu, SEXP Derivative, SEXP Factor);
+  SEXP logWMr(SEXP X, SEXP Nu1, SEXP Nu2, SEXP Factor);
+
   SEXP SolvePosDef(SEXP M, SEXP rhs, SEXP logdet);
   SEXP CholPosDef(SEXP M);
+  
 
   SEXP RFoptions(SEXP options);
   void RelaxUnknownRFoption(int *relax);
+
+  SEXP attachRFoptionsUtils();
+  SEXP detachRFoptionsUtils();
+
+  SEXP sortX(SEXP Data, SEXP From, SEXP To, SEXP NAlast);
+  SEXP orderX(SEXP Data, SEXP From, SEXP To, SEXP NAlast);
+
+  void sleepMicro(int *micro);
+  void sleepMilli(int *milli);
+  void hostname(char **h, int *i);
+  void pid(int *i);
+  SEXP getChar();
+
+
+  
+  void Ordering(double *d, int *len, int *dim, int *pos);
+
 }
+
 
 #endif 
  

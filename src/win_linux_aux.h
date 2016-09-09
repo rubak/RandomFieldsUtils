@@ -1,5 +1,6 @@
 
 
+
 /*
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
@@ -23,11 +24,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 
+#ifndef WIN_LINUX_AUX_H
+#define WIN_LINUX_AUX_H 1
 
-#ifndef rfutils_struve_H
-#define rfutils_struve_H 1
+extern "C" void sleepMilli(int *milli);
+extern "C" void sleepMicro(int *milli);
+extern "C" void pid(int *i);
+extern "C" void hostname(char **h, int *i);
 
-double StruveH(double x, double nu);
-double StruveL(double x, double nu, bool expScaled);
 
-#endif
+#endif /* WIN_LINUX_AUX_H */
+
+

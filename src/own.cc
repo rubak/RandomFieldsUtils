@@ -1,11 +1,8 @@
-
-
 /*
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
-
- Copyright (C) 2015 Martin Schlather
+ Copyright (C) 2015 -- Martin Schlather, Reinhard Furrer
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,12 +19,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
+#include <R.h>
+#include <Rinternals.h>
+#include "General_utils.h"
+#include "own.h"
 
 
-#ifndef rfutils_struve_H
-#define rfutils_struve_H 1
+// local
+char ERRMSG[LENERRMSG], MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG];
 
-double StruveH(double x, double nu);
-double StruveL(double x, double nu, bool expScaled);
+// globally needed
+errorloc_type ERROR_LOC="";
+errorstring_type ERRORSTRING;
 
-#endif

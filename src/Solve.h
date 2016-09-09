@@ -25,10 +25,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef rfutils_solve_H
 #define rfutils_solve_H 1
 
-#include "Options_utils.h"
+
+typedef enum InversionMethod { 
+  Cholesky, SVD, Eigen, Sparse,
+  NoInversionMethod, // last user available method
+  QR, LU, // currently not propagated
+  NoFurtherInversionMethod, // local values
+  direct_formula, 
+  Diagonal // always last one!
+} InversionMethod;
 
 
-
+#define SOLVE_METHODS 3
 typedef struct solve_storage {
   int SICH_n, MM_n, workspaceD_n, workspaceU_n, VT_n, U_n, D_n, 
     iwork_n, work_n, w2_n, ipiv_n, workLU_n, pivot_n,
@@ -48,45 +56,6 @@ typedef struct solve_storage {
 
 
 
-#define CMALLOC(WHICH, N, TYPE)	{				 \
-    int _N_ = N;						 \
-    if (pt->WHICH##_n < _N_) {					 \
-      if (pt->WHICH##_n < 0) BUG;				 \
-      FREE(pt->WHICH);						 \
-      pt->WHICH##_n = _N_;						\
-	if ((pt->WHICH = (TYPE *) CALLOC(_N_, sizeof(TYPE))) == NULL)	\
-	  return ERRORMEMORYALLOCATION;					\
-    } else {								\
-      assert( (_N_ > 0 && pt->WHICH != NULL) || _N_ == 0);		\
-      for (int iii=0; iii<_N_; pt->WHICH[iii++] = 0);			\
-    }									\
-  }									\
-    TYPE VARIABLE_IS_NOT_USED *WHICH = pt->WHICH
 
-
-//  sqrtPosDef nutzt pt->U fuer das Ergebnis		
-#define FREEING(WHICH)						\
-  assert(int VARIABLE_IS_UNUSED *_i = WHICH);	\
-  if (pt->WHICH != NULL && pt->WHICH != result) {	\
-    UNCONDFREE(pt->WHICH);						\
-    pt->WHICH##_n = 0;						\
-  }						
- 					       
-#define FREEING_INT(WHICH)			\
-  assert(int VARIABLE_IS_UNUSED *_i = WHICH);	\
-  if (pt->WHICH != NULL) {			\
-    UNCONDFREE(pt->WHICH);				\
-    pt->WHICH##_n = 0;				\
-  }						
- 
-
-SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, bool sqrtOnly, solve_param *);
-
-int doPosDef(double *M, int size, bool posdef,
-		double *rhs, int rhs_cols, double *result,
-		double *logdet, 
-		bool sqrtOnly,
-		solve_storage *pt, solve_param *
-		);
 
 #endif

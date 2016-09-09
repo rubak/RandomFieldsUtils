@@ -45,6 +45,7 @@ Else the Cholesky decomposition is tried.
 \keyword{math}
 \examples{
 
+if (FALSE) {
 ## This examples shows that 'cholPosDef' can be much faster
 ## than 'chol'
 
@@ -62,6 +63,7 @@ unix.time(C2 <- chol(M))
 unix.time(C1 <- cholPosDef(M))
 range(C2 - C1)
 stopifnot(all(abs(C2 - C1) < 10^{-9}))
+}
 
 } 
 

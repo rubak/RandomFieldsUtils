@@ -12,6 +12,6 @@ bibentry(bibtype="Manual",
              person("Martin", "Kroll", role="ctb")),
          year = year,
          note = note,
-         url = "http://CRAN.R-project.org/package=RandomFieldsUtils"
+         url = "https://cran.r-project.org/package=RandomFieldsUtils"
          )
 

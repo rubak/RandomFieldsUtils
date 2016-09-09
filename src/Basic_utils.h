@@ -29,17 +29,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define basic_rfutils_h 1
 #include <R.h>
 
+#ifdef _OPENMP
 #define DO_PARALLEL 1
+#else
+#ifdef DO_PARALLEL
+#undef DO_PARALLEL
+#endif
+#endif
 
 #ifndef showfree
 #define showfree !true 
 #define DOPRINT true
-// #define SCHLATHERS_MACHINE 1
+// 
+// 1
 // // 1
-// #define HIDE_UNUSED_VARIABLE 1
+// // 1
 #endif
 
-extern"C" {
+extern "C" {
   // Fortran Code by Reinhard Furrer
   void spamcsrdns_(int*, double *, int *, int*, double*);
   void spamdnscsr_(int*, int*, double *, int*, double*, int*, int*, double*);

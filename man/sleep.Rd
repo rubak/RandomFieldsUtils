@@ -1,0 +1,22 @@
+\name{sleep.milli}
+\alias{sleep.milli}
+\alias{sleep.micro}
+\alias{sleep}
+\title{Sleep}
+\description{
+  Process sleeps for a given amount of time
+}
+\usage{
+sleep.milli(n)
+sleep.micro(n)
+}
+\arguments{
+  \item{n}{integer. sleeping time units}
+}
+\value{
+  No value is returned.
+}
+\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
+}
+\keyword{utilities}
+\keyword{misc}

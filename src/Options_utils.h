@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <R.h>
 #include <Rdefines.h>
 #include "Basic_utils.h"
+#include "Solve.h"
 
 
 #define R_PRINTLEVEL 1
@@ -57,15 +58,6 @@ typedef struct basic_pxaram {
       }
 
 
-
-typedef enum InversionMethod { 
-  Cholesky, SVD, Sparse,
-  NoInversionMethod, // last user available method
-  QR, LU, // currently not propagated
-  NoFurtherInversionMethod, // local values
-  direct_formula, 
-  Diagonal // always last one!
-} InversionMethod;
 #define nr_InversionMethods ((int) Diagonal + 1)
 #define nr_user_InversionMethods ((int) NoInversionMethod + 1)
 extern const char * InversionNames[nr_InversionMethods];
@@ -74,29 +66,24 @@ extern const char * InversionNames[nr_InversionMethods];
 #define PIVOT_MMD 1
 #define PIVOT_RCM 2
 #define SOLVE_SVD_TOL 3
-#define SOLVE_METHODS 3
-#define solveN 11
+#define solveN 12
 typedef struct solve_param {
   usr_bool sparse;
-  double spam_tol, spam_min_p, svd_tol;
+  double spam_tol, spam_min_p, svd_tol, eigen2zero;
   InversionMethod Methods[SOLVE_METHODS];
   int spam_min_n, spam_sample_n, spam_factor,
     pivot, max_chol, max_svd;
   //  bool tmp_delete;
 } solve_param;
 #ifdef SCHLATHERS_MACHINE
-#define svd_tol_start -1e-08
+#define svd_tol_start 1e-08
 #else
-#define svd_tol_start -1
+#define svd_tol_start 0
 #endif
 #define solve_START				\
-  { Nan, DBL_EPSILON,	0.8, svd_tol_start,			\
+  { Nan, DBL_EPSILON,	0.8, svd_tol_start, 1e-12,	\
       {NoInversionMethod, NoInversionMethod},		\
-      400, 500, 4294967, PIVOT_MMD, 1000000000, 1000000000}
-#define chol_param_default				\
-  { False, DBL_EPSILON,	0.8, svd_tol_start,			\
-      {Cholesky, Cholesky},						\
-      400, 500, 4294967, PIVOT_NONE, 1000000000, 1000000000}
+      400, 500, 4294967, PIVOT_MMD, 16384, 10000}
 extern const char * solve[solveN];
 
 

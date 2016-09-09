@@ -1122,7 +1122,7 @@ c-----------------------------------------------------------------------
 c
 c     local variables.
 c
-      integer ibeg, iend, imid, k
+      integer ibeg, iend, imid
 c
 c     initialization 
 c
@@ -1203,7 +1203,7 @@ c-----------------------------------------------------------------------
       subroutine aemub (nrow,ncol,a,ja,ia,amask,jmask,imask,
      *                  c,jc,ic,iw,aw,nzmax,ierr)
 c---------------------------------------------------------------------
-      real*8 a(*),c(*),amask(*),aw(ncol)
+      real(8) a(*),c(*),amask(*),aw(ncol)
       integer ia(nrow+1),ja(*),jc(*),ic(nrow+1),jmask(*),imask(nrow+1)
       logical iw(ncol)
 c-----------------------------------------------------------------------
@@ -1296,7 +1296,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine aemub1 (nrow,ncol,a,ja,ia,b,jb,ib,c,jc,ic,
      *     nzmax,ierr)
-      real*8 a(*), b(*), c(*)
+      real(8) a(*), b(*), c(*)
       integer ja(*),jb(*),jc(*),ia(nrow+1),ib(nrow+1),ic(nrow+1)
 c-----------------------------------------------------------------------
 c A modification of aplsb by Pin Ng on 6/12/02 to
@@ -1402,7 +1402,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine aedib (nrow,ncol,job,a,ja,ia,b,jb,ib,
      *     c,jc,ic,nzmax,iw,aw,ierr)
-      real*8 a(*), b(*), c(*), aw(ncol) 
+      real(8) a(*), b(*), c(*), aw(ncol) 
       integer ja(*),jb(*),jc(*),ia(nrow+1),ib(nrow+1),ic(nrow+1),
      *     iw(ncol)
 c-----------------------------------------------------------------------
@@ -1497,7 +1497,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine aeexpb (nrow,ncol,job,a,ja,ia,b,jb,ib,
      *     c,jc,ic,nzmax,iw,aw,ierr)
-      real*8 a(*), b(*), c(*), aw(ncol) 
+      real(8) a(*), b(*), c(*), aw(ncol) 
       integer ja(*),jb(*),jc(*),ia(nrow+1),ib(nrow+1),ic(nrow+1),
      *     iw(ncol)
 c-----------------------------------------------------------------------

@@ -56,12 +56,16 @@ I0L0(x)
 }
 \examples{
 
+if (FALSE) {
+
 x <- seq(1, 2, 0.1)
 struveH(x, 0)
 struveH(x, 1)
 
 I0L0(x) - (besselI(x, nu=0) - struveL(x, 0)) 
 besselI(x, nu=1) - struveL(x, 1) ## cf. Abramovitz & Stegun, table 12.1
+
+}
 
 }
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
