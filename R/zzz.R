@@ -4,7 +4,7 @@
 }
 
 .onAttach <- function (lib, pkg) {
-   packageStartupMessage("This is RandomFieldsUtils Version: 0.3.2");
+   packageStartupMessage("This is RandomFieldsUtils Version: 0.3.3");
 }
 
 .onDetach <- function(lib){

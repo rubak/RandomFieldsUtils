@@ -14,4 +14,3 @@ bibentry(bibtype="Manual",
          note = note,
          url = "https://cran.r-project.org/package=RandomFieldsUtils"
          )
-
