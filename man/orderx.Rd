@@ -46,8 +46,8 @@ orderx(x, from=1, to=length(x), decreasing=FALSE, na.last = NA)
 \examples{
 x <- runif(10^6)
 k <- 10
-unix.time(y<-order(x)[1:k])
-unix.time(z<-orderx(x, from=1, to=k)) ## much faster
+system.time(y<-order(x)[1:k])
+system.time(z<-orderx(x, from=1, to=k)) ## much faster
 stopifnot(all(x[y ]== x[z])) ## same result
 }
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}

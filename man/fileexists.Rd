@@ -1,6 +1,7 @@
 \name{FileExists}
 \alias{FileExists}
 \alias{LockRemove}
+\alias{LockFile}
 
 \title{Files}
 \description{
@@ -11,7 +12,7 @@
 }
 \usage{
    FileExists(file, printlevel=RFoptions()$basic$printlevel)
-
+   LockFile(file, printlevel=RFoptions()$basic$printlevel)
    LockRemove(file)
 }
 \arguments{
@@ -27,6 +28,9 @@
   has tried to create the same file in the same instance.  In this case
   \code{FileExists} returns for at least one of the processes that
   \code{file}.lock has already been created.
+
+  \code{LockFile} is the same as \code{FileExists} except that it does
+  not check whether \code{file} already exists.
 }
 
 \value{

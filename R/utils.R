@@ -34,6 +34,24 @@ hostname<-function(){.C(C_hostname, h=paste(seq(0,0,l=100), collapse=""),
 
 pid <- function() {.C(C_pid, i=integer(1))$i}
 
+LockFile <- function(file, printlevel=RFoptions()$basic$printlevel) {
+  PL_ERRORS <- 6
+  lock.ext <- ".lock"
+  LockFile <- paste(file, lock.ext, sep="")
+  if (file.exists(LockFile)) { #2.
+    if (printlevel>=PL_ERRORS ) cat("'",file,"' is locked.\n");
+    return(2);
+  }
+  PID <- pid();
+  write(file=LockFile,c(PID,hostname()),ncolumns=2,append=TRUE); #3.a.
+  Pid <- matrix(scan(LockFile,what=character(0), quiet=TRUE),nrow=2)
+  if ((sum(Pid[1,]==PID)!=1) || (sum(Pid[1,]>PID)>0)){ #3.b.
+    if (printlevel>PL_ERRORS )
+      cat("Lock file of '", file, "' is knocked out.\n");
+    return(3);
+  }
+  return(0);
+}
 
 FileExists <- function(file, printlevel=RFoptions()$basic$printlevel) {
     ## for parallel simulation studies: the same data output file should not
@@ -46,26 +64,12 @@ FileExists <- function(file, printlevel=RFoptions()$basic$printlevel) {
   ##      time it may happen that in case of simulatenous creation of file.lock
   ##      no process will do the work...(then the lock file will rest.)
   PL_ERRORS <- 6
-  lock.ext <- ".lock";
   if (file.exists(file)) { #1.
     if (printlevel>=PL_ERRORS ) cat("'", file, "' already exists.\n");
     return(1)
-  } else { 
-    LockFile <- paste(file, lock.ext, sep="")
-    if (file.exists(LockFile)) { #2.
-      if (printlevel>=PL_ERRORS ) cat("'",file,"' is locked.\n");
-      return(2);
-    }
-    PID <- pid();
-    write(file=LockFile,c(PID,hostname()),ncolumns=2,append=TRUE); #3.a.
-    Pid <- matrix(scan(LockFile,what=character(0), quiet=TRUE),nrow=2)
-    if ((sum(Pid[1,]==PID)!=1) || (sum(Pid[1,]>PID)>0)){ #3.b.
-      if (printlevel>PL_ERRORS )
-        cat("Lock file of '", file, "' is knocked out.\n");
-      return(3);
-    }
+  } else {
+    return(LockFile(file, printlevel=printlevel))
   }
-  return(0);
 }
 
 LockRemove <- function(file) {
@@ -120,13 +124,17 @@ Print <- function(..., digits=6, empty.lines=2) { #
 
 
 
-cholPosDef <- function(a) {
- # return(.Call("CholPosDef", a, PACKAGE="RandomFieldsUtils"))
-  .Call(C_CholPosDef, a)
+cholx <- function(a) {
+ # return(.Call("Cholesky", a, PACKAGE="RandomFieldsUtils"))
+  .Call(C_Chol, a)
  }
 
+cholPosDef <- function() stop("please use 'cholesky' instead of 'cholPosDef'.")
 
 solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
+  stop("please use 'solvex' instead of 'solvePosDef'.")
+}
+solvex <- function(a, b=NULL, logdeterminant=FALSE) {
   if (logdeterminant) {
     logdet <- double(1)
     res <- .Call(C_SolvePosDef, a, b, logdet)

@@ -880,7 +880,7 @@ c-----------------------------------------------------------------------
          do  j=1, ncol
             if (.not.(dabs(dns(i,j)) .le. eps)) then 
                ja(next) = j
-c             write(*,*) next,dns(i,j), eps, i, j
+c            write(*,*) next,dns(i,j), eps, i, j
                a(next) = dns(i,j)
                next = next+1
             endif

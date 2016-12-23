@@ -1,13 +1,15 @@
-\name{chol}
-\alias{cholPosDef}
+\name{Cholesky}
+\alias{cholesky}
 \alias{chol}
+\alias{cholx}
+\alias{cholPosDef}
 \title{Cholesky Decomposition of Positive Definite Matrices}
 \description{
   This function calculates the Choleskey decomposition of a matrix.
 }
 
 \usage{
-cholPosDef(a)
+cholx(a)
 %, sparse=NA, method=-1)
 }
 \arguments{
@@ -46,7 +48,7 @@ Else the Cholesky decomposition is tried.
 \examples{
 
 if (FALSE) {
-## This examples shows that 'cholPosDef' can be much faster
+## This examples shows that 'cholesky' can be much faster
 ## than 'chol'
 
 ## creating a covariance matrix for a temporal process
@@ -59,8 +61,8 @@ size <- 600
 x <- runif(size, 0, size / 10)
 M <- covmatrix((1 - x) * (x < 1) , x) ## Askey's model of covariance
 b <- seq(0, 1, len=size)
-unix.time(C2 <- chol(M))
-unix.time(C1 <- cholPosDef(M))
+system.time(C2 <- chol(M))
+system.time(C1 <- cholx(M))
 range(C2 - C1)
 stopifnot(all(abs(C2 - C1) < 10^{-9}))
 }

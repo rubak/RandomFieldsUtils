@@ -480,3 +480,49 @@ SEXP logWMr(SEXP X, SEXP Nu1, SEXP Nu2, SEXP Factor) {
   UNPROTECT(1);					
   return(Ans);
 }
+
+
+
+
+/////////////////////////////////////
+// not documente yet:
+
+
+
+
+double incomplete_gamma(double start, double end, double s) {
+  // int_start^end t^{s-1} e^{-t} \D t
+
+  // print("incomplete IN s=%f e=%f s=%f\n", start, end, s);
+
+  double
+    v = 0.0, 
+    w = 0.0;
+
+  if (s <= 1.0) {
+    if (start == 0.0) return RF_NAN;
+  }
+  
+  double 
+    e_start = exp(-start),
+    e_end = exp(-end),
+    power_start = pow(start, s),      
+    power_end = end < RF_INF ? pow(end, s) : 0,
+    factor = 1.0; 
+  
+  
+  while (s < 0.0) {
+    factor /= s;    
+    v +=  factor * (power_end * e_end - power_start * e_start);
+    power_start *= start;
+    if (end < RF_INF) power_end *= end;
+    s += 1.0;
+  }
+  
+  w = pgamma(start, s, 1.0, 0, 0);  // q, shape, scale, lower, log
+  if (R_FINITE(end)) w -= pgamma(end, s, 1.0, 0, 0);
+
+  //  print("incomplete s=%f e=%f s=%f v=%f g=%f w=%f\n", start, end, s, v, gammafn(s), w);
+
+  return v + gammafn(s) * w * factor;
+}

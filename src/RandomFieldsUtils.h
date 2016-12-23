@@ -41,7 +41,7 @@ extern "C" {
   SEXP logWMr(SEXP X, SEXP Nu1, SEXP Nu2, SEXP Factor);
 
   SEXP SolvePosDef(SEXP M, SEXP rhs, SEXP logdet);
-  SEXP CholPosDef(SEXP M);
+  SEXP Chol(SEXP M);
   
 
   SEXP RFoptions(SEXP options);

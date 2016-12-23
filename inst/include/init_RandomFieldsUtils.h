@@ -161,6 +161,7 @@ extern "C" {
 	   double *, rhs, int, rhs_cols, double *, result, double*, logdet, 
 	   solve_storage*, PT)
   DECLARE3(int, sqrtPosDef, double *, M, int, size, solve_storage *, pt)
+  DECLARE3(int, sqrtPosDefFree, double *, M, int, size, solve_storage *, pt)
   DECLARE3(int, sqrtRHS, solve_storage *, pt, double*, RHS, double *, res)
   DECLARE2(int, invertMatrix, double *, M, int, size)
   DECLARE2(double, StruveH, double, x, double, nu)

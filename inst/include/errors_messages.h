@@ -57,6 +57,8 @@ extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
 extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields 
 extern errorloc_type ERROR_LOC;
 
+#define ERRMSG(X) if (PL>=PL_ERRORS){errorMSG(X,MSG); PRINTF("error: %s%s\n",ERROR_LOC,MSG);}
+
 
 #define RFERROR error
 #define ERR(X) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); RFERROR(ERRMSG);}
@@ -80,6 +82,9 @@ extern errorloc_type ERROR_LOC;
     RFERROR(MSG2);}
 #define ERR7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
     sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
+    RFERROR(MSG2);}
+#define ERR8(X,Y,Z,A,B,C,D,E,F) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
+    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E, F);			\
     RFERROR(MSG2);}
 #define FERR(X) strcpy(ERRORSTRING, X); DEBUGINFOERR
 #define SERR(X) { FERR(X); return ERRORM;}
@@ -132,5 +137,6 @@ extern errorloc_type ERROR_LOC;
 #define WARN7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
     sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
     RFWARNING(MSG2);}
+
 
 #endif

@@ -1,10 +1,12 @@
 \name{solve}
 \alias{solvePosDef}
+\alias{solvex}
 \alias{solve}
 \title{Solve a System of Equations for Positive Definite Matrices}
 \description{
   This function solves the equality \eqn{a x = b} for \eqn{x}
-  where \eqn{a} is a positive definite matrix and \eqn{b} is a vector or a
+  where \eqn{a} is a \bold{positive definite}
+  matrix and \eqn{b} is a vector or a
   matrix. It is slightly faster than the inversion by the
   \code{\link[base]{chol}}esky decomposition and clearly faster than
   \code{\link[base]{solve}}.
@@ -13,7 +15,7 @@
 }
 
 \usage{
-solvePosDef(a, b=NULL, logdeterminant=FALSE)
+solvex(a, b=NULL, logdeterminant=FALSE)
 %, sparse=NA, method=-1)
 }
 \arguments{
@@ -24,7 +26,7 @@ solvePosDef(a, b=NULL, logdeterminant=FALSE)
   \item{b}{
     a numeric or complex vector or matrix giving the right-hand
     side(s) of the linear system.  If missing, \code{b} is taken to be
-    an identity matrix and \code{solvePosDef} will return the inverse of
+    an identity matrix and \code{solvex} will return the inverse of
     \code{a}.
   }
   \item{logdeterminant}{logical.
@@ -70,8 +72,7 @@ If it fails, the eigen value decomposition is tried.
 \keyword{math}
 \examples{
 if (FALSE) {
-## This examples shows that 'solvePosDef' can be much faster
-## than 'solve'
+## This examples shows that 'solvex' can be much faster than 'solve'
 
 ## creating a covariance matrix for a temporal process
 covmatrix <- function(model, x) {
@@ -83,8 +84,8 @@ size <- 600
 x <- runif(size, 0, size / 10)
 M <- covmatrix((1 - x) * (x < 1) , x) ## Askey's model of covariance
 b <- seq(0, 1, len=size)
-unix.time(inv2 <- solve(M, b))
-unix.time(inv1 <- solvePosDef(M, b)) ## much faster in this case
+system.time(inv2 <- solve(M, b))
+system.time(inv1 <- solvex(M, b)) ## much faster in this case
 range(inv2 - inv1)
 stopifnot(all(abs(inv2 - inv1) < 10^{-9}))
 

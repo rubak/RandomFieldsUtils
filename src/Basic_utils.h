@@ -37,11 +37,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #endif
 
+#define MULTIMINSIZE(S) ((S) > 20)
+// #define MULTIMINSIZE(S) false
+// #define MULTIMINSIZE(S) true
+
+
+
 #ifndef showfree
 #define showfree !true 
 #define DOPRINT true
-// 
-// 1
+// // 1
 // // 1
 // // 1
 #endif

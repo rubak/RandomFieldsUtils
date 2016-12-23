@@ -47,8 +47,8 @@ sortx(x, from=1, to=length(x), decreasing=FALSE, na.last = NA)
 \examples{
 x <- runif(10^6)
 k <- 10
-unix.time(y<-sort(x)[1:k])
-unix.time(z<-sortx(x, from=1, to=k)) ## much faster
+system.time(y<-sort(x)[1:k])
+system.time(z<-sortx(x, from=1, to=k)) ## much faster
 stopifnot(all(y == z)) ## same result
 }
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}

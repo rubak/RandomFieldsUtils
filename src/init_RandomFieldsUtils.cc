@@ -76,7 +76,7 @@ static const R_CMethodDef cMethods[]  = {
 #define CALLDEF_DO(name, n) {#name, (DL_FUNC) &name, n}
 static R_CallMethodDef callMethods[]  = {
   // in die respectiven C-Dateien muss RandomFieldsUtils.h eingebunden sein
-  CALLDEF_DO(CholPosDef, 1),
+  CALLDEF_DO(Chol, 1),
   CALLDEF_DO(SolvePosDef, 3),
   CALLDEF_DO(struve, 4),
   CALLDEF_DO(I0ML0, 1),
@@ -111,6 +111,7 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
   CALLABLE(invertMatrix);
   
   CALLABLE(sqrtPosDef); 
+  CALLABLE(sqrtPosDefFree); 
   CALLABLE(sqrtRHS);
 
   CALLABLE(StruveH);

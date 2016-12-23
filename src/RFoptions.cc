@@ -175,6 +175,7 @@ SEXP getRFoptions() {
   sublist = (SEXP *) MALLOC(sizeof(SEXP) * totalN);
   subnames = (SEXP *) MALLOC(sizeof(SEXP) * totalN);
   for (ListNr =0; ListNr<NList; ListNr++) {
+    //printf("ListNr %d\n", ListNr);
     trueprefixN = AllprefixN[ListNr];    
     for (i=0; i<trueprefixN; i++, itot++) {   
       if (strcmp(Allprefix[ListNr][i], OBSOLETENAME) == 0) continue;
@@ -226,7 +227,7 @@ void splitAndSet(SEXP el, char *name, bool isList) {
 
 
 SEXP RFoptions(SEXP options) {
-  int i, j, lenlist, lensub;
+   int i, j, lenlist, lensub;
   SEXP el, list, sublist, names, subnames;
   char *name, *pref;
   bool isList = false;
@@ -239,12 +240,13 @@ SEXP RFoptions(SEXP options) {
   // PRINTF("start %f\n", GLOBAL.gauss.exactness);
   options = CDR(options); /* skip 'name' */
   if (options == R_NilValue) {
-    //PRINTF("before get %f\n", 1.);
+    //    printf("before get %f\n", 1.);
     return getRFoptions(); 
   }
 
   name = (char*) (isNull(TAG(options)) ? "" : CHAR(PRINTNAME(TAG(options))));
   if ((isList = strcmp(name, "LIST")==0)) {   
+    //printf("isList\n");
     list = CAR(options);
     if (TYPEOF(list) != VECSXP)
       ERR1("'LIST' needs as argument the output of '%s'", RFOPTIONS);
@@ -254,7 +256,7 @@ SEXP RFoptions(SEXP options) {
       int len;
       pref = (char*) CHAR(STRING_ELT(names, i));  
 
-      //   print("%d %s warn.ambig=%d\n", i, pref, GLOBAL.warn.ambiguous);
+      //       print("%d %s\n", i, pref);
 
       sublist = VECTOR_ELT(list, i);
       len = strlen(pref);
@@ -285,21 +287,23 @@ SEXP RFoptions(SEXP options) {
   } else {
     for(i = 0; options != R_NilValue; i++, options = CDR(options)) {
 
-      //      printf("set opt i=%d\n", i);
+      //           printf("set opt i=%d\n", i);
 
       el = CAR(options);
       name = (char*) (isNull(TAG(options)) ? "" :CHAR(PRINTNAME(TAG(options))));
       splitAndSet(el, name, isList);
     }
-    //       print("end2 %f\n", GLOBAL.gauss.exactness);
+    //         print("end2\n");
   }
 
 
   //printf("Nlist = %d\n", NList);
   for (i=0; i<NList; i++) if (finalparam[i] != NULL) {
-      //printf("%d %ld \n", i, (long) finalparam[i]);
+      //      printf("%d %ld \n", i, (long) finalparam[i]);
       finalparam[i]();
     }
+
+  // printf("END\n");
 
   GLOBAL.basic.asList = true;
   return(R_NilValue);

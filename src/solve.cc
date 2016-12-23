@@ -371,6 +371,9 @@ int doPosDef(double *M, int size, bool posdef,
     }
     if (!random_sample || sparse == True) {
       int diag_nnzA = 0;
+      //#ifdef DO_PARALLEL
+      //#pragma omp parallel for schedule(dynamic) reduction(+:nnzA,diag_nnzA)
+      //#endif
       for (int i=0; i<size; i++) {
 	int end = i * sizeP1;
 	long j;
@@ -415,8 +418,8 @@ int doPosDef(double *M, int size, bool posdef,
       }
     }
   }
-
   
+    
   if (diag) {
     pt->method = Diagonal;
     if (PL>=PL_STRUCTURE) PRINTF("dealing with diagonal matrix\n");
@@ -483,7 +486,7 @@ int doPosDef(double *M, int size, bool posdef,
 
   // cholesky, QR, SVD, Eigen, LU always destroy original matrix M
   bool gesichert;
-  if ((gesichert = rhs_cols==0 && result == NULL)) {
+  if ((gesichert = rhs_cols==0 && result == NULL)) {    
     if ((gesichert = (SOLVE_METHODS > sparse + 1 &&
 		      Meth[sparse + 1] != Meth[sparse] &&
 		      Meth[sparse + 1] != NoFurtherInversionMethod)
@@ -529,29 +532,22 @@ int doPosDef(double *M, int size, bool posdef,
       if (m > sparse) {      
 	MEMCOPY(MPT, SICH, sizeSq * sizeof(double));
       }
-    } else if (pt->method != Sparse) {
+    } else if (pt->method != Sparse && MPT != M) {
       MEMCOPY(MPT, M, sizeSq * sizeof(double));
     }
     
     switch(pt->method) {
     case Cholesky : // cholesky       
-      
       if (!posdef) CERR("Cholesky needs positive definite matrix");
       if (size > sp->max_chol)
 	CERR("matrix too large for Cholesky decomposition.");
       
-      //      if (Sp->cores <= 1 && false) {
-      //	F77_CALL(dpotrf)("Upper", &size, MPT, &size, &err);  
-      //      } else 
+      // cmp for instance http://stackoverflow.com/questions/22479258/cholesky-decomposition-with-openmp
 
+      //printf("multicore = %d cores=%d\n", GLOBAL.basic.cores);	
       
+      err = NOERROR;	  	
       {
-	bool VARIABLE_IS_NOT_USED multicore = (GLOBAL.basic.cores > 1);
-        // cmp for instance http://stackoverflow.com/questions/22479258/cholesky-decomposition-with-openmp
-
-	//printf("multicore = %d cores=%d\n", multicore, GLOBAL.basic.cores);	
-
-	err = NOERROR;	  	
 	double *A = MPT;
 	for (int i=0; i<size; i++, A += size) {
 	  double scalar;	  
@@ -565,9 +561,8 @@ int doPosDef(double *M, int size, bool posdef,
 	  //	  double invsum = 1.0 / A[i];
 	  double sum = A[i];
 	  double *endB = MPT + sizeSq; 
-
 #ifdef DO_PARALLEL
-#pragma omp parallel for if (multicore)
+#pragma omp parallel for if (MULTIMINSIZE(size - i))
 #endif
 	  for (double *B=MPT + (i+1) * size; B<endB; B+=size) {
 	    double scalar2;
@@ -578,9 +573,6 @@ int doPosDef(double *M, int size, bool posdef,
 	}
       }
 
-
- 
-  
 	// see also http://www.wseas.us/e-library/conferences/2013/Dubrovnik/MATHMECH/MATHMECH-25.pdf
 	// http://ac.els-cdn.com/0024379586901679/1-s2.0-0024379586901679-main.pdf?_tid=bc5f2c8c-3117-11e6-80e1-00000aab0f02&acdnat=1465789050_ebfe7248d7a126bd2a301e97a3dbf914
 	if (false) {
@@ -590,8 +582,6 @@ int doPosDef(double *M, int size, bool posdef,
 	int isize=0;
 	for (int i=0; i<size; i++, isize += size) {
 	  double *A = MPT + isize;
-	  
-	  // #pragma o mp parallel for -- warum funktioniert das nicht??
 	  for (int j=0; j<i; j++) {
 	    int jsize = j * size;
 	    double 
@@ -617,9 +607,7 @@ int doPosDef(double *M, int size, bool posdef,
 	//	  o mp_set_num_threads(Sp->cores);
 	int isize=0;
 	for (int i=0; i<size; i++, isize += size) {
-	  //#pragma o mp parallel for
 	  double *A = MPT + isize;
-	  //#pragma o mp parallel for
 	  for (int j=0; j<=i; j++) {
 	    int jsize = j * size;
 	    double 
@@ -647,9 +635,6 @@ int doPosDef(double *M, int size, bool posdef,
 	    int ispalte = i * size;
 	    MPT[k + ispalte] *= f;
 	  }
-#ifdef DO_PARALLEL
-#pragma omp parallel for 
-#endif
 	  for (int j = k + 1; j<size; j++) {
 	    int jspalte = j * size;
 	    double factor = MPT[k + jspalte];
@@ -703,7 +688,7 @@ int doPosDef(double *M, int size, bool posdef,
       } // err == NOERROR
       
       if (err != NOERROR) {	
-	CERR1("Cholesky decomposition failed with err=%d of 'dpotr*'. Probably matrix not strictly positive definite.\n", err);
+	CERR1("Cholesky decomposition failed with err=%d. Probably matrix not strictly positive definite.\n", err);
       }
       
       if (PL >=  PL_DETAILSUSER) PRINTF("Cholesky decomposition successful\n");
@@ -1020,8 +1005,7 @@ int doPosDef(double *M, int size, bool posdef,
       F77_CALL(spamdnscsr)(&size, &size, M, &size, DD,
 			   cols, // ja
 			   rows, // ia
-			   &spam_tol); // create spam object
-     
+			   &spam_tol); // create spam object   
       pt->nsuper = 0;
  	// calculate spam_cholesky
       err = 4; // to get into the while loop
@@ -1284,7 +1268,7 @@ SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, bool sqrtOnly,
   
   UNPROTECT(1);
   if (err != NOERROR) {
-    const char *methname[] = {"solvePosDef", "cholPosDef"};
+    const char *methname[] = {"solvePosDef", "cholesky"};
     if (err != ERRORM) strcpy(ERRORSTRING, "");
     ERR2("'%s' failed: %s\n", methname[sqrtOnly], ERRORSTRING);
   }
@@ -1362,7 +1346,37 @@ int sqrtPosDef(double *M, int size,    // in out
   return err;
 }
 
-SEXP CholPosDef(SEXP M) {
+int sqrtPosDefFree(double *M, int size,    // in out
+	  solve_storage *pt     // in out
+	       ){
+  int err, sizeSq = size * size;
+  solve_param *sp = &(GLOBAL.solve);
+  InversionMethod *Meth = sp->Methods;
+
+  if (Meth[0] == NoInversionMethod || Meth[0] == NoFurtherInversionMethod ||
+      (Meth[1] != NoInversionMethod && Meth[1] != NoFurtherInversionMethod &&
+       Meth[1] != Meth[0]) ||
+      (Meth[0] != Cholesky && Meth[0] != Eigen && Meth[0] != SVD)
+      ) {
+     err = sqrtPosDef(M, size, pt);
+    Free(M);
+    return(err);
+  }
+
+  if (GLOBAL.solve.sparse == True) 
+    warning("package 'spam' is currently not used for simulation");
+  usr_bool sparse = GLOBAL.solve.sparse;
+  GLOBAL.solve.sparse = False;
+  assert(pt != NULL);
+  FREE(pt->result);
+  pt->result = M;
+  pt->result_n = sizeSq;
+  err = doPosDef(M, size, true, NULL, 0, NULL, NULL, true, pt, sp);
+  GLOBAL.solve.sparse = sparse;
+  return err;
+}
+
+SEXP Chol(SEXP M) {
   solve_param chol_param = GLOBAL.solve;
   chol_param.Methods[0] = chol_param.Methods[1] = Cholesky;
   chol_param.sparse = False; // currently does not work, waiting for Reinhard
@@ -1372,19 +1386,23 @@ SEXP CholPosDef(SEXP M) {
 
 int sqrtRHS(solve_storage *pt, double* RHS, double *result){
   assert(pt != NULL);
-  int k = 0,
+  int 
     size = pt->size;
   switch (pt->method) { 
   case direct_formula : 
   case Cholesky : {
     double *U = pt->result;
     assert(U != NULL);
-
-    for (int i=0; i<size; i++, k+=size) {
-      double *Uk = U + k,
-	dummy = 0.0;
-      for (int j=0; j<=i; j++) dummy += RHS[j] * Uk[j];
-      result[i] = (double) dummy; 
+#ifdef DO_PARALLEL
+#pragma omp parallel for schedule(dynamic) if (MULTIMINSIZE(size))
+#endif
+    for (int i=0; i<size; i++) {
+      double dummy, 
+	*Uk = U + i * size;
+      int iP1 = i + 1;
+      SCALAR_PROD(RHS, Uk, iP1, dummy);
+      //      printf("%d %f\n", i, dummy);
+      result[i] = dummy; 
     }
   }
     break;
@@ -1392,9 +1410,12 @@ int sqrtRHS(solve_storage *pt, double* RHS, double *result){
   case SVD : case Eigen : {  
     double *U = pt->result;
     assert(U != NULL);
+#ifdef DO_PARALLEL
+#pragma omp parallel for if (MULTIMINSIZE(size))
+#endif
     for (int i=0; i<size; i++){
       double dummy = 0.0;
-      k = i;
+      int k = i;
       for (int j=0; j<size; j++, k+=size) dummy += U[k] * RHS[j];
       result[i] = (double) dummy; 
     }

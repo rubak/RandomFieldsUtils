@@ -36,7 +36,7 @@ print.RFoptElmnt <- function(x, ...) {
 
 RFoptions <- function(..., no.readonly=TRUE) {
 ##  on.exit(.C("RelaxUnknownRFoption", FALSE))
-##  .C("RelaxUnknownRFoption", TRUE)
+  ##  .C("RelaxUnknownRFoption", TRUE)
   opt <- lapply(.External(C_RFoptions, ...),
                 function(x) {
                   class(x) <- "RFoptElmnt"
@@ -48,5 +48,10 @@ RFoptions <- function(..., no.readonly=TRUE) {
       opt$readonly <- list()
     }
   }
-  if (length(opt)==0) invisible(opt) else opt
+  if (length(opt)==0) {
+ #   O <- opt
+#    names(O) <- NULL
+#    opt <- c(opt, unlist(O))
+    invisible(opt)
+  } else opt
 }

@@ -40,7 +40,7 @@ extern int PL;
 
 #define LEN_OPTIONNAME 201
 
-#define basicN 6
+#define basicN 7
 // IMPORTANT: all names of basic must be at least 3 letters long !!!
 extern const char *basic[basicN];
 typedef struct basic_pxaram {

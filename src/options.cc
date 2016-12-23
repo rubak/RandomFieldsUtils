@@ -28,10 +28,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "General_utils.h"
 #include "kleinkram.h"
 #include "init_RandomFieldsUtils.h"
+#include <unistd.h>
+
+#define PLverbose 2
 
 // IMPORTANT: all names of general must be at least 3 letters long !!!
 const char *basic[basicN] =
-  { "printlevel", "skipchecks", "cPrintlevel", "seed",  "asList", "cores"};
+  { "printlevel", "skipchecks", "cPrintlevel", "seed",  "asList", "cores",
+    "verbose"};
 
 const char * solve[solveN] = 
   { "use_spam", "spam_tol", "spam_min_p", "svdtol",			
@@ -56,18 +60,22 @@ utilsparam GLOBAL = {
 
 
 
-
+#if defined(unix) || defined(__unix__) || defined(__unix)
+int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+#else
+int numCPU = MAXINT;
+#endif
 
 
 
 void setparameterUtils(int i, int j, SEXP el, char name[LEN_OPTIONNAME], 
-		       bool VARIABLE_IS_NOT_USED isList) {
+		       bool isList) {
   switch(i) {
   case 0: {// general
     basic_param *gp;
     gp = &(GLOBAL.basic);
     switch(j) {
-    case 0: {
+    case 0: {  // general options
       int threshold = 1000; //PL_ERRORS;
       gp->Rprintlevel = INT;
       PL = gp->Cprintlevel = 
@@ -79,12 +87,20 @@ void setparameterUtils(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
     case 3: gp->seed = Integer(el, name, 0, true); break;
     case 4: gp->asList = LOG; break;
     case 5: gp->cores = POSINT; 
+      if (gp->cores > numCPU) {
+	WARN1("number of 'cores' is set to %d", numCPU);
+	gp->cores = numCPU;
+      }
 #ifdef DO_PARALLEL      
       omp_set_num_threads(gp->cores);
 #else
       if (gp->cores != 1) 
 	ERR("The system does not allow for OpenMP: the value 1 is kept for'cores'.");
 #endif
+      break;
+    case 6 : if (!isList) {
+      PL = gp->Cprintlevel = gp->Rprintlevel = (LOG) * PLverbose;
+      }
       break;
     default: BUG;
     }}
@@ -138,6 +154,7 @@ void getparameterUtils(SEXP *sublist) {
     ADD(ScalarInteger(p->seed));    
     ADD(ScalarLogical(p->asList));   
     ADD(ScalarInteger(p->cores));    
+    ADD(ScalarLogical(p->Rprintlevel >= PLverbose))
    }
   
  i++; {

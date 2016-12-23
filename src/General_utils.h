@@ -52,6 +52,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #endif
 
+
+
+
+// not SCHLATHERS_MACHINE
 #ifndef SCHLATHERS_MACHINE
 #define INTERNAL SERR("Sorry. This functionality does not exist currently. There is work in progress at the moment by the maintainer.")
 #define assert(X) {}
@@ -67,9 +71,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define CALLOC calloc
 #define FREE(X) if ((X) != NULL) {free(X); (X)=NULL;}
 #define UNCONDFREE(X) {free(X); (X)=NULL;}
+#endif // not SCHLATHERS_MACHINE
 
-#else // SCHLATHERS_MACHINE
 
+
+// SCHLATHERS_MACHINE
+#ifdef SCHLATHERS_MACHINE 
+#define MAXALLOC 1e9
 
 // __extension__ unterdrueckt Fehlermeldung wegen geklammerter Argumente
 #define INTERNAL  \
@@ -89,38 +97,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL); memcpy(A,B,C); })
 //#define MEMCOPY(A,B,C) memory_copy(A, B, C)
-#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=668467200); malloc(X);})
-#define CALLOC(X, Y) __extension__({assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
-
-//#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=668467200); PRINTF("malloc for '"#X"' needs %ld bytes in %s, line %d\n", (long) (X), __FILE__, __LINE__);malloc(X);})
-//#define CALLOC(X,Y) __extension__ ({assert((X)>0 && (X)<=668467200); PRINTF("calloc for '"#X"' and '"#Y"' needs %ld * %ld = %ld bytes in %s, line %d \n", (long) (X), (long) (Y), (long)((X) * (Y)), __FILE__, __LINE__);calloc(X,Y);})
-
-
+#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=MAXALLOC); malloc(X);})
+#define CALLOC(X, Y) __extension__({assert((X)>0 && (X)<=MAXALLOC && (Y)>0 && (Y)<=64); calloc(X,Y);})
 #define FREE(X) { if ((X) != NULL) {if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}}
 #define UNCONDFREE(X) { if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}
-
 #endif // SCHLATHERS_MACHINE
 
 
-#ifdef RANDOMFIELDS_DEBUGGING
 
+
+#ifdef RANDOMFIELDS_DEBUGGING
 #undef MALLOC
-#define MALLOC(X) __extension__({DOPRINTF("(MALLOC %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9);malloc(X);})
+#define MALLOC(X) __extension__({DOPRINTF("(MALL %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9);malloc(X);})
 //
 #undef CALLOC
-#define CALLOC(X, Y) __extension__({DOPRINTF("(CALLOC %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (X)<1e8 && (Y)>0 && (Y)<=64); calloc(X,Y);})
+#define CALLOC(X, Y) __extension__({DOPRINTF("(CALL %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (X)<MAXALLOC && (Y)>0 && (Y)<=64); calloc(X,Y);})
 //#define MALLOC malloc
 //#define CALLOC calloc
 
-#define DEBUGINFOERR {							\
+#define DEBUGINFOERR {						\
     errorstring_type dummy_; strcpy(dummy_, ERRORSTRING);		\
     sprintf(ERRORSTRING, "%s (%s, line %d)\n", dummy_, __FILE__, __LINE__); \
   }
 #define DEBUGINFO DOPRINTF("(currently at  %s, line %d)\n", __FILE__, __LINE__)
 
 #else
-#define DEBUGINFO 
-#define DEBUGINFOERR
+#define DEBUGINFO
+#define DEBUGINFOERR if (PL >= PL_ERRORS) PRINTF("error: %s\n", ERRORSTRING);
 #endif
 
 
@@ -140,7 +143,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PL_SUBDETAILS 10
 
 #define MATERN_NU_THRES 100
-
 
 #endif
 

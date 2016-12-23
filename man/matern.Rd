@@ -53,7 +53,7 @@ equals
  K_\nu(s\sqrt{\nu}r)}{C(r) = 2^{1- \nu} \Gamma(\nu)^{-1} (s\sqrt{\nu}
  r)^\nu K_\nu(s\sqrt{\nu} r)}
 
-The function values are rather precise even for large \code{nu}.
+The function values are rather precise even for large values of \code{nu}.
 }
 
 
@@ -89,7 +89,7 @@ The function values are rather precise even for large \code{nu}.
 \seealso{
   \command{\link{nonstwm}}
   
- For more details see \command{\link[RandomFields]{RMmatern}}.
+ For more details see also \command{\link[RandomFields]{RMmatern}}.
 }
 
 
@@ -104,6 +104,5 @@ confirm <- function(x, y) stopifnot(all.equal(x, y))
 x <- 3
 confirm(matern(x, 0.5), exp(-x))
 confirm(matern(x, Inf), gauss(x/sqrt(2)))
-
 confirm(matern(1:2, c(0.5, Inf)), exp(-(1:2)))
 }
