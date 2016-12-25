@@ -74,7 +74,7 @@ const char * InversionNames[nr_InversionMethods] = {
  
 
 void solve_DELETE0(solve_storage *x) {
-     FREE(x->iwork);
+    FREE(x->iwork);
     FREE(x->ipiv);
 
     FREE(x->pivot);
@@ -107,6 +107,7 @@ void solve_DELETE0(solve_storage *x) {
     FREE(x->DD);
     FREE(x->w3);
     FREE(x->result);
+    FREE(x->to_be_deleted);
 }
 
 void solve_DELETE(solve_storage **S) {
@@ -124,7 +125,7 @@ void solve_NULL(solve_storage* x) {
     //
     x->SICH_n = x->MM_n = x->workspaceD_n = x->workspaceU_n = 
     x->VT_n = x->work_n = x->w2_n = x->U_n = x->D_n = x->workLU_n =
-    x->lnz_n =  x->DD_n = x->w3_n = x->result_n =
+    x->lnz_n =  x->DD_n = x->w3_n = x->result_n = 
     0;
   
   x->nsuper = x->nnzlindx = x->size = -1;
@@ -138,7 +139,7 @@ void solve_NULL(solve_storage* x) {
   
   x->SICH = x->MM = x->workspaceD = x->workspaceU = 
     x->VT = x->work = x->w2 = x->U = x->D = x->workLU = 
-     x->lnz = x->DD = x->w3 = x->result = NULL;
+     x->lnz = x->DD = x->w3 = x->result = x->to_be_deleted = NULL;
 }
 
 
@@ -431,8 +432,9 @@ int doPosDef(double *M, int size, bool posdef,
     if (rhs_cols == 0) {
       MEMCOPY(RESULT, M, sizeSq * sizeof(double));
       if (sqrtOnly) {
-	for (int i=0; i<sizeSq; i += sizeP1)
+	for (int i=0; i<sizeSq; i += sizeP1) {
 	  RESULT[i] = M[i] > 0.0 ? sqrt(M[i]) : 0.0;	
+	}
       } else 
 	for (int i=0; i<sizeSq; i += sizeP1) 
 	  RESULT[i] = M[i] <= 0.0 ? 0.0 : 1.0 / M[i];
@@ -446,6 +448,7 @@ int doPosDef(double *M, int size, bool posdef,
       for (int k=j=0; j<rhs_cols; j++)
 	for (int i=0; i<size; i++, k++) RESULT[k] = rhs[k] * MM[i];
     }
+    
     err = NOERROR;
     goto ErrorHandling;
   }
@@ -1175,9 +1178,10 @@ int doPosDef(double *M, int size, bool posdef,
 
 
  ErrorHandling:
+  
   if (Pt == NULL) solve_DELETE(&pt);
   //else if (GLOBAL.solve.tmp_delete) {FREEING(SICH); FREEING(MM);}
-	  
+
   return err; //  -method;
 }
   
@@ -1358,9 +1362,13 @@ int sqrtPosDefFree(double *M, int size,    // in out
        Meth[1] != Meth[0]) ||
       (Meth[0] != Cholesky && Meth[0] != Eigen && Meth[0] != SVD)
       ) {
-     err = sqrtPosDef(M, size, pt);
-    Free(M);
-    return(err);
+    err = sqrtPosDef(M, size, pt);
+#ifdef WIN32
+    pt->to_be_deleted = M;
+#else
+   Free(M);
+#endif
+   return(err);
   }
 
   if (GLOBAL.solve.sparse == True) 
@@ -1372,6 +1380,10 @@ int sqrtPosDefFree(double *M, int size,    // in out
   pt->result = M;
   pt->result_n = sizeSq;
   err = doPosDef(M, size, true, NULL, 0, NULL, NULL, true, pt, sp);
+ 
+  //int doPosDef(double *M, int size, bool posdef,
+  //	     double *rhs, int rhs_cols, double *result, double *logdet, 
+  //	     bool sqrtOnly, solve_storage *Pt, solve_param *Sp
   GLOBAL.solve.sparse = sparse;
   return err;
 }
@@ -1388,6 +1400,7 @@ int sqrtRHS(solve_storage *pt, double* RHS, double *result){
   assert(pt != NULL);
   int 
     size = pt->size;
+ 
   switch (pt->method) { 
   case direct_formula : 
   case Cholesky : {

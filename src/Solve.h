@@ -51,7 +51,8 @@ typedef struct solve_storage {
     *invp, *cols, *rows, *lindx, *xja; //*t_cols, *t_rows;
   double *SICH, *MM, *workspaceD, *workspaceU,
     *VT, *work, *w2, *U, *D, *workLU, 
-    *lnz, *DD, *w3, *result; //, *t_DD;
+    *lnz, *DD, *w3, *result,
+    *to_be_deleted; //, *t_DD;
 } solve_storage;
 
 

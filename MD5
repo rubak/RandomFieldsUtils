@@ -1,14 +1,14 @@
-9a98c4697c964f33e4bb361be1b2ad13 *DESCRIPTION
+4107dd5b278632f7c02b053831f5b831 *DESCRIPTION
 08e4bcd6eff029d24db78dcf53f79894 *NAMESPACE
 acabf021c425958b8b2b7bebf4034be2 *R/RFoptions.R
 3324a6ddfcf33c60b75eb11793125fbd *R/maths.R
 ca113e6033c13d555799bb97ed139a7d *R/utils.R
-8433102e6823df20d095d288c163bcc4 *R/zzz.R
+62e8831d987b2e416b4e7f08c1f42aca *R/zzz.R
 a021bfabf5361d383820398d4473bfe7 *inst/CITATION
 867d47247f5359aca27044b660758e4f *inst/include/Basic_utils.h
 39e359bad44939d092accff4ea71758e *inst/include/General_utils.h
 09e36698236db30133a2cbfa5650ebb2 *inst/include/Options_utils.h
-1cb0c3ca3812e7bb1651b81920b57eac *inst/include/Solve.h
+5c2fa3fdbde3b9e587dd4f5a7216a6cc *inst/include/Solve.h
 9bc36db841ac9da84dbe84fc26636282 *inst/include/errors_messages.h
 7aab5c3b334bafc00983719721f15a93 *inst/include/init_RandomFieldsUtils.h
 b304edc828c752e80c048e9659545e89 *inst/include/kleinkram.h
@@ -32,7 +32,7 @@ a556c1215acedb06c7d095f2566672cd *man/solvePosDef.Rd
 09e36698236db30133a2cbfa5650ebb2 *src/Options_utils.h
 c49e08f5a1f4a1c04bb75469013b626b *src/RFoptions.cc
 cdf561f18b4afaef78db8d97babb1fd8 *src/RandomFieldsUtils.h
-1cb0c3ca3812e7bb1651b81920b57eac *src/Solve.h
+5c2fa3fdbde3b9e587dd4f5a7216a6cc *src/Solve.h
 7ec47b2ed2f99f629a6f1f2329abc866 *src/bckslvmodified.f
 08a9f6c9da48a188df6c8c32fcdfa3d9 *src/cholmodified.f
 9bc36db841ac9da84dbe84fc26636282 *src/errors_messages.h
@@ -44,7 +44,7 @@ b304edc828c752e80c048e9659545e89 *src/kleinkram.h
 c5526eaba62fa82d2a5d8ae6399609c7 *src/options.cc
 6353e13aa7e09a12c72fe914b5f60c0d *src/own.cc
 d116e41a8305132770dbb36e8cdef776 *src/own.h
-03628a1961798d566e0233fa87091bf5 *src/solve.cc
+9421cf815bfa2e1e409d67d30f25b312 *src/solve.cc
 b811d6b8f5022077c3de5214d4081043 *src/sort.cc
 3865607d016169fc2b8d7155f6e8fad4 *src/spamown.f
 fffcbf7678c4e1270d9768c285cc46a7 *src/utils.cc
