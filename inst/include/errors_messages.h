@@ -61,50 +61,50 @@ extern errorloc_type ERROR_LOC;
 
 
 #define RFERROR error
-#define ERR(X) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); RFERROR(ERRMSG);}
-#define ERR1(X, Y) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, ERRMSG, Y);					 \
+#define ERR(X) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); RFERROR(ERRMSG);}
+#define ERR1(X, Y) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); \
+    SPRINTF(MSG2, ERRMSG, Y);					 \
     RFERROR(MSG2);}
-#define ERR2(X, Y, Z) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X);\
-    sprintf(MSG2, ERRMSG, Y, Z);					\
+#define ERR2(X, Y, Z) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X);\
+    SPRINTF(MSG2, ERRMSG, Y, Z);					\
     RFERROR(MSG2);}
-#define ERR3(X, Y, Z, A) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A);					\
+#define ERR3(X, Y, Z, A) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A);					\
     RFERROR(MSG2);}
-#define ERR4(X, Y, Z, A, B) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B);					\
+#define ERR4(X, Y, Z, A, B) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B);					\
     RFERROR(MSG2);}
-#define ERR5(X, Y, Z, A, B, C) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC,X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B, C);				\
+#define ERR5(X, Y, Z, A, B, C) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC,X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B, C);				\
     RFERROR(MSG2);}
-#define ERR6(X, Y, Z, A, B,C,D) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D);				\
+#define ERR6(X, Y, Z, A, B,C,D) {ERRLINE;SPRINTF(ERRMSG, "%s %s",ERROR_LOC,X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B, C, D);				\
     RFERROR(MSG2);}
-#define ERR7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
+#define ERR7(X, Y, Z,A,B,C,D,E) {ERRLINE;SPRINTF(ERRMSG, "%s %s",ERROR_LOC,X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
     RFERROR(MSG2);}
-#define ERR8(X,Y,Z,A,B,C,D,E,F) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E, F);			\
+#define ERR8(X,Y,Z,A,B,C,D,E,F) {ERRLINE;SPRINTF(ERRMSG, "%s %s",ERROR_LOC,X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B, C, D, E, F);			\
     RFERROR(MSG2);}
 #define FERR(X) strcpy(ERRORSTRING, X); DEBUGINFOERR
 #define SERR(X) { FERR(X); return ERRORM;}
 #define CERR(X) { FERR(X); err=ERRORM; continue;}
-#define FERR1(X,Y) sprintf(ERRORSTRING, X, Y); DEBUGINFOERR
+#define FERR1(X,Y) SPRINTF(ERRORSTRING, X, Y); DEBUGINFOERR
 #define SERR1(X,Y) { FERR1(X, Y); return ERRORM;}
 #define CERR1(X,Y) { FERR1(X, Y); err=ERRORM; continue; }
-#define FERR2(X,Y,Z) sprintf(ERRORSTRING, X, Y, Z); DEBUGINFOERR
+#define FERR2(X,Y,Z) SPRINTF(ERRORSTRING, X, Y, Z); DEBUGINFOERR
 #define SERR2(X, Y, Z) { FERR2(X, Y, Z); return ERRORM;}
 #define CERR2(X, Y, Z) { FERR2(X, Y, Z);  err=ERRORM; continue;}
-#define FERR3(X,Y,Z,A) sprintf(ERRORSTRING, X, Y, Z, A); DEBUGINFOERR
+#define FERR3(X,Y,Z,A) SPRINTF(ERRORSTRING, X, Y, Z, A); DEBUGINFOERR
 #define SERR3(X, Y, Z, A) { FERR3(X, Y, Z, A); return ERRORM;}
 #define CERR3(X, Y, Z, A) { FERR3(X, Y, Z, A); err=ERRORM; continue;}
-#define FERR4(X,Y,Z,A,B) sprintf(ERRORSTRING, X, Y, Z, A, B); DEBUGINFOERR 
+#define FERR4(X,Y,Z,A,B) SPRINTF(ERRORSTRING, X, Y, Z, A, B); DEBUGINFOERR 
 #define SERR4(X, Y, Z, A, B) {  FERR4(X, Y, Z, A, B); return ERRORM;}
-#define FERR5(X,Y,Z,A,B,C) sprintf(ERRORSTRING,X,Y,Z,A,B,C); DEBUGINFOERR 
+#define FERR5(X,Y,Z,A,B,C) SPRINTF(ERRORSTRING,X,Y,Z,A,B,C); DEBUGINFOERR 
 #define SERR5(X, Y, Z, A, B, C) {FERR5(X, Y, Z, A, B, C); return ERRORM;}
-#define FERR6(X,Y,Z,A,B,C,D) sprintf(ERRORSTRING,X,Y,Z,A,B,C,D); DEBUGINFOERR 
+#define FERR6(X,Y,Z,A,B,C,D) SPRINTF(ERRORSTRING,X,Y,Z,A,B,C,D); DEBUGINFOERR 
 #define SERR6(X, Y, Z, A, B, C, D) {FERR6(X, Y, Z, A, B, C,D);  return ERRORM;}
-#define FERR7(X,Y,Z,A,B,C,D,E) sprintf(ERRORSTRING,X,Y,Z,A,B,C,D,E);DEBUGINFOERR
+#define FERR7(X,Y,Z,A,B,C,D,E) SPRINTF(ERRORSTRING,X,Y,Z,A,B,C,D,E);DEBUGINFOERR
 #define SERR7(X, Y, Z, A, B, C, D, E) {FERR7(X,Y,Z,A,B,C,D,E);  return ERRORM;}
 #define GERR(X) {FERR(X); err = ERRORM; goto ErrorHandling;}
 #define GERR1(X,Y) {FERR1(X,Y);err = ERRORM; goto ErrorHandling;}
@@ -115,27 +115,27 @@ extern errorloc_type ERROR_LOC;
 #define GERR6(X,Y,Z,A,B,C,D) {FERR6(X,Y,Z,A,B,C,D); err=ERRORM; goto ErrorHandling;}
 
 #define RFWARNING warning
-#define warn(X) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); RFWARNING(ERRMSG);}
-#define WARN1(X, Y) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, ERRMSG, Y);					 \
+#define warn(X) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); RFWARNING(ERRMSG);}
+#define WARN1(X, Y) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); \
+    SPRINTF(MSG2, ERRMSG, Y);					 \
     RFWARNING(MSG2);}
-#define WARN2(X, Y, Z) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X);\
-    sprintf(MSG2, ERRMSG, Y, Z);					\
+#define WARN2(X, Y, Z) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X);\
+    SPRINTF(MSG2, ERRMSG, Y, Z);					\
     RFWARNING(MSG2);}
-#define WARN3(X, Y, Z, A) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A);					\
+#define WARN3(X, Y, Z, A) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A);					\
     RFWARNING(MSG2);}
-#define WARN4(X, Y, Z, A, B) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC, X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B);					\
+#define WARN4(X, Y, Z, A, B) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC, X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B);					\
     RFWARNING(MSG2);}
-#define WARN5(X, Y, Z, A, B, C) {ERRLINE;sprintf(ERRMSG, "%s %s", ERROR_LOC,X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B, C);				\
+#define WARN5(X, Y, Z, A, B, C) {ERRLINE;SPRINTF(ERRMSG, "%s %s", ERROR_LOC,X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B, C);				\
     RFWARNING(MSG2);}
-#define WARN6(X, Y, Z, A, B,C,D) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D);				\
+#define WARN6(X, Y, Z, A, B,C,D) {ERRLINE;SPRINTF(ERRMSG, "%s %s",ERROR_LOC,X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B, C, D);				\
     RFWARNING(MSG2);}
-#define WARN7(X, Y, Z,A,B,C,D,E) {ERRLINE;sprintf(ERRMSG, "%s %s",ERROR_LOC,X); \
-    sprintf(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
+#define WARN7(X, Y, Z,A,B,C,D,E) {ERRLINE;SPRINTF(ERRMSG, "%s %s",ERROR_LOC,X); \
+    SPRINTF(MSG2, ERRMSG, Y, Z, A, B, C, D, E);				\
     RFWARNING(MSG2);}
 
 

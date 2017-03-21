@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "RandomFieldsUtils.h"
 #include "General_utils.h"
-#include "kleinkram.h"
 #include "own.h"
 #include "init_RandomFieldsUtils.h"
 
@@ -68,7 +67,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList) {
     ListNr = NOMATCHING;
   char name[LEN_OPTIONNAME];
   
-  sprintf(name, "%s%s%s", prefix, strlen(prefix)==0 ? "" : ".", mainname);
+  SPRINTF(name, "%s%s%s", prefix, strlen(prefix)==0 ? "" : ".", mainname);
 
   //  print("set param: %s.%s.%s\n",prefix, strlen(prefix)==0 ? "" : ".", mainname);
   //  print("relax=%d\n", RELAX_UNKNOWN_RFOPTION);
@@ -79,18 +78,18 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList) {
     return;
   }
 
-  if (strcmp(prefix, "")) {
+  if (STRCMP(prefix, "")) {
     for (ListNr=0; ListNr<NList; ListNr++) {
       i = Match(prefix, Allprefix[ListNr], AllprefixN[ListNr]);
       if (i != NOMATCHING) break;
     }
     if (i == NOMATCHING) ERR1("option prefix name '%s' not found.", prefix); 
-    if (i < 0 || strcmp(prefix, Allprefix[ListNr][i])) {
+    if (i < 0 || STRCMP(prefix, Allprefix[ListNr][i])) {
       for (int k=ListNr + 1; k < NList; k++) {
 	int ii = Match(prefix, Allprefix[ListNr], AllprefixN[ListNr]);
 	if (ii == NOMATCHING) continue;
 	i = MULTIPLEMATCHING;
-	if (ii >= 0 && strcmp(prefix, Allprefix[k][ii])==0) {
+	if (ii >= 0 && STRCMP(prefix, Allprefix[k][ii])==0) {
 	  ListNr = k;
 	  i = ii;
 	  break;
@@ -120,7 +119,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList) {
     
     // printf("j=%d  %s\n", j,  j >=0 ? Allall[ListNr][i][j] : "multi");
     
-    if (j < 0  || strcmp(mainname, Allall[ListNr][i][j])) {
+    if (j < 0  || STRCMP(mainname, Allall[ListNr][i][j])) {
       int starti = i + 1;
       for (int k = ListNr; k<NList; k++, starti=0) {
 	int tpN = AllprefixN[k];
@@ -131,7 +130,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList) {
 	  //  printf("listnr=%d %s jj=%d %s\n", ListNr, Allall[ListNr][i][j], 
 	  //	 jj, jj < 0 ? "none" : Allall[k][ii][jj]);
 	  j = MULTIPLEMATCHING;
-	  if (jj >= 0 && strcmp(mainname, Allall[k][ii][jj])==0) {
+	  if (jj >= 0 && STRCMP(mainname, Allall[k][ii][jj])==0) {
 	    ListNr = k;
 	    i = ii;
 	    j = jj;
@@ -164,7 +163,7 @@ SEXP getRFoptions() {
   for (totalN=ListNr=0; ListNr<NList; ListNr++) {
     trueprefixN = AllprefixN[ListNr];
     for (i=0; i<trueprefixN; i++) {
-      totalN += strcmp(Allprefix[ListNr][i], OBSOLETENAME) != 0;
+      totalN += STRCMP(Allprefix[ListNr][i], OBSOLETENAME) != 0;
     }
   }
 
@@ -178,7 +177,7 @@ SEXP getRFoptions() {
     //printf("ListNr %d\n", ListNr);
     trueprefixN = AllprefixN[ListNr];    
     for (i=0; i<trueprefixN; i++, itot++) {   
-      if (strcmp(Allprefix[ListNr][i], OBSOLETENAME) == 0) continue;
+      if (STRCMP(Allprefix[ListNr][i], OBSOLETENAME) == 0) continue;
       SET_STRING_ELT(names, itot, mkChar(Allprefix[ListNr][i]));
       PROTECT(sublist[itot] = allocVector(VECSXP, AllallN[ListNr][i]));
       PROTECT(subnames[itot] = allocVector(STRSXP, AllallN[ListNr][i]));
@@ -245,7 +244,7 @@ SEXP RFoptions(SEXP options) {
   }
 
   name = (char*) (isNull(TAG(options)) ? "" : CHAR(PRINTNAME(TAG(options))));
-  if ((isList = strcmp(name, "LIST")==0)) {   
+  if ((isList = STRCMP(name, "LIST")==0)) {   
     //printf("isList\n");
     list = CAR(options);
     if (TYPEOF(list) != VECSXP)
@@ -317,7 +316,7 @@ void attachRFoptions(const char **prefixlist, int N,
 		  getparameterfct get) {
   for (int ListNr=0; ListNr<NList; ListNr++) {    
     if (AllprefixN[ListNr] == N && 
-	strcmp(Allprefix[ListNr][0], prefixlist[0]) == 0) {
+	STRCMP(Allprefix[ListNr][0], prefixlist[0]) == 0) {
       if (PL > 0) 
 	PRINTF("options starting with prefix '%s' have been already attached.",
 		prefixlist[0]);
@@ -341,7 +340,7 @@ void detachRFoptions(const char **prefixlist, int N) {
   int ListNr;
   for (ListNr=0; ListNr<NList; ListNr++) {    
     if (AllprefixN[ListNr] == N && 
-	strcmp(Allprefix[ListNr][0], prefixlist[0]) == 0) break;
+	STRCMP(Allprefix[ListNr][0], prefixlist[0]) == 0) break;
   }  
   if (ListNr >= NList) {
     ERR1("options starting with prefix '%s' have been already attached.",

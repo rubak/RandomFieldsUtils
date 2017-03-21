@@ -1,9 +1,7 @@
 
-#include <R.h>
-#include <Rinternals.h>
+#include "RandomFieldsUtils.h"
 #include "General_utils.h"
 #include "init_RandomFieldsUtils.h"
-#include "RandomFieldsUtils.h"
 
 static int ORDERDIM;
 static double *ORDERD;

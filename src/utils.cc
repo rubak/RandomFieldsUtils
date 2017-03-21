@@ -22,12 +22,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include <math.h>
+#include <Rmath.h>
 #include <unistd.h>
-#include <Rinternals.h>
+#include "RandomFieldsUtils.h"
 #include "win_linux_aux.h"
 #include "General_utils.h"
-#include "RandomFieldsUtils.h"
+
 
 SEXP getChar() {
   ERR("does not work");
@@ -76,3 +76,5 @@ SEXP getChar() {
   FREE(s);
   return str;
 }
+
+

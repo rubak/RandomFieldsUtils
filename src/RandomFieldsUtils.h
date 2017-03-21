@@ -27,10 +27,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef RFutils_public_H
 #define RFutils_public_H 1
 
+#include <R.h>
+#include <Rinternals.h>
 #include <R_ext/Rdynload.h>
-#include "General_utils.h"
+#include "Basic_utils.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif 
   void R_init_RandomFieldsUtils(DllInfo *info);
   void R_unload_RandomFieldsUtils(DllInfo *info);
 
@@ -43,7 +47,6 @@ extern "C" {
   SEXP SolvePosDef(SEXP M, SEXP rhs, SEXP logdet);
   SEXP Chol(SEXP M);
   
-
   SEXP RFoptions(SEXP options);
   void RelaxUnknownRFoption(int *relax);
 
@@ -59,11 +62,22 @@ extern "C" {
   void pid(int *i);
   SEXP getChar();
 
-
   
   void Ordering(double *d, int *len, int *dim, int *pos);
 
+#ifdef SCHLATHERS_MACHINE
+  SEXP scalarX(SEXP x, SEXP y, SEXP mode);
+  SEXP brdomain(SEXP Srf, SEXP Sgamma, SEXP Sinstances, SEXP Smaxn);
+  SEXP Udiffusion(SEXP SUSc, SEXP SUCo, SEXP Snevertried,
+		  SEXP Sa, SEXP Sabar, SEXP tWeight, SEXP Sq,
+		  SEXP Sdt, SEXP rho, SEXP SrandSc, SEXP SrandCo,
+		  SEXP Sit, SEXP Sdummy, SEXP Sthreshold);
+#endif
+
+#ifdef __cplusplus
 }
+#endif
+
 
 
 #endif 

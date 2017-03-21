@@ -28,6 +28,13 @@ pid()
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
 }
 
+
+\examples{
+cat("The name of your computer is '", hostname(),
+    "'. Your R program has current pid ", pid(), ".\n", sep="")
+}
+
+
 \keyword{sysdata}
 \keyword{utilities}
 

@@ -183,3 +183,13 @@ void getparameterUtils(SEXP *sublist) {
 }
 
 
+void getErrorString(errorstring_type errorstring){
+  strcopyN(errorstring, ERRORSTRING, MAXERRORSTRING);
+}
+
+void setErrorLoc(errorloc_type errorloc){
+  strcopyN(ERROR_LOC, errorloc, nErrorLoc);
+}
+
+
+

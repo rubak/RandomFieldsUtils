@@ -46,6 +46,19 @@
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
 }
 
+\examples{
+\dontrun{
+## the next command checks whether the file 'data.rda'
+## or the file 'data.rda.lock' exists. If so, a positive
+## value is returned. If not, the file 'data.rda.lock'
+## is created and the value 0 returned.
+FileExists("data.rda")
+
+## the next command deletes the file 'data.rda.lock'
+LockRemove("data.rda")
+}
+}
+
 \keyword{file}
 \keyword{utilities}
 

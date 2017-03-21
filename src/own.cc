@@ -19,10 +19,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
+//#include "Basic_utils.h"  // must be before anything else
+#include "RandomFieldsUtils.h"  // must be before anything else
+#ifdef DO_PARALLEL
+#include <omp.h>
+#endif
 #include <R.h>
 #include <Rinternals.h>
 #include "General_utils.h"
 #include "own.h"
+#include "init_RandomFieldsUtils.h"
+
 
 
 // local
@@ -32,3 +39,27 @@ char ERRMSG[LENERRMSG], MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG];
 errorloc_type ERROR_LOC="";
 errorstring_type ERRORSTRING;
 
+
+SEXP attachRFoptionsUtils() {
+  //  NList = 0;
+  
+  // printf("UTx %ld\n", (long) getUtilsParam);
+
+  attachRFoptions(ownprefixlist, ownprefixN, ownall, ownallN,
+  		  setparameterUtils, NULL, getparameterUtils);
+
+#ifdef DO_PARALLEL
+  basic_param *gp = &(GLOBAL.basic);
+  omp_set_num_threads(gp->cores);
+#endif
+  
+  return R_NilValue;
+}
+
+SEXP detachRFoptionsUtils(){
+#ifdef DO_PARALLEL      
+  omp_set_num_threads(1);
+#endif
+  detachRFoptions(ownprefixlist, ownprefixN);
+  return R_NilValue;
+}

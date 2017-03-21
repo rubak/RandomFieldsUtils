@@ -60,17 +60,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INTERNAL SERR("Sorry. This functionality does not exist currently. There is work in progress at the moment by the maintainer.")
 #define assert(X) {}
 #define BUG {								\
-    sprintf(BUG_MSG, "Severe error occured in function '%s' (file '%s', line %d). Please contact maintainer martin.schlather@math.uni-mannheim.de .", \
+    SPRINTF(BUG_MSG, "Severe error occured in function '%s' (file '%s', line %d). Please contact maintainer martin.schlather@math.uni-mannheim.de .", \
 	    __FUNCTION__, __FILE__, __LINE__);				\
     RFERROR(BUG_MSG);							\
   }									
 #define DO_TESTS false
 //#define MEMCOPY(A,B,C) {memcpy(A,B,C); printf("memcpy %s %d\n", __FILE__, __LINE__);}
-#define MEMCOPY(A,B,C) memcpy(A,B,C)
-#define MALLOC malloc
-#define CALLOC calloc
-#define FREE(X) if ((X) != NULL) {free(X); (X)=NULL;}
-#define UNCONDFREE(X) {free(X); (X)=NULL;}
+#define MEMCOPY(A,B,C) MEMCOPYX(A,B,C)
+#define MALLOC MALLOCX
+#define CALLOC CALLOCX
+#define FREE(X) if ((X) != NULL) {FREEX(X); (X)=NULL;}
+#define UNCONDFREE(X) {FREEX(X); (X)=NULL;}
 #endif // not SCHLATHERS_MACHINE
 
 
@@ -81,26 +81,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // __extension__ unterdrueckt Fehlermeldung wegen geklammerter Argumente
 #define INTERNAL  \
-  sprintf(BUG_MSG, \
+  SPRINTF(BUG_MSG, \
 	  "made to be an internal function '%s' ('%s', line %d).", /* // */ \
 	  __FUNCTION__, __FILE__, __LINE__);				\
   /* warning(BUG_MSG) */						\
   SERR(BUG_MSG)
  
 #define assert(X) if (!__extension__ (X)) {				\
-    sprintf(BUG_MSG,"'assert(%s)' failed in function '%s'.",#X,__FUNCTION__); \
+    SPRINTF(BUG_MSG,"'assert(%s)' failed in function '%s'.",#X,__FUNCTION__); \
     ERR(BUG_MSG);							\
   }
 #define SHOW_ADDRESSES 1
 #define BUG { PRINTF("BUG in '%s'.",  __FUNCTION__);  ERR(BUG_MSG); }
 #define DO_TESTS true
 
-#define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL); memcpy(A,B,C); })
+#define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL); MEMCOPYX(A,B,C); })
 //#define MEMCOPY(A,B,C) memory_copy(A, B, C)
-#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=MAXALLOC); malloc(X);})
-#define CALLOC(X, Y) __extension__({assert((X)>0 && (X)<=MAXALLOC && (Y)>0 && (Y)<=64); calloc(X,Y);})
-#define FREE(X) { if ((X) != NULL) {if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}}
-#define UNCONDFREE(X) { if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); free(X); (X)=NULL;}
+#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=MAXALLOC); MALLOCX(X);})
+#define CALLOC(X, Y) __extension__({assert((X)>0 && (X)<=MAXALLOC && (Y)>0 && (Y)<=64); CALLOCX(X,Y);})
+#define FREE(X) { if ((X) != NULL) {if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); FREEX(X); (X)=NULL;}}
+#define UNCONDFREE(X) { if (showfree) DOPRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); FREEX(X); (X)=NULL;}
 #endif // SCHLATHERS_MACHINE
 
 
@@ -108,16 +108,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef RANDOMFIELDS_DEBUGGING
 #undef MALLOC
-#define MALLOC(X) __extension__({DOPRINTF("(MALL %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9);malloc(X);})
+#define MALLOC(X) __extension__({DOPRINTF("(MALL %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9); MALLOCX(X);})
 //
 #undef CALLOC
-#define CALLOC(X, Y) __extension__({DOPRINTF("(CALL %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (X)<MAXALLOC && (Y)>0 && (Y)<=64); calloc(X,Y);})
+#define CALLOC(X, Y) __extension__({DOPRINTF("(CALL %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (X)<MAXALLOC && (Y)>0 && (Y)<=64); CALLOCX(X,Y);})
 //#define MALLOC malloc
 //#define CALLOC calloc
 
 #define DEBUGINFOERR {						\
     errorstring_type dummy_; strcpy(dummy_, ERRORSTRING);		\
-    sprintf(ERRORSTRING, "%s (%s, line %d)\n", dummy_, __FILE__, __LINE__); \
+    SPRINTF(ERRORSTRING, "%s (%s, line %d)\n", dummy_, __FILE__, __LINE__); \
   }
 #define DEBUGINFO DOPRINTF("(currently at  %s, line %d)\n", __FILE__, __LINE__)
 
@@ -143,6 +143,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PL_SUBDETAILS 10
 
 #define MATERN_NU_THRES 100
+
 
 #endif
 

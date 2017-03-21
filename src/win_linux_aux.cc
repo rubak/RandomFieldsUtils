@@ -32,13 +32,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // achtung! windows.h zusammen mit <Rmath.h oder R.graphics>
 // gibt warnung, da ERROR mehrfach definiert !
 // deshalb auch in auxiliary.h nicht basic.h einbinden // obsolette ?!!
-#include <math.h>
 #include <unistd.h>
 #include <Rinternals.h>
 #include "win_linux_aux.h"
 /*
 
-#include <math.h>
 #include <unistd.h>
  
 #include <R_ext/Lapack.h>

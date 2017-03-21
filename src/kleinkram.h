@@ -138,14 +138,13 @@ int GetName(SEXP el, char *name, const char * List[], int n,
 
 #define SCALAR_PROD(A, B, N, ANS) {			\
     int  k_ =0,				\
-    end_ = N - 5;				\
+    end_ = N - 4;				\
   ANS = 0.0;					\
-  for (; k_<end_; k_+=5) {				\
+  for (; k_<end_; k_+=4) {				\
     ANS += A[k_] * B[k_]				\
       + A[k_ + 1] * B[k_ + 1]				\
       + A[k_ + 2] * B[k_ + 2]				\
-      + A[k_ + 3] * B[k_ + 3]				\
-      + A[k_ + 4] * B[k_ + 4];				\
+      + A[k_ + 3] * B[k_ + 3];				\
   }							\
   for (; k_<N; k_++) ANS += A[k_] * B[k_];		\
   }

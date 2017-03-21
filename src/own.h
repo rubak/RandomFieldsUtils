@@ -28,10 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define rfutil_own_H 1
 #include "Options_utils.h"
 
-
-
 void setparameterUtils(int i, int j, SEXP el, char name[200], bool isList);
 void getparameterUtils(SEXP *sublist);
+void set_num_threads();
 
 
 extern utilsparam GLOBAL;

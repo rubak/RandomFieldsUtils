@@ -79,7 +79,6 @@ LockRemove <- function(file) {
 }
 
 
-
 Print <- function(..., digits=6, empty.lines=2) { #
   ## ?"..1"
 #  print(..1)
@@ -129,7 +128,7 @@ cholx <- function(a) {
   .Call(C_Chol, a)
  }
 
-cholPosDef <- function() stop("please use 'cholesky' instead of 'cholPosDef'.")
+cholPosDef <- function() stop("please use 'cholx' instead of 'cholPosDef'.")
 
 solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
   stop("please use 'solvex' instead of 'solvePosDef'.")
@@ -165,12 +164,11 @@ sortx <- function(x, from=1, to=length(x),
 
 orderx <- function(x, from=1, to=length(x),
                          decreasing=FALSE, na.last = NA) {
-#  cat(length(x) / (0.35 + 0.14 * log(length(x)))^2, "")
+#  cat((to - from) *  (0.35 + 0.14 * log(length(x)))^2, "", length(x), "\n")
   if ((to - from) * (0.35 + 0.14 * log(length(x)))^2 > length(x)) { #10^2:1, 10^3:1.5, 10^4:3 10^5:5 10^6:5, 10^7: 8, 10^8:10,
-    #cat("old\n");
-    return(if (from==1 && to==length(x))
-           order(x, decreasing=decreasing, na.last=na.last) else
-           order(x, decreasing=decreasing, na.last=na.last)[from:to])
+    #    cat("old", from, to ,"\n");
+    ans <- order(x, decreasing=decreasing, na.last=na.last)
+    return(if (from==1 && to==length(x)) ans else ans[from:to])
   }
   if (decreasing) {
     x <- -x
@@ -180,3 +178,6 @@ orderx <- function(x, from=1, to=length(x),
   .Call(C_orderX, x, as.integer(from), as.integer(to),
         as.logical(na.last))
 }
+
+
+# scalar <- function(x, y, mode="1x1") .Call(C_scalarX, x, y, mode)

@@ -26,11 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef rfutils_init_H
 #define rfutils_init_H 1
 
-
-#include <R_ext/Rdynload.h>
-#include <R.h>
-#include <Rinternals.h>
 #include "Options_utils.h"
+#include "errors_messages.h"
+
 
 
 #ifdef HAVE_VISIBILITY_ATTRIBUTE
@@ -61,7 +59,7 @@ extern "C" {
   V attribute_hidden RU_##N(AV AN) {					\
   static N##_type fun = NULL;						\
   if (fun == NULL) fun = (N##_type) R_GetCCallable(RF_UTILS, #N);	\
-  return fun(AN); }							
+  return fun(AN); }						
 #define DECLARE1(V, N, AV, AN)						\
   typedef V (*N##_type)(AV AN);						\
   /* extern N##_type Ext_##N; */					\
@@ -194,6 +192,8 @@ extern "C" {
   DECLARE4(void, ordering, double*, data, int, len, int, dim, int *, pos)
   DECLARE4(void, orderingInt, int*, data, int, len, int, dim, int *, pos)
 
+
+  
   /*
 
     See in R package RandomFields, /src/userinterfaces.cc 
@@ -202,11 +202,11 @@ extern "C" {
     in a calling package
 
    */
-
-
 #ifdef __cplusplus
 }
 #endif
 
-      
+
 #endif
+
+      

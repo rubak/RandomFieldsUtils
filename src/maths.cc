@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <R_ext/Lapack.h>
 #include "RandomFieldsUtils.h"
 #include "init_RandomFieldsUtils.h"
+#include "General_utils.h"
 
 
 double struve_intern(double x, double nu, double factor_Sign, bool expscaled)
@@ -29,22 +30,23 @@ double struve_intern(double x, double nu, double factor_Sign, bool expscaled)
   if (x <= 0.0) return RF_NA; // not programmed yet
   double exp_dummy,
      dummy = 0.0, 
-     logx = 2.0 * log(0.5 * x), 
+     logx = 2.0 * Log(0.5 * x), 
      x1 = 1.5, 
      x2 = nu + 1.5,
      value = 1.0, 
      fsign = factor_Sign,
     epsilon=1e-20;
 
+  
    do {
-     dummy += logx - log(x1) - log(fabs(x2));
-     exp_dummy = exp(dummy);
+     dummy += logx - Log(x1) - Log(FABS(x2));
+     exp_dummy = EXP(dummy);
      value += (1 - 2 * (x2 < 0))  * fsign * exp_dummy;
      //  printf("%f %f %f %f\n", value, fsign, x1, x2);
      x1 += 1.0;
      x2 += 1.0;
      fsign = factor_Sign * fsign; 
-   } while (exp_dummy > fabs(value) * epsilon);
+   } while (exp_dummy > FABS(value) * epsilon);
 
  
 
@@ -53,11 +55,11 @@ double struve_intern(double x, double nu, double factor_Sign, bool expscaled)
    if (x2 > 0.0) { 
      dummy = (nu + 1.0) * 0.5 * logx - lgammafn(x1) - lgammafn(x2);
      if (expscaled) dummy -= x;
-     value *= exp(dummy);
+     value *= EXP(dummy);
    } else {
      //if ( (double) ((int) (x1-0.5)) != x1-0.5 ) return RF_NA;
-     value *= pow(0.5 * x, nu + 1.0) / (gammafn(x1) * gammafn(x2));
-     if (expscaled) value *= exp(-x);
+     value *= POW(0.5 * x, nu + 1.0) / (gammafn(x1) * gammafn(x2));
+     if (expscaled) value *= EXP(-x);
    }
 
   return value;
@@ -163,14 +165,14 @@ double I0mL0(double x){
   if (x < 0.0) {return RF_NA;}
   if (x < 16.0) {
     r = 0.5 * g2[0];
-    ac = acos((6.0 * x - 40.0) / (x + 40.0));
+    ac = ACOS((6.0 * x - 40.0) / (x + 40.0));
     for (i=1; i<24; i++) {
       r += g2[i] * cos(i * ac);
     }
   } else {
     r = 0.5 * g3[0];
     x2 = x * x;
-    ac = acos((800.0 - x2) / (288.0 + x2));
+    ac = ACOS((800.0 - x2) / (288.0 + x2));
     for (i=1; i<24; i++) {
       r += g3[i] * cos(i * ac);
     }
@@ -197,26 +199,26 @@ SEXP I0ML0(SEXP X) {
 
 /* Gausian model */
 double Gauss(double x) {
-  return exp(- x * x);
+  return EXP(- x * x);
   //  printf("%f %f\n", *x, *v);
 }
 double logGauss(double x) {
   return - x * x;
 }
 double DGauss(double y) {
-  return -2.0 * y * exp(- y * y);
+  return -2.0 * y * EXP(- y * y);
 }
 double DDGauss(double x) {
   double y = x * x; 
-  return (4.0 * y - 2.0)* exp(- y);
+  return (4.0 * y - 2.0)* EXP(- y);
 }
 double D3Gauss(double x) {
   double y = x * x; 
-  return x * (12 - 8 * y) * exp(- y);
+  return x * (12 - 8 * y) * EXP(- y);
 }
 double D4Gauss(double x) {
   double y = x * x; 
-  return ((16 * y - 48) * y + 12) * exp(- y);
+  return ((16 * y - 48) * y + 12) * EXP(- y);
 }
 
 
@@ -239,7 +241,7 @@ double logWM(double x, double nu1, double nu2, double factor) {
   double v, y, 
     nu = 0.5 * (nu1 + nu2),
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
-    scale = factor==0.0 ? 1.0 : factor * sqrt(nuThres);
+    scale = factor==0.0 ? 1.0 : factor * SQRT(nuThres);
   bool simple = nu1 == nu2 || nu > MATERN_NU_THRES;
 
   if (x > LOW_MATERN) {
@@ -261,8 +263,8 @@ double logWM(double x, double nu1, double nu2, double factor) {
       loggamma = 0.5 * (loggamma1old + loggamma2old);
     }
     y = x  * scale;
-    v = LOG2 + nuThres * log(0.5 * y) - loggamma + 
-		  log(bessel_k(y, nuThres, 2.0)) - y;
+    v = LOG2 + nuThres * Log(0.5 * y) - loggamma + 
+		  Log(bessel_k(y, nuThres, 2.0)) - y;
   } else v = 0.0;
     
   if (nu > MATERN_NU_THRES) { // factor!=0.0 && 
@@ -289,7 +291,7 @@ double logWM(double x, double nu1, double nu2, double factor) {
 
 double WM(double x, double nu, double factor) {
   // check calling functions, like hyperbolic and gneiting if any changings !!
-  return exp(logWM(x, nu, nu, factor));
+  return EXP(logWM(x, nu, nu, factor));
 }
 
 double DWM(double x, double nu, double factor) { 
@@ -297,7 +299,7 @@ double DWM(double x, double nu, double factor) {
   static double loggamma;
   double   y, v,
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
-    scale = (factor != 0.0) ? factor * sqrt(nuThres) : 1.0;
+    scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0;
   
   if (x > LOW_MATERN) {
     if (nuThres!=nuOld) {
@@ -305,8 +307,8 @@ double DWM(double x, double nu, double factor) {
       loggamma = lgammafn(nuThres);
     }
     y = x * scale;  
-    v = - 2.0 * exp(nuThres * log(0.5 * y) - loggamma + 
-			     log(bessel_k(y, nuThres - 1.0, 2.0)) - y);
+    v = - 2.0 * EXP(nuThres * Log(0.5 * y) - loggamma + 
+			     Log(bessel_k(y, nuThres - 1.0, 2.0)) - y);
   } else {
     v = (nuThres > 0.5) ? 0.0 : (nuThres < 0.5) ? INFTY : 1.253314137;
   }
@@ -328,7 +330,7 @@ double DDWM(double x, double nu, double factor) {
   static double gamma;
   double  y, v,
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
-    scale = (factor != 0.0) ? factor * sqrt(nuThres) : 1.0,
+    scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0,
     scaleSq  = scale * scale;
    
   if (x > LOW_MATERN) {
@@ -337,7 +339,7 @@ double DDWM(double x, double nu, double factor) {
       gamma = gammafn(nuThres);
     }
     y = x * scale;
-    v = pow(0.5 * y , nuThres - 1.0) / gamma *
+    v = POW(0.5 * y , nuThres - 1.0) / gamma *
       (- bessel_k(y, nuThres - 1.0, 1.0) + y * bessel_k(y, nuThres - 2.0, 1.0));
   } else {
     v = (nu > 1.0) ? -0.5 / (nu - 1.0) : INFTY;
@@ -361,7 +363,7 @@ double D3WM(double x, double nu, double factor) {
   static double gamma;
   double y, v,
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
-    scale = (factor != 0.0) ? factor * sqrt(nuThres) : 1.0,
+    scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0,
     scaleSq  = scale * scale;
   
   if (x > LOW_MATERN) {
@@ -370,7 +372,7 @@ double D3WM(double x, double nu, double factor) {
       gamma = gammafn(nuThres);
     }
     y = x * scale;
-    v = pow(0.5 * y , nuThres - 1.0) / gamma *
+    v = POW(0.5 * y , nuThres - 1.0) / gamma *
       ( 3.0 * bessel_k(y, nuThres - 2.0, 1.0) 
 	-y * bessel_k(y, nuThres - 3.0, 1.0)); 
   } else {
@@ -395,7 +397,7 @@ double D4WM(double x,  double nu, double factor) {
   static double gamma;
   double y, v,
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
-    scale = (factor != 0.0) ? factor * sqrt(nuThres) : 1.0,
+    scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0,
     scaleSq  = scale * scale;
   
   if (x > LOW_MATERN) {
@@ -404,7 +406,7 @@ double D4WM(double x,  double nu, double factor) {
       gamma = gammafn(nuThres);
     }
     y = x * scale;
-    v = 0.25 * pow(0.5 * y , nuThres - 3.0) / gamma *
+    v = 0.25 * POW(0.5 * y , nuThres - 3.0) / gamma *
       (+ 6.0 * (nuThres - 3.0 - y * y) * bessel_k(y, nuThres - 3.0, 1.0)
        + y * (3.0  + y * y) * bessel_k(y, nuThres - 4.0, 1.0)); 
   } else {
@@ -446,7 +448,7 @@ typedef double (*primfct3)(double, double, double);
 
 SEXP gaussr(SEXP X, SEXP Derivative) {  
   static primfct1 fctns[] = {Gauss, DGauss, DDGauss, D3Gauss, D4Gauss};
-  CALCULATE(primfct1)(fabs(x[i]));
+  CALCULATE(primfct1)(FABS(x[i]));
   RETURN;
 }
 
@@ -458,7 +460,7 @@ SEXP WMr(SEXP X, SEXP Nu, SEXP Derivative, SEXP Factor) {
   int 
     nnu = length(Nu),
     nfactor = length(Factor);  
-  CALCULATE(primfct3)(fabs(x[i]), nu[i % nnu], factor[i % nfactor]);
+  CALCULATE(primfct3)(FABS(x[i]), nu[i % nnu], factor[i % nfactor]);
   RETURN;
 }
  
@@ -476,7 +478,7 @@ SEXP logWMr(SEXP X, SEXP Nu1, SEXP Nu2, SEXP Factor) {
   SEXP Ans;								
   PROTECT(Ans=allocVector(REALSXP, 1));					
   double *ans = REAL(Ans);						
-  ans[0] = logWM(fabs(x[0]), nu1, nu2, factor);
+  ans[0] = logWM(FABS(x[0]), nu1, nu2, factor);
   UNPROTECT(1);					
   return(Ans);
 }
@@ -504,10 +506,10 @@ double incomplete_gamma(double start, double end, double s) {
   }
   
   double 
-    e_start = exp(-start),
-    e_end = exp(-end),
-    power_start = pow(start, s),      
-    power_end = end < RF_INF ? pow(end, s) : 0,
+    e_start = EXP(-start),
+    e_end = EXP(-end),
+    power_start = POW(start, s),      
+    power_end = end < RF_INF ? POW(end, s) : 0,
     factor = 1.0; 
   
   

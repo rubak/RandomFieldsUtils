@@ -43,8 +43,8 @@ extern int PL;
 #define basicN 7
 // IMPORTANT: all names of basic must be at least 3 letters long !!!
 extern const char *basic[basicN];
-typedef struct basic_pxaram {
-   bool 
+typedef struct basic_param {
+  bool 
    skipchecks,
      asList;
   int 

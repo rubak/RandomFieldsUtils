@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "RandomFieldsUtils.h"
 #include "own.h"
 #include "init_RandomFieldsUtils.h"
+#include "General_utils.h"
+
 
 const char * InversionNames[nr_InversionMethods] = {
   "cholesky",  "svd", "eigen", "sparse",
@@ -38,7 +40,7 @@ const char * InversionNames[nr_InversionMethods] = {
     //  double *A_= A, *B_= B;				
      // i_ = N,					
 
-
+ 
 
 
 #define CMALLOC(WHICH, N, TYPE)	{				 \
@@ -166,7 +168,7 @@ int solve3(double *M, int size, bool posdef,
   }
 
   if (det == 0 || (posdef && det < 0)) return ERRORFAILED;
-  if (logdet != NULL) *logdet = log(det);
+  if (logdet != NULL) *logdet = Log(det);
 
   double detinv = 1.0 / det; // determinant of inverse of M
   
@@ -248,16 +250,16 @@ int chol3(double *M, int size, double *res){
   assert(size <= 3);
   if (size <= 0) SERR("matrix in 'solvePosDef' of non-positive size.");
   //  if (M[0] < 0) return ERRORFAILED;
-  res[0] = sqrt(M[0]);
+  res[0] = SQRT(M[0]);
   if (size == 1) return NOERROR;
   res[1] = 0.0;
   res[size] = M[size] / res[0];
-  res[size + 1] = sqrt(M[size + 1] - res[size] * res[size]);
+  res[size + 1] = SQRT(M[size + 1] - res[size] * res[size]);
   if (size == 2) return NOERROR;
   res[2] = res[5] = 0.0;
   res[6] = M[6] / res[0];
   res[7] = (M[7] - res[3] * res[6]) / res[4];
-  res[8] = sqrt(M[8] - res[6] * res[6] - res[7] * res[7]);
+  res[8] = SQRT(M[8] - res[6] * res[6] - res[7] * res[7]);
   return NOERROR;
 } 
 
@@ -357,10 +359,10 @@ int doPosDef(double *M, int size, bool posdef,
       double 
 	thr = sp->spam_sample_n * (1.0 - sp->spam_min_p);
       int	
-	threshold = (int) (thr + sqrt(thr) * 3),
+	threshold = (int) (thr + SQRT(thr) * 3),
 	notZero = 0;
       for (int i=0; i<sp->spam_sample_n; i++) {
-	if ((notZero += fabs(M[(i * sp->spam_factor) % sizeSq]) > 
+	if ((notZero += FABS(M[(i * sp->spam_factor) % sizeSq]) > 
 	     spam_tol) >= threshold){
 	  sparse = False;
 	  break;
@@ -378,10 +380,10 @@ int doPosDef(double *M, int size, bool posdef,
       for (int i=0; i<size; i++) {
 	int end = i * sizeP1;
 	long j;
-	for (j=i * size; j<end; nnzA += fabs(M[j++]) >= spam_tol);
-	diag_nnzA += fabs(M[j++]) > spam_tol;
+	for (j=i * size; j<end; nnzA += FABS(M[j++]) >= spam_tol);
+	diag_nnzA += FABS(M[j++]) > spam_tol;
 	end = (i+1) * size;
-	if (!posdef) for (; j<end; j++) nnzA += fabs(M[j++]) >= spam_tol;
+	if (!posdef) for (; j<end; j++) nnzA += FABS(M[j++]) >= spam_tol;
       }
       diag = (nnzA == 0);
       if (posdef) nnzA *= 2;
@@ -403,7 +405,7 @@ int doPosDef(double *M, int size, bool posdef,
       int end = i * sizeP1;
       long j;
       for (j=i * size; j<end; j++) {
-	if (fabs(M[j]) > spam_tol) {
+	if (FABS(M[j]) > spam_tol) {
 	  diag = false;
 	  break;
 	}
@@ -426,14 +428,14 @@ int doPosDef(double *M, int size, bool posdef,
     if (PL>=PL_STRUCTURE) PRINTF("dealing with diagonal matrix\n");
     if (logdet != NULL) {
       double tmp = 0.0;
-      for (int i=0; i<sizeSq; i+=sizeP1) tmp += log(M[i]);
+      for (int i=0; i<sizeSq; i+=sizeP1) tmp += Log(M[i]);
       *logdet = tmp;
     }
     if (rhs_cols == 0) {
       MEMCOPY(RESULT, M, sizeSq * sizeof(double));
       if (sqrtOnly) {
 	for (int i=0; i<sizeSq; i += sizeP1) {
-	  RESULT[i] = M[i] > 0.0 ? sqrt(M[i]) : 0.0;	
+	  RESULT[i] = M[i] > 0.0 ? SQRT(M[i]) : 0.0;	
 	}
       } else 
 	for (int i=0; i<sizeSq; i += sizeP1) 
@@ -559,7 +561,7 @@ int doPosDef(double *M, int size, bool posdef,
 	    err = ERRORFAILED;
 	    break;
 	  }
-	  A[i] = sqrt(A[i] - scalar);
+	  A[i] = SQRT(A[i] - scalar);
 	  
 	  //	  double invsum = 1.0 / A[i];
 	  double sum = A[i];
@@ -596,7 +598,7 @@ int doPosDef(double *M, int size, bool posdef,
 	  
 
 	  double sum = A[i] - scalar(A, A, i); 
-	  if (sum > 0.0) A[i] = sqrt(sum);
+	  if (sum > 0.0) A[i] = SQRT(sum);
 	  else { err = ERRORFAILED; break;}
 	}
 	}
@@ -618,7 +620,7 @@ int doPosDef(double *M, int size, bool posdef,
 	      sum = A[j]; 
 	    for (int k=0; k<j; k++) sum -= A[k] * B[k];
 	    if (j < i) A[j] = sum / B[j];
-	    else if (sum > 0.0) A[j] = sqrt(sum);
+	    else if (sum > 0.0) A[j] = SQRT(sum);
 	    else { err = ERRORFAILED; }
 	  }
 	}
@@ -632,7 +634,7 @@ int doPosDef(double *M, int size, bool posdef,
 
 	for (int k =0; k<size; k++) {
 	  int kspalte = k * size; 
-	  MPT[k + kspalte] = sqrt(MPT[k + kspalte]);
+	  MPT[k + kspalte] = SQRT(MPT[k + kspalte]);
 	  double f = 1.0 / MPT[k + kspalte];
 	  for (int i = k + 1; i<size; i++) {
 	    int ispalte = i * size;
@@ -670,7 +672,7 @@ int doPosDef(double *M, int size, bool posdef,
 	  int i;
 	  if (logdet != NULL) {
 	    for (*logdet=0.0, i=0; i < sizeSq; i+=sizeP1) {
-	      *logdet += log(MPT[i]);
+	      *logdet += Log(MPT[i]);
 	    }
 	    *logdet *= 2;
 	  }
@@ -789,14 +791,14 @@ int doPosDef(double *M, int size, bool posdef,
       if (sqrtOnly) {
 	for (int j=0; j<size; j++) {
 	  double dummy;
-	  dummy = D[j] < eigen2zero ? 0.0 : sqrt(D[j]);
+	  dummy = D[j] < eigen2zero ? 0.0 : SQRT(D[j]);
 	  for (int i=0; i<size; i++, k++) RESULT[k] = U[k] * dummy;
 	}
       } else {
 	// calculate determinant 
 	if (logdet != NULL) {
 	  double dummy = 0.0;
-	   for (int i = 0; i < size; dummy += log(D[i++]));
+	   for (int i = 0; i < size; dummy += Log(D[i++]));
 	   *logdet = dummy;
 	}
 	
@@ -857,7 +859,7 @@ int doPosDef(double *M, int size, bool posdef,
 	for (int j=0; j<size; j++) {
 	  double dummy;
 	  if (D[j] < -eigen2zero) CERR("negative eigenvalues found");
-	  dummy = D[j] < eigen2zero ? 0.0 : sqrt(D[j]);
+	  dummy = D[j] < eigen2zero ? 0.0 : SQRT(D[j]);
 	  for (int i=0; i<size; i++, k++) RESULT[k] = U[k] * dummy;
 	}
  
@@ -873,12 +875,12 @@ int doPosDef(double *M, int size, bool posdef,
 		 sum += Ui[j] * Uk[j];
 	       }
 	      
-	      if (fabs(Morig[i * size + k] - sum) > svdtol) {
+	      if (FABS(Morig[i * size + k] - sum) > svdtol) {
 		if (PL > PL_ERRORS) {
 		  PRINTF("difference %e at (%d,%d) between the value (%e) of the covariance matrix and the square of its root (%e).\n", 
 			 Morig[i * size +k] - sum, i, k, Morig[i*size+k], sum);
 		}
-		FERR3("required precision not attained  (%e > %e): probably invalid model. See also '%s'\n", fabs(Morig[i * size + k] - sum), svdtol,
+		FERR3("required precision not attained  (%e > %e): probably invalid model. See also '%s'\n", FABS(Morig[i * size + k] - sum), svdtol,
 		      solve[SOLVE_SVD_TOL]);
 
 		err=ERRORM;
@@ -894,12 +896,12 @@ int doPosDef(double *M, int size, bool posdef,
 	// calculate determinant 
 	if (logdet != NULL) {
 	  double dummy = 0.0;
-	  for (int i = 0; i < size; dummy += log(D[i++]));
+	  for (int i = 0; i < size; dummy += Log(D[i++]));
 	  *logdet = dummy;
 	}
 	
 	for (int j=0; j<size; j++) 
-	  D[j] = fabs(D[j]) < eigen2zero ? 0.0 : 1.0 / D[j];
+	  D[j] = FABS(D[j]) < eigen2zero ? 0.0 : 1.0 / D[j];
 
 	if (rhs_cols > 0) {
 	  int tot = size * rhs_cols;
@@ -940,7 +942,7 @@ int doPosDef(double *M, int size, bool posdef,
       if (logdet != NULL) {
 	CERR("logdet cannot be determined for 'LU'");
 	int i;
-	for (*logdet=0.0, i = 0; i < sizeSq; i += sizeP1) *logdet +=log(MPT[i]);
+	for (*logdet=0.0, i = 0; i < sizeSq; i += sizeP1) *logdet +=Log(MPT[i]);
       }
 
       if (rhs_cols > 0) {
@@ -986,7 +988,7 @@ int doPosDef(double *M, int size, bool posdef,
       if (!doperm) for (int i=0; i<size; i++) pivot[i] = i + 1;
 
       if (spam_zaehler == 0) {
-	for (int i=0; i<sizeSq; i++) nnzA += fabs(M[i]) >= spam_tol;
+	for (int i=0; i<sizeSq; i++) nnzA += FABS(M[i]) >= spam_tol;
 	spam_zaehler = nnzA + 1; // falls nur aus Nullen bestehend
       }
       
@@ -1016,7 +1018,7 @@ int doPosDef(double *M, int size, bool posdef,
 	if (nnzcolindices == 0) {
 	  double rel = nnzA / (double) size;
 	  if (rel < 5) {
-	    nnzcolindices = (int) ceil(nnzA * (1.05 * rel - 3.8));
+	    nnzcolindices = (int) CEIL(nnzA * (1.05 * rel - 3.8));
 	    if (nnzcolindices < 1000) nnzcolindices = 1000;
 	  } else {
 	    nnzcolindices = nnzA;
@@ -1024,7 +1026,7 @@ int doPosDef(double *M, int size, bool posdef,
 	  nnzcolindices *= nnzcfact[doperm];
 	  if (nnzcolindices < nnzA) nnzcolindices = nnzA;
 	} else if (err == 5) {
-	  int tmp = (int) ceil(nnzcolindices * cholincrease_nnzcol);
+	  int tmp = (int) CEIL(nnzcolindices * cholincrease_nnzcol);
 	  if (PL > PL_RECURSIVE) 
 	    PRINTF("Increased 'nnzcolindices' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
 	  nnzcolindices = tmp;
@@ -1032,11 +1034,11 @@ int doPosDef(double *M, int size, bool posdef,
 	if (nnzcolindices < pt->lindx_n) nnzcolindices = pt->lindx_n;
 	
 	if (nnzR == 0) {
-	  double u = floor(.4 * pow(nnzA, 1.2));
-	  u = u < 4 * nnzA ? 4 * nnzA : ceil(u);
+	  double u = FLOOR(.4 * POW(nnzA, 1.2));
+	  u = u < 4 * nnzA ? 4 * nnzA : CEIL(u);
 	  nnzR = (int) u * nnzRfact[doperm];
 	} else if (err == 4) {
-	  int tmp = (int) ceil(nnzR * cholincrease_nnzR);
+	  int tmp = (int) CEIL(nnzR * cholincrease_nnzR);
 	  if (PL > PL_RECURSIVE) 
 	    PRINTF("Increased 'nnzR' with 'NgPeyton' method\n(currently set to %d from %d)", tmp, nnzR);
 	  nnzR = tmp;
@@ -1100,7 +1102,7 @@ int doPosDef(double *M, int size, bool posdef,
 	if (logdet != NULL) {
 	  double tmp = 0.0;
 	  for (int i=0; i<size; i++) {
-	    tmp += log(lnz[xlnz[i] - 1]);
+	    tmp += Log(lnz[xlnz[i] - 1]);
 	  }
 	  *logdet = 2.0 * tmp;	  
 	}
@@ -1325,7 +1327,7 @@ z = RFsimulate(RMspheric(), x, max_variab=10000, n=10000, spC=FALSE)
 C = cov(t(z))
 c = RFcovmatrix(RMspheric(), x)
 print(summary(as.double(c - C))) ##//
-stopifnot(max(abs(c-C)) < 0.05)
+stopifnot(max(a b s(c-C)) < 0.05)
 
  */
 

@@ -18,5 +18,11 @@ sleep.micro(n)
 }
 \author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
 }
+
+\examples{
+## next command waits half a second before returning
+sleep.milli(500)
+}
+
 \keyword{utilities}
 \keyword{misc}
