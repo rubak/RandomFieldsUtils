@@ -1,9 +1,9 @@
-45ee1f1d37c91911e793b4d38a379011 *DESCRIPTION
+f743f1cf0812332b2173b2efeceb0457 *DESCRIPTION
 08e4bcd6eff029d24db78dcf53f79894 *NAMESPACE
 acabf021c425958b8b2b7bebf4034be2 *R/RFoptions.R
 3324a6ddfcf33c60b75eb11793125fbd *R/maths.R
 feaa9602b2d967cc42f36b0f911787cf *R/utils.R
-23e668853e9fb7b913bacf613dcdba66 *R/zzz.R
+6ec0ad94d169d25023e0654abefa89cf *R/zzz.R
 a021bfabf5361d383820398d4473bfe7 *inst/CITATION
 fe1da1625d7f815c637b2cfd1444ab14 *inst/include/Basic_utils.h
 39598aef7112741a19221ed37181d83d *inst/include/General_utils.h
