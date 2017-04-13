@@ -160,7 +160,7 @@ typedef enum usr_bool {
 #define CALLOCX std::calloc
 #define MALLOCX std::malloc
 #define FREEX std::free
-#define SPRINTF std::sprintf
+#define SPRINTF std::sprintf //
 
 #ifdef SCHLATHERS_MACHINE
 #define ROUND(X) round(X)

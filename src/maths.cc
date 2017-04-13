@@ -399,6 +399,8 @@ double D4WM(double x,  double nu, double factor) {
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
     scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0,
     scaleSq  = scale * scale;
+
+  //  printf("x=%f nu=%f\n", x, nuThres);
   
   if (x > LOW_MATERN) {
     if (nuThres!=nuOld) {
@@ -423,6 +425,9 @@ double D4WM(double x,  double nu, double factor) {
     w = D4Gauss(y) * scaleSq * scaleSq;
     v = v * g + (1.0 - g) * w;
   }
+
+  // printf("v=%f\n", v);
+  
   return v;
 }
 

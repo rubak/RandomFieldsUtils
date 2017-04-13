@@ -38,7 +38,7 @@ static const R_CMethodDef cMethods[]  = {
  {"hostname", (DL_FUNC) &hostname, 2, host_arg},
   // {"attachRFoptionsUtils", (DL_FUNC) &attachRFoptionsUtils, 0, NULL, NULL},
   // {"detachRFoptionsUtils", (DL_FUNC) &detachRFoptionsUtils, 0, NULL, NULL},
-  {NULL, NULL, 0, NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
 

@@ -784,8 +784,13 @@ int doPosDef(double *M, int size, bool posdef,
       }
       
       for (int i=0; i<size; i++) if (D[i] < -eigen2zero) {
+	  const char *advice[2]={"",
+			   " Consider increasing the value of 'eigen2value'."};
+	  double min  = D[i];
+	  for (int j=i+1; j<size; j++) if (D[j] < min) min = D[j];
 	  //print("negative eigen values!!!! %f\n", D[i]);
-	  GERR("negative eigenvalues found");
+	  GERR3("Negative eigenvalues found (less than -eigen2zero=%e). Smallest one equals %e.%s", -eigen2zero, min, advice[min > -eigen2zero * 100]);
+	    
 	} //else print("%f ", D[i]);
       
       if (sqrtOnly) {

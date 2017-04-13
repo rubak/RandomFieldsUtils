@@ -377,7 +377,8 @@ SEXP scalarX(SEXP x, SEXP y, SEXP mode) {
 }
   
 #else
-SEXP scalarX(SEXP x, SEXP y, SEXP mode) { BUG; }
+SEXP scalarX(SEXP VARIABLE_IS_NOT_USED x, SEXP  VARIABLE_IS_NOT_USED y,
+	     SEXP  VARIABLE_IS_NOT_USED mode) { BUG; }
 
 
 #endif // SCHLATHERS_MACHINE
