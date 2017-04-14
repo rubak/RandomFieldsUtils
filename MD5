@@ -1,11 +1,11 @@
-cebb9549e57ba70216318dc42cd2cdc9 *DESCRIPTION
+23e06b94ac0894fb894b8330a144436a *DESCRIPTION
 08e4bcd6eff029d24db78dcf53f79894 *NAMESPACE
 acabf021c425958b8b2b7bebf4034be2 *R/RFoptions.R
 3324a6ddfcf33c60b75eb11793125fbd *R/maths.R
 feaa9602b2d967cc42f36b0f911787cf *R/utils.R
-f307c4453b0b720c724326fcc6edb065 *R/zzz.R
+06a4e00616dc945cdad05519f53e8582 *R/zzz.R
 a021bfabf5361d383820398d4473bfe7 *inst/CITATION
-41a6dc6d7d4594705ea59e68991f7d28 *inst/include/Basic_utils.h
+87386da75db85d7fc88ab1c46261c94f *inst/include/Basic_utils.h
 39598aef7112741a19221ed37181d83d *inst/include/General_utils.h
 83ff926b36e383a5b4fd19bafc65d424 *inst/include/Options_utils.h
 5c2fa3fdbde3b9e587dd4f5a7216a6cc *inst/include/Solve.h
@@ -26,7 +26,7 @@ c9954677c5143d1293a7ff7c6403358b *man/nonstwm.Rd
 30f323fb4473b0ddada1160cb5af1e01 *man/sleep.Rd
 a556c1215acedb06c7d095f2566672cd *man/solvePosDef.Rd
 7034e7a90104522c8da4f95a536472de *man/sortx.Rd
-7e783380d55d46c844e7e22be690f474 *src/Basic_utils.h
+f31accc274159145eed7d13ed2b58870 *src/Basic_utils.h
 39598aef7112741a19221ed37181d83d *src/General_utils.h
 d70143e9b9f31bbac4a3350515dfd9ee *src/Makevars
 83ff926b36e383a5b4fd19bafc65d424 *src/Options_utils.h

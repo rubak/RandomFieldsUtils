@@ -145,10 +145,10 @@ typedef enum usr_bool {
 #define CEIL(X) std::ceil((double) X) // keine Klammern um X!
 #define COS(X) std::cos(X)
 #define EXP(X) std::exp(X)
-#define FABS(X) std::fabs((double) X)
+#define FABS(X) std::fabs((double) X) // keine Klammern um X!
 #define FLOOR(X) std::floor(X)
 #define Log(X) std::log(X)
-#define POW(X, Y) std::pow((double) X, (double) Y)
+#define POW(X, Y) R_pow((double) X, (double) Y) // keine Klammern um X!
 #define SIN(X) std::sin(X)
 #define SQRT(X) std::sqrt((double) X)
 #define STRCMP(A, B) std::strcmp(A, B)
@@ -161,15 +161,8 @@ typedef enum usr_bool {
 #define MALLOCX std::malloc
 #define FREEX std::free
 #define SPRINTF std::sprintf //
-
-#ifdef SCHLATHERS_MACHINE
-#define ROUND(X) round(X)
-#define TRUNC(X) trunc((double) X) // keine Klammern um X!
-#define QSORT qsort
-#else
-#define ROUND(X) round(X)
-#define TRUNC(X) trunc((double) X) // keine Klammern um X!
-#define QSORT qsort
-#endif
+#define ROUND(X) std::round(X)
+#define TRUNC(X) ftrunc((double) X) // keine Klammern um X!
+#define QSORT std::qsort
 
 #endif
