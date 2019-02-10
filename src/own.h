@@ -5,7 +5,7 @@
  Martin Schlather, schlather@math.uni-mannheim.de
 
 
- Copyright (C) 2015 Martin Schlather
+ Copyright (C) 2015 -- 2017 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,8 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define rfutil_own_H 1
 #include "Options_utils.h"
 
-void setparameterUtils(int i, int j, SEXP el, char name[200], bool isList);
-void getparameterUtils(SEXP *sublist);
+void setparameterUtils(int i, int j, SEXP el, char name[200], bool isList, int local);
+void getparameterUtils(SEXP sublist, int i, int local);
+void delparameterUtils(int local);
 void set_num_threads();
 
 
@@ -39,6 +40,7 @@ extern const char * ownprefixlist[ownprefixN],
   **ownall[ownprefixN];
 extern int ownallN[ownprefixN];
 
+#define HELPINFO(M) if (GLOBAL.basic.helpinfo) WARN1("%.50s\nNote that you can unable the above information by 'RFoptions(helpinfo=FALSE)'.\n", M) //
 
 #endif
 

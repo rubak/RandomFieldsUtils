@@ -4,7 +4,7 @@
 
  Collection of system specific auxiliary functions
 
- Copyright (C) 2001 -- 2015 Martin Schlather, 
+ Copyright (C) 2001 -- 2017 Martin Schlather, 
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -61,19 +61,21 @@ SEXP brdomain(SEXP Srf, SEXP Ssigma2, SEXP Sinstances, SEXP Smaxn) {
       pois += e;
       int
 	x0 = (int) (UNIFORM_RANDOM * nloc);
-      if (t==1) PRINTF(" pois=%f e=%f %d : ", pois, e, x0);
+      if (t==1) { PRINTF(" pois=%10g e=%10g %d : ", pois, e, x0);}
       double
 	*field = rf + nloc * (int) (UNIFORM_RANDOM * N),
 	*s2 = sigma2 + x0 * nloc,
-	uz0 = - Log(pois) - field[x0];
+	uz0 = - LOG(pois) - field[x0];
       
       for (int j=0; j<nloc; j++) {
         if (j == x0 && field[j] != field[x0]) BUG;
 	double w = uz0 + field[j] - s2[j];
-	if (t==1 && j == 97-68 - 1 && (m <= 10))
-	  PRINTF("j=%d %f %f u=%f\n", j, w, ans[j], - Log(pois));
-	if (t==1 && j == 97-68 - 1 &&  x0==j)
-	  PRINTF("\nGREAT j=%d %f %f u=%f\n", j, w, ans[j], - Log(pois));
+	if (t==1 && j == 97-68 - 1 && (m <= 10)) {
+	  PRINTF("j=%d %10g %10g u=%10g\n", j, w, ans[j], - LOG(pois));
+	}
+	if (t==1 && j == 97-68 - 1 &&  x0==j) {
+	  PRINTF("\nGREAT j=%d %10g %10g u=%10g\n", j, w, ans[j], - LOG(pois));
+	}
 	if (w > ans[j]) ans[j] = w;
       }
     }

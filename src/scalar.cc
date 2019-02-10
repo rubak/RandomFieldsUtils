@@ -5,7 +5,7 @@
 
  Collection of system specific auxiliary functions
 
- Copyright (C) 2001 -- 2015 Martin Schlather, 
+ Copyright (C) 2001 -- 2017 Martin Schlather, 
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -31,27 +31,19 @@ PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS)  -march=native -mssse3
 
  */
 
+#define BUG assert(false);
 
-
-#define SIMD_AVAILABLE 1
-
-
-
-#include "RandomFieldsUtils.h"
-#include "General_utils.h"
-#ifdef XXXSCHLATHERS_MACHINE
-
-#ifdef SIMD_AVAILABLE
-#include <x86intrin.h>
-#endif
- 
-
-
+#include <assert.h>
 #include "kleinkram.h"
+#include "scalar.h"
+#include "intrinsics.h"
+#include "Basic_utils.h"
+#include "errors_messages.h"
+#include "zzz_RandomFieldsUtils.h"
+
 
 #define Nmodi 9
 name_type modi = { "1x1", "2x2", "4x4", "8x8", "near", "simple", "precise", "kahan", "1x1p"};
-
 
 
 typedef unsigned int uint32;
@@ -60,325 +52,342 @@ typedef unsigned int uint32;
 #define size 8
 #define vectorlen (256 / (size * 8))
 #define repet 8
-#define VECTOR _mm256_loadu_pd
-#define SET_0(NR) sum##NR = _mm256_setzero_pd()
-#define P_0(NR) prod##NR = _mm256_setzero_pd()
-#define SUMUP(NR, nr) sum##NR = _mm256_add_pd(sum##NR, sum##nr)
-#define ADDF(NR) \
-  sum##NR = _mm256_fmadd_pd(VECTOR(x + i + NR * vectorlen),\
-			    VECTOR(y + i + NR * vectorlen), sum##NR)
+#define atonce (vectorlen * repet)
+#define SET_0(NR) sum##NR = ZERODOUBLE
+#define P_0(NR) prod##NR = ZERODOUBLE
+#define SUMUP(NR, nr) sum##NR = ADDDOUBLE(sum##NR, sum##nr)
 #define ADDN(NR)							\
-  prod##NR = _mm256_mul_pd(VECTOR(x + i + NR * vectorlen),		\
-			   VECTOR(y + i + NR * vectorlen));		\
-  sum##NR = _mm256_add_pd(sum##NR, prod##NR) 
+  prod##NR = MULTDOUBLE(LOADuDOUBLE(x + i + NR * vectorlen),		\
+			LOADuDOUBLE(y + i + NR * vectorlen));		\
+  sum##NR = ADDDOUBLE(sum##NR, prod##NR) 
 
 
-#ifdef SIMD_AVAILABLE
+#if (7 != repet - 1)
+  wrong repet length
+#endif
+#if (3 != vectorlen - 1)
+  wrong vector length
+#endif
+
+  
+#ifdef AVX
 
 #ifdef FMA_AVAILABLE
-double avx_scalarproductDfma(double * x, double * y, int len) {
-  int i = 0,
-     lenM = len - (repet * vectorlen - 1);  
+#define ADDF(NR) \
+  sum##NR = _mm256_fmadd_pd(LOADuDOUBLE(x + i + NR * vectorlen),\
+			    LOADuDOUBLE(y + i + NR * vectorlen), sum##NR)
+double avx_scalarprodDfma(double * x, double * y, int len) {
+ int i = 0,
+    lenM = len - (atonce - 1);  
    __m256d SET_0(0);
    double *D  = (double *) &sum0;
 
-  if ( len >= vectorlen * repet) {
+  if (len >= atonce) {
     __m256d SET_0(1), SET_0(2), SET_0(3), SET_0(4), SET_0(5), SET_0(6),SET_0(7);
-#if (7 != repet - 1)
-  wrong repet length
-#endif
-   for (; i < lenM; i += repet * vectorlen) { 
+   for (; i < lenM; i += atonce) { 
      ADDF(0); ADDF(1); ADDF(2); ADDF(3); ADDF(4); ADDF(5); ADDF(6); ADDF(7); 
-#if (7 != repet - 1)
-  wrong repet length
-#endif
-    }
-  SUMUP(0, 1); SUMUP(2, 3); SUMUP(4, 5); SUMUP(6, 7); SUMUP(0, 2); SUMUP(4, 6); SUMUP(0, 4);
-#if (7 != repet - 1)
-  wrong repet length
-#endif
+   }
+   SUMUP(0, 1); SUMUP(2, 3); SUMUP(4, 5); SUMUP(6, 7);
+   SUMUP(0, 2); SUMUP(4, 6); SUMUP(0, 4);
   }
   lenM = len - vectorlen + 1;
-  for (; i < lenM; i += vectorlen) { // could unroll further
-    ADDF(0);
-  }
+  for (; i < lenM; i += vectorlen) { ADDF(0);  }
   double sum = D[0] + D[1] + D[2] + D[3];
-#if (3 != vectorlen - 1)
-  wrong vector length
-#endif
-
-  for (; i < len; ++i) sum += x[i] * y[i];
+  for (; i < len; i++) sum += x[i] * y[i];
   return sum;
 }
 #endif
 
 
-double avx_scalarproductDnearfma(double * x, double * y, int len) {
+double avx_scalarprodDnearfma(double * x, double * y, int len) {
   // deutlich genauer zum 0 tarif
   int i = 0,
-     lenM = len - (repet * vectorlen - 1);  
-  __m256d SET_0(0), SET_0(1), SET_0(2), SET_0(3), SET_0(4), SET_0(5), SET_0(6),SET_0(7),
-    P_0(0), P_0(1), P_0(2), P_0(3), P_0(4), P_0(5), P_0(6),P_0(7);
+     lenM = len - (atonce - 1);  
+  __m256d SET_0(0), SET_0(1), SET_0(2), SET_0(3), SET_0(4), SET_0(5),
+    SET_0(6),SET_0(7),
+    P_0(0), P_0(1), P_0(2), P_0(3), P_0(4), P_0(5), P_0(6), P_0(7);
+  double *D  = (double *) &sum0;
 
-   double *D  = (double *) &sum0;
-
-  if ( len >= vectorlen * repet) {
-    for (; i < lenM; i += repet*vectorlen) {
-      //
+  if ( len >= atonce) {
+    for (; i < lenM; i += atonce) {
       ADDN(0); ADDN(1); ADDN(2); ADDN(3); ADDN(4); ADDN(5); ADDN(6); ADDN(7); 
- #if (7 != repet - 1)
-  wrong repet length
-#endif
     }
-    SUMUP(0, 1); SUMUP(2, 3); SUMUP(4, 5); SUMUP(6, 7); SUMUP(0, 2); SUMUP(4, 6); SUMUP(0, 4);
-    // SUMUP(0, 1); SUMUP(0, 2); SUMUP(0, 3); SUMUP(0, 4); SUMUP(0, 5); SUMUP(0, 6); SUMUP(0, 7);
-#if (7 != repet - 1)
-  wrong repet length
-#endif
+    SUMUP(0, 1); SUMUP(2, 3); SUMUP(4, 5); SUMUP(6, 7);
+    SUMUP(0, 2); SUMUP(4, 6); SUMUP(0, 4);
   }
   lenM = len - vectorlen + 1;
-  for (; i < lenM; i += vectorlen) { // could unroll further
-    ADDN(0);
-  }
-
+  for (; i < lenM; i += vectorlen) {  ADDN(0);  }
   double sum = D[0] + D[1] + D[2] + D[3];
-#if (3 != vectorlen - 1)
-  wrong vector length
-#endif
-
-  for (; i < len; ++i) sum += x[i] * y[i];
+  for (; i < len; i++) sum += x[i] * y[i];
+  
   return sum;
 }
  
 
-#define ADD(NR)								\
-  prod0 = _mm256_mul_pd(VECTOR(x + i + NR * vectorlen),		\
-			   VECTOR(y + i + NR * vectorlen));		\
-  sum0 = _mm256_add_pd(sum0, prod0)
-double avx_scalarproductD(double * x, double * y, int len) {
+#define ADDM(NR)								\
+  prod0 = MULTDOUBLE(LOADuDOUBLE(x + i + NR * vectorlen),		\
+			   LOADuDOUBLE(y + i + NR * vectorlen));		\
+  sum0 = ADDDOUBLE(sum0, prod0)
+double avx_scalarprodD(double * x, double * y, int len) {
   int i = 0,
-     lenM = len - (repet * vectorlen - 1);  
+    lenM = len - (atonce - 1);  
   __m256d SET_0(0), P_0(0);
    double *D  = (double *) &sum0;
 
-  if ( len >= vectorlen * repet) {
-  for (; i < lenM; i += repet*vectorlen) {
-    //
-    ADD(0); ADD(1); ADD(2); ADD(3); ADD(4); ADD(5); ADD(6); ADD(7); 
- #if (7 != repet - 1)
-  wrong repet length
-#endif
+  if ( len >= atonce) {
+  for (; i < lenM; i += atonce) {
+    ADDM(0); ADDM(1); ADDM(2); ADDM(3); ADDM(4); ADDM(5); ADDM(6); ADDM(7); 
     }
   }
-
   lenM = len - vectorlen + 1;
-  for (; i < lenM; i += vectorlen) { // could unroll further
-    ADD(0);
-  }
-  
+  for (; i < lenM; i += vectorlen) { ADDM(0); } 
   double sum = D[0] + D[1] + D[2] + D[3];
-#if (3 != vectorlen - 1)
-  wrong vector length
-#endif
-
-  for (; i < len; ++i) sum += x[i] * y[i];
+  for (; i < len; i++) sum += x[i] * y[i];
   return sum;
 }
 
+//#p r a g m a   o m p declare reduction(minabs : int :  omp_out = a bs(omp_in) > omp_out ? omp_out : a bs(omp_in)   initializer (omp_priv=LARGENUM)
 
-double avx_scalarproductDP(double * x, double * y, int len) {
+#if defined OpenMP4
+double avx_scalarprodDparallel(double * x, double * y, int len) {
+   int i = 0,
+    lenM = len - (atonce - 1);  
+   __m256d SET_0(0), P_0(0);
+   double *D  = (double *) &sum0;
+
+#ifdef DO_PARALLEL
+#pragma omp declare reduction(addpd:  __m256d:				\
+			      omp_out = ADDDOUBLE(omp_out, omp_in))	\
+			      initializer (omp_priv = ZERODOUBLE)
+#endif
+ 
+  if ( len >= atonce) {
+#ifdef DO_PARALLEL
+#pragma omp parallel for num_threads(CORES) reduction(addpd:sum0) schedule(dynamic, 100)
+#endif
+    for (i=0; i < lenM; i += atonce) {
+      ADDM(0); ADDM(1); ADDM(2); ADDM(3); ADDM(4); ADDM(5); ADDM(6); ADDM(7); 
+    }
+  }
+  lenM = len - vectorlen + 1;
+  for (; i < lenM; i += vectorlen) { ADDM(0); }
+  double sum = D[0] + D[1] + D[2] + D[3];
+  for (; i < len; i++) sum += x[i] * y[i];
+  return sum;
+}
+#endif
+
+
+double avx_scalarprodDP(double * x, double * y, int len) {
   int i = 0,
-     lenM = len - (repet * vectorlen - 1);  
+     lenM = len - (atonce - 1);  
   __m256d SET_0(0), SET_0(1), P_0(0);
    double *D  = (double *) &sum1;
-
-  if ( len >= vectorlen * repet) {
-    
+  if ( len >= atonce) {
     for (; i < lenM; ) {
       int lenMM = i + vectorlen * (repet * 10 + 1);
       if (lenMM > lenM) lenMM = lenM;
-      sum0 = _mm256_mul_pd(VECTOR(x + i), VECTOR(y + i));
+      sum0 = MULTDOUBLE(LOADuDOUBLE(x + i), LOADuDOUBLE(y + i));
       i += vectorlen;
-      for (; i < lenMM; i += repet*vectorlen) {
-	ADD(0); ADD(1); ADD(2); ADD(3); ADD(4); ADD(5); ADD(6); ADD(7); 
-#if (7 != repet - 1)
-	wrong repet length
-#endif
-	  }
-      sum1 = _mm256_add_pd(sum0, sum1);
+      for (; i < lenMM; i += atonce) {
+	ADDM(0); ADDM(1); ADDM(2); ADDM(3); ADDM(4); ADDM(5); ADDM(6); ADDM(7); 
+      }
+      sum1 = ADDDOUBLE(sum0, sum1);
     }
   }
   
  lenM = len - vectorlen + 1;
- for (; i < lenM; i += vectorlen) { // could unroll further
-    prod0 = _mm256_mul_pd(VECTOR(x + i), VECTOR(y + i));
-    sum1 = _mm256_add_pd(sum1, prod0);
+ for (; i < lenM; i += vectorlen) { 
+    prod0 = MULTDOUBLE(LOADuDOUBLE(x + i), LOADuDOUBLE(y + i));
+    sum1 = ADDDOUBLE(sum1, prod0);
   }
-  
   double sum = D[0] + D[1] + D[2] + D[3];
-#if (3 != vectorlen - 1)
-  wrong vector length
-#endif
-
-    for (; i < len; ++i) {
-      // printf("final %d\n", i);
-      sum += x[i] * y[i];
-    }
+  for (; i < len; i++) sum += x[i] * y[i];
   return sum;
 }
 
 
-
-
-#define ADDK(NR)								\
-  prod0 = _mm256_mul_pd(VECTOR(x + i + NR * vectorlen),		\
-			   VECTOR(y + i + NR * vectorlen));		\
-  sum2 = _mm256_sub_pd(prod0, sum1);\
-  sum3 = _mm256_add_pd(sum0, sum2);		\
-  sum1 = _mm256_sub_pd(sum3, sum0);		\
-  sum0 = sum3;					\
-  sum1 = _mm256_sub_pd(sum1, sum2);
- double avx_scalarproductDK(double * x, double * y, int len) {
-   // Kahan enhanced
+#define ADDK(NR)							\
+  prod0 = MULTDOUBLE(LOADuDOUBLE(x + i + NR * vectorlen),		\
+		     LOADuDOUBLE(y + i + NR * vectorlen));		\
+  sum2 = SUBDOUBLE(prod0, sum1);					\
+  sum3 = ADDDOUBLE(sum0, sum2);						\
+  sum1 = SUBDOUBLE(sum3, sum0);						\
+  sum0 = sum3;								\
+  sum1 = SUBDOUBLE(sum1, sum2);
+double avx_scalarprodDK(double * x, double * y, int len) {
+  // Kahan
   int i = 0,
-     lenM = len - (repet * vectorlen - 1);  
+    lenM = len - (atonce - 1);  
   __m256d SET_0(0), // sum
-    SET_0(1),  // c
+    SET_0(1), 
     SET_0(2), // y
-    SET_0(3),  // t
+    SET_0(3), // t
     P_0(0),
     P_0(1);
-   double *D  = (double *) &sum0;
-
-  if ( len >= vectorlen * repet) {
-  for (; i < lenM; i += repet*vectorlen) {
-    //
-    ADDK(0); ADDK(1); ADDK(2); ADDK(3); ADDK(4); ADDK(5); ADDK(6); ADDK(7);
- #if (7 != repet - 1)
-  wrong repet length
-#endif
+  double *D  = (double *) &sum0;  
+  if ( len >= atonce) {
+    for (; i < lenM; i += atonce) {
+      ADDK(0); ADDK(1); ADDK(2); ADDK(3); ADDK(4); ADDK(5); ADDK(6); ADDK(7);
     }
   }
- lenM = len - vectorlen + 1;
- for (; i < lenM; i += vectorlen) { // could unroll further
-    ADDK(0);
- }
- sum0 = _mm256_add_pd(sum0, prod1); 
-  
+  lenM = len - vectorlen + 1;
+  for (; i < lenM; i += vectorlen) { ADDK(0); }
+  sum0 = ADDDOUBLE(sum0, prod1);
   double sum = D[0] + D[1] + D[2] + D[3];
-#if (3 != vectorlen - 1)
-  wrong vector length
-#endif
-
-  for (; i < len; ++i) sum += x[i] * y[i];
+  
+  for (; i < len; i++) sum += x[i] * y[i];
   return sum;
 }
 
-// end if simd
 #endif
  
  
-double scalarproductf64( double * v1,  double * v2, int N){
+double scalarprod( double * v1, double * v2, int N){
   double *endv1 = v1 + N,
     sum = 0;
-    for(; v1!= endv1; v1++, v2++) sum+= v2[0] * v1[0];
-    return sum;
+  for(; v1!= endv1; v1++, v2++) sum +=  v2[0] * v1[0];
+  return sum;
 }
  
  
- 
-double scalarproductf64P( double * v1,  double * v2, int N){
-  double //*endv1 = v1 + N,
-    sum = 0;
+double scalarprodP( double * v1, double * v2, int N){
+  double 
+    sum = 0.0;
 #ifdef DO_PARALLEL
-#pragma omp parallel for reduction(+:sum)
-#else
-  ERR("parallel not allowed");
+#pragma omp parallel for num_threads(CORES) if (N > 200) reduction(+:sum) schedule(dynamic, 100) 
 #endif
   for(int i=0; i<=N; i++) sum += v2[i] * v1[i];
-    return sum;
+  return sum;
 }
  
  
-double scalarproduct2by2f64( double * v1,  double * v2, int N){
-    double *endv1 = v1 + N,
-      sum = 0;
-    for(; v1!= endv1; v1+=2, v2+=2) {
-        sum+= v2[0] * v1[0] + v2[1] * v1[1];
-    }
-    return sum;
+double scalarprod2by2( double * v1, double * v2, int N){
+  double *endv1 = v1 + (N / 2) * 2,
+    *end = v1 + N,
+    sum = 0;
+  for(; v1 < endv1; v1 += 2, v2 += 2) sum += v2[0] * v1[0] + v2[1] * v1[1];
+  if (v1 < end) sum += v2[0] * v1[0]; 
+  return sum;
 }
  
  
-double scalarproduct4by4f64( double * v1,  double * v2, int N){
-    double*endv1 = v1 + N,
-      sum = 0;
-    for(; v1 < endv1; v1+=4, v2+=4) {
-      sum+= v2[0] * v1[0] + v2[1] * v1[1] + v2[2] * v1[2]+ v2[3] * v1[3];
-    }
-    return sum;
+double scalarprod4by4( double * v1, double * v2, int N){
+  double*endv1 = v1 + (N / 4) * 4,
+    *end = v1 + N,
+    sum = 0;
+  for(; v1 < endv1; v1 += 4, v2 += 4)
+    sum += v2[0] * v1[0] + v2[1] * v1[1] + v2[2] * v1[2]+ v2[3] * v1[3];
+  for(; v1 < end; v1++, v2++) sum += v2[0] * v1[0];        
+  return sum;
 }
 
  
-double scalarproduct8by8f64( double * v1,  double * v2, int N){
-    double *endv1 = v1 + N,
-      sum = 0;
-    for(; v1!= endv1; v1+=8, v2+=8) {
-      sum+= v2[0] * v1[0] + v2[1] * v1[1]+ v2[2] * v1[2] + v2[3] * v1[3] +
-	v2[4] * v1[4] + v2[5] * v1[5]+ v2[6] * v1[6]+ v2[7] * v1[7];
-    }
-    return sum;
+double scalarprod8by8( double * v1, double * v2, int N){
+  double
+    *endv1 = v1 + (N / 8) * 8,
+    *end = v1 + N,
+    sum = 0.0;
+  for(; v1 < endv1; v1 += 8, v2 += 8)
+    sum += v2[0] * v1[0] + v2[1] * v1[1]+ v2[2] * v1[2] + v2[3] * v1[3] +
+      v2[4] * v1[4] + v2[5] * v1[5]+ v2[6] * v1[6]+ v2[7] * v1[7];
+  for(; v1 < end; v1++, v2++) sum +=  v2[0] * v1[0];        
+  return sum;
 }
- 
+
+
+
+double scalarprodPX( double * V1, double * V2, int N){
+#define AtOnce 16
+  double
+    *endv1 = V1 + (N / AtOnce) * AtOnce,
+    *end = V1 + N,
+    sum = 0;
+#ifdef DO_PARALLEL
+#pragma omp parallel for num_threads(CORES) if (N > 200) reduction(+:sum) schedule(dynamic, 50) 
+#endif
+  for(double *v1=V1; v1 < endv1; v1 += AtOnce) {
+    double *v2 = V2 + (V1 - v1);
+    sum +=  v2[0] * v1[0] + v2[1] * v1[1]+ v2[2] * v1[2] + v2[3] * v1[3] +
+      v2[4] * v1[4] + v2[5] * v1[5]+ v2[6] * v1[6]+ v2[7] * v1[7] +
+      v2[8] * v1[8] + v2[9] * v1[9]+ v2[10] * v1[10] + v2[11] * v1[11] +
+      v2[12] * v1[12] + v2[13] * v1[13]+ v2[14] * v1[14]+ v2[15] * v1[15];
+  }
+  double
+    *v1 = V1 + (N / AtOnce),
+    *v2 = V2 + (V1 - v1);
+  for(; v1 < end; v1++, v2++) sum += v2[0] * v1[0];        
+  return sum;
+}
+
+
+
+//bool pr = true;
+double scalarX(double *x, double *y, int len, int n) {
+  if (n < 0) {
+  }
+//  if (pr) { printf("mode = %d\n", n); pr = false; }
+ // 0 : 7.9
+// 1:  7.55
+// 2: 7.8
+// 3:7.58
+//4: 7.5 
+// 5: 7.4!
+//6:7.4
+//7: 7.9
+// 8: "ewige" schleife
+
+  switch(n) {
+  case 0 : return scalarprod(x, y, len);
+  case SCALAR_BASE : return scalarprod2by2(x, y, len); 
+  case 2 : return scalarprod4by4(x, y, len); 
+  case 3 : return scalarprod8by8(x, y, len); 
+#ifdef FMA_AVAILABLE
+  case 4 : return avx_scalarprodDfma(x, y, len);
+#endif    
+#ifdef AVX
+  case 5 : return avx_scalarprodDnearfma(x, y, len); 
+  case SCALAR_AVX : return avx_scalarprodD(x, y, len); // best one kernel
+  case 7 : return avx_scalarprodDP(x, y, len);  //best
+  case SCALAR_KAHAN : return avx_scalarprodDK(x, y, len); // kahan
+#else
+  case 4: case 5: case 6: case 7: case 8 : return scalarprod2by2(x, y, len);
+#endif
+    
+#ifdef DO_PARALLEL
+  case SCALAR_AVX_PARALLEL :
+#if defined AVX and defined OpenMP
+    return avx_scalarprodDparallel(x, y, len);
+#endif    
+  case SCALAR_BASE_PARALLEL : return scalarprodP(x, y, len);// parallel, nicht-vectoriell
+#else
+  case SCALAR_AVX_PARALLEL :
+#ifdef AVX
+  return avx_scalarprodD(x, y, len);
+#endif     
+   case SCALAR_BASE_PARALLEL : return scalarprod2by2(x, y, len); 
+#endif  
+  default : ERR("method not available"); 
+  }
+  return RF_NAN;
+}
+  
+
+
 
 SEXP scalarX(SEXP x, SEXP y, SEXP mode) {
   int len = length(x);
   if (length(y) != len) ERR("x and y differ in length");
-  int n = Match((char*) CHAR(STRING_ELT(mode, 0)), modi, Nmodi);
-  if (n < 0) ERR("unknown modus");
+  int n;
+  if (length(mode) == 0) n = -1;
+  else {
+    n = Match((char*) CHAR(STRING_ELT(mode, 0)), modi, Nmodi);
+    if (n < 0) ERR("unknown modus");
+  }
   SEXP Ans;
   PROTECT(Ans = allocVector(REALSXP, 1));
   double *ans = REAL(Ans);
-  switch(n) {
-  case 0 : *ans = scalarproductf64(REAL(x), REAL(y), len); break;
-  case 1 : *ans = scalarproduct2by2f64(REAL(x), REAL(y), len); break;
-  case 2 : *ans = scalarproduct4by4f64(REAL(x), REAL(y), len); break;
-  case 3 : *ans = scalarproduct8by8f64(REAL(x), REAL(y), len); break;
-  case 4 :
-#ifdef SIMD_AVAILABLE
-    *ans = avx_scalarproductDnearfma(REAL(x), REAL(y), len); break;
-    #else
-    BUG;
-    #endif
-  case 5 :
-    #ifdef SIMD_AVAILABLE
-    *ans = avx_scalarproductD(REAL(x), REAL(y), len); break;
-     #else
-    BUG;
-   #endif
-  case 6 :
-    #ifdef SIMD_AVAILABLE
-    *ans = avx_scalarproductDP(REAL(x), REAL(y), len); break;
-    #else
-    BUG;
-    #endif
-  case 7 :
-    #ifdef SIMD_AVAILABLE
-    *ans = avx_scalarproductDK(REAL(x), REAL(y), len); break;
-    #else
-    BUG;
-    #endif
-  case 8 : *ans = scalarproductf64P(REAL(x), REAL(y), len); break;
-  default : BUG;
-  }
- 
+  *ans = scalarX(REAL(x), REAL(y), len, n);
   UNPROTECT(1);
   return Ans;
 }
-  
-#else
-SEXP scalarX(SEXP VARIABLE_IS_NOT_USED x, SEXP  VARIABLE_IS_NOT_USED y,
-	     SEXP  VARIABLE_IS_NOT_USED mode) { BUG; }
-
-
-#endif // SCHLATHERS_MACHINE

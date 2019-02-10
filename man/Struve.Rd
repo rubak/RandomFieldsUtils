@@ -68,6 +68,6 @@ besselI(x, nu=1) - struveL(x, 1) ## cf. Abramovitz & Stegun, table 12.1
 }
 
 }
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
+
 \keyword{math}

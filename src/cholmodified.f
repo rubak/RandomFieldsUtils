@@ -1,3 +1,24 @@
+c 
+c     Authors:
+c     Reinhard Furrer
+c       
+c  Copyright (C) 2017 -- 2017 Reinhard Furrer
+c 
+c This program is free software; you can redistribute it and/or
+c modify it under the terms of the GNU General Public License
+c as published by the Free Software Foundation; either version 3
+c of the License, or (at your option) any later version.
+c 
+c This program is distributed in the hope that it will be useful,
+c but WITHOUT ANY WARRANTY; without even the implied warranty of
+c MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+c GNU General Public License for more details.
+c 
+c You should have received a copy of the GNU General Public License
+c along with this program; if not, write to the Free Software
+c Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
+
+
       subroutine updatefactor( m,nnzd,
      &     d,jd,id, invp,perm, 
      &                lindx,xlindx, nsuper,lnz,xlnz,

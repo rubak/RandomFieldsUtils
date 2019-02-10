@@ -83,8 +83,7 @@ The function values are rather precise even for large values of \code{nu}.
 
 }
 
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 
 \seealso{
   \command{\link{nonstwm}}
@@ -98,9 +97,7 @@ The function values are rather precise even for large values of \code{nu}.
 \keyword{math}
 
 
-\examples{
-confirm <- function(x, y) stopifnot(all.equal(x, y))
-
+\examples{%    library(RandomFieldsUtils)
 x <- 3
 confirm(matern(x, 0.5), exp(-x))
 confirm(matern(x, Inf), gauss(x/sqrt(2)))

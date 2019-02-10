@@ -1,5 +1,13 @@
 \name{RFoptions}
 \alias{RFoptions}
+\alias{PIVOT_UNDEFINED}
+\alias{PIVOT_NONE}
+\alias{PIVOT_AUTO}
+\alias{PIVOT_DO}
+\alias{PIVOT_IDX}
+%\alias{PIVOT_IDXBACK}
+\alias{PIVOTSPARSE_MMD}
+\alias{PIVOTSPARSE_RCM}
 \title{Setting control arguments}
 \description{
  \command{\link{RFoptions}} sets and returns control arguments for the analysis
@@ -21,6 +29,8 @@
   The subsections below comment on\cr
   \bold{1. \code{basic}: Basic options}\cr
   \bold{2. \code{solve}: Options for solving linear systems}\cr
+  \bold{3. Reserved words}\cr
+  \cr
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % \bold{16. Options for RFloglikelihood}\cr
@@ -31,7 +41,7 @@
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   \bold{1. Basic options}
   \describe{
-    \item{asList}{logical. Lists of arguments are treated slightly
+    \item{\code{asList}}{logical. Lists of arguments are treated slightly
       different from non-lists. If \code{asList=FALSE} they are treated the
       same way as non-lists. This options being set to \code{FALSE} after
       calling \command{RFoptions} it should be set as first element of a list.
@@ -70,6 +80,18 @@
       Default: 1 \cr % [also  do].\cr
     }
 
+    \item{\code{helpinfo}}{logical. If \code{TRUE} then
+      additional information is printed for more efficient programming
+      in R.
+    }
+
+    \item{\code{kahanCorrection}}{
+      logical. If \code{TRUE}, the Kahan summation algorithm is used for
+      calculating scalar products.
+      
+      Default: false
+    }
+   
     \item{\code{printlevel}}{If \code{printlevel}\eqn{\le0}{<=0}
       there is not any output on the screen. The
       higher the number the more tracing information is given.
@@ -88,7 +110,8 @@
       Default: 1 %[also do].\cr
     }
     
-    \item{seed}{integer (currently only used by the package RandomFields).
+    \item{\code{seed}}{integer (currently only used by the package
+      RandomFields). 
       If \code{NULL} or \code{NA}
       \command{\link[base]{set.seed}} is \bold{not} called.
       Otherwise, \code{\link[base]{set.seed}(seed)} is set
@@ -136,18 +159,109 @@
   
   
   \describe{ % to do
+    \item{\code{det_as_log}}{
+    }
+    \item{\code{eigen2zero}}{
+      When the svd or eigen decomposition is calculated,
+      all values with modulus less than or equal to \code{eigen2zero}
+      are set to zero.
+      
+      Default: \code{1e-12}
+    }
     \item{\code{max_chol}}{integer. Maximum number of rows of a matrix in
       a Cholesky decomposition
       
-      Default: \eqn{8192}
+      Default: \eqn{16384}
     }
-    \item{\code{max_svn}}{integer. Maximum number of rows of a matrix in
+    \item{\code{max_svd}}{integer. Maximum number of rows of a matrix in
       a svd decomposition
       
-      Default: \eqn{6555}
+      Default: \eqn{10000}
     }
     
-    \item{\code{solve_method}}{
+    \item{\code{pivot}}{Type of pivoting for the Cholesky
+      decomposition. Possible values are 
+      \describe{
+	\item{PIVOT_NONE}{No pivoting.}
+	\item{PIVOT_AUTO}{If the  matrix has a size greater than
+	  3x3 and Choleskey fails without pivoting, privoting
+	  is done. For matrices of size less than 4x4, no pivoting and
+	  no checks are performed. See also \code{PIVOT_DO}}
+ 	\item{PIVOT_DO}{Do always pivoting.
+	  NOTE: privoted Cholesky decomposition yields only very approximately
+	  an upper triangular matrix L, but still L^t L = M holds true.
+%	  The information about the pivoting sequence are attributed to
+%	  the result.
+	}
+ 	\item{PIVOT_IDX}{uses the same pivoting as in the previous
+	  pivoted decomposition. This option becomes relevant only when
+	  simulations with different parameters or different models shall be
+	  performed with the same seed so that also the pivoting must be
+	  coupled.
+%	  The information about the pivoting sequence are attributed to
+%	  the result.
+	}
+ %	\item{PIVOT_IDXBACK}{ same as \code{PIVOT_IDX}, but
+%	the sequence of indices of the pivoting is returned via
+%	\code{RFoptions()$solve$pivot_idx}.}
+      }
+
+      Default: \code{PIVOT_NONE}
+    }
+    
+    \item{\code{pivot_actual_size}}{integer.
+      Genuine dimension of the linear mapping given by a matrix in \link{cholx}.
+      This is a very rarely used option when pivoting with
+      \code{pivot=PIVOT_IDX}.
+    }
+     
+    \item{\code{pivot_check}}{logical. Only used in pivoted Cholesky
+      decomposition. 
+      If \code{TRUE} and a numerically zero diagonal element is detected,
+      it is checked whether the offdiagonal elements are numerically zero 
+      as well.
+      (See also \code{pivot_max_deviation} and
+      \code{pivot_max_reldeviation}.) 
+      If \code{NA} then only a warning is given.
+      
+      Default: \code{TRUE}
+   }
+
+       \item{\code{pivot_idx}}{vector of integer.
+      Sequence of pivoting indices in pivoted Cholesky decomposition.
+      Note that
+      \code{pivot_idx[1]} gives the number of indices that will be
+      used. The vector must have at least the length
+      \code{pivot_idx[1] + 1}.
+
+      Default: \code{NULL}
+    }
+    
+    \item{\code{pivot_relerror}}{positive number.
+      Tolerance for (numerically) negative eigenvalues and for (numerically)
+      overdetermined systems appearing in the pivoted Cholesky decomposition.
+
+      Default: \code{1e-11}
+    }
+    
+    \item{\code{pivot_max_deviation}}{positive number.
+      Together with \code{pivot_max_reldeviation} it determines
+      when the rest of the matrix (eigenvalues) in the pivoted
+      Cholesky decomposition are considered as zero.
+      
+      Default: \code{1e-10}
+    }
+    
+    \item{\code{pivot_max_reldeviation}}{positive number.
+	Together with \code{pivot_max_deviation} it determines
+      when the rest of the matrix (eigenvalues) in the pivoted
+      Cholesky decomposition are considered as zero.
+ 
+      Default: \code{1e-10}
+   }
+
+     
+   \item{\code{solve_method}}{
       vector of at most 3 integers that gives the sequence of methods
       in order to inverse a matrix or to calculate its square root:
       \code{"cholesky"}, \code{"svd"}, \code{"eigen"} \code{"sparse"},
@@ -167,7 +281,8 @@
     }
     
     \item{\code{spam_min_n}}{
-      integer. Has the matrix 
+      integer. THe minimal size for a matrix to apply a
+      sparse matrix algorithms automatically.
       
       Default: 400
     }
@@ -179,11 +294,14 @@
     }
     \item{\code{spam_pivot}}{
       integer. Pivoting algorithm for sparse matrices:
-      0:none; 1:MMD, 2:RCM
-      
+      \describe{
+	\item{PIVOT_NONE}{No pivoting}
+	\item{PIVOTSPARSE_MMD}{}
+	\item{PIVOTSPARSE_RCM}{}
+      }
       See package \code{spam} for details.
       
-      Default: 1
+      Default: PIVOTSPARSE_MMD
     }
     \item{\code{spam_sample_n}}{
       Whether a matrix is sparse or not is tested by a
@@ -207,14 +325,7 @@
       
       Default: \code{0}
     }
-    \item{\code{eigen2zero}}{
-      When the svd or eigen decomposition is calculated,
-      all values with modulus less than or equal to \code{eigen2zero}
-      are set to zero.
-    
-      Default: \code{1e-12}
-    }
-    \item{\code{use_spam}}{
+     \item{\code{use_spam}}{
       Should the package \code{spam} (sparse matrices)
       be used for matrix calculations?
       If \code{TRUE} \pkg{spam} is always used. If \code{FALSE},
@@ -222,6 +333,38 @@
       the size and the sparsity of the matrix.
       
       Default: \code{NA}. 
+    }
+  }
+
+  \bold{3. Reserved Words}
+  \describe{
+    \item{\code{LIST}}{
+      \code{LIST} usually equals the output of \code{RFoptions()}.
+      This argument is used to reset the RFoptions.
+      Some of the options behave differently if passed through
+      \code{LIST}. E.g. a warning counter is not reset.
+      The argument \code{LIST} cannot be combined with any other arguments.
+    }
+    \item{\code{GETOPTIONS}}{string vector of prefixes that indicate
+      classes of options. In this package they
+      can be \code{"basic"} and \code{"solve"}. (E.g. package
+      \pkg{RandomFields} has many more classes of options.)
+      The given classes of options  are then
+      returned by \code{RFoptions()}. Note that the values are the
+      previous values.
+      
+      \code{GETOPTIONS} must always be the very first argument.
+    }
+    \item{\code{SAVEOPTIONS}}{string vector of prefixes. Same as for
+      \code{GETOPTIONS}, except that important classes are always
+      returned and thus  should not be given. Hence \code{SAVEOPTIONS}
+      is often a convenient short cut for \code{GETOPTIONS}.
+      The class always included in this package is \code{"basic"}, in
+      package \pkg{RandomFields} thes are the two packages
+      \code{"basic"} and \code{"general"}.
+   
+      \code{SAVEOPTIONS} must always be the very first argument. In
+      particular, it may not given at the same time with \code{GETOPTIONS}.
     }
   }
 }
@@ -233,10 +376,7 @@
  arguments, otherwise.
 }
 
-%\references{}
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
- \url{http://ms.math.uni-mannheim.de/de/publications/software}}
-
+\me
 
 \examples{
 

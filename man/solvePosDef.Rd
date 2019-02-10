@@ -57,7 +57,10 @@ If the matrix is diagonal direct calculations are performed.
  
 Else if the matrix is sparse the package \pkg{spam} is used.
 
-Else the Cholesky decomposition is tried.
+Else the Cholesky decomposition is tried. Note that with
+\code{RFoptions(pivot=  )} pivoting can be enabled. Pivoting is about
+30\% slower.
+
 If it fails, the eigen value decomposition is tried.
 }
 
@@ -67,29 +70,61 @@ If it fails, the eigen value decomposition is tried.
 \seealso{
   \link[spam]{chol.spam} in the package \pkg{spam}
 }
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 \keyword{math}
 \examples{
-if (FALSE) {
-## This examples shows that 'solvex' can be much faster than 'solve'
+%   library(RandomFieldsUtils)
 
-## creating a covariance matrix for a temporal process
-covmatrix <- function(model, x) {
-  x <- as.matrix(dist(x))
-  return(eval(substitute(model)))
-}
+RFoptions(solve_method = "cholesky", printlevel=1)
+set.seed(1)
+n <- 1000
+x <- 1:n
+y <- runif(n)
 
-size <- 600
-x <- runif(size, 0, size / 10)
-M <- covmatrix((1 - x) * (x < 1) , x) ## Askey's model of covariance
-b <- seq(0, 1, len=size)
-system.time(inv2 <- solve(M, b))
-system.time(inv1 <- solvex(M, b)) ## much faster in this case
-range(inv2 - inv1)
-stopifnot(all(abs(inv2 - inv1) < 10^{-9}))
 
-}
+## FIRST EXAMPLE: full rank matrix
+M <- exp(-as.matrix(dist(x) / n)) 
+b0 <- matrix(nr=n, runif(n * 5))
+b <- M \%*\% b0 + runif(n)
+
+## standard with 'solve'
+print(system.time(z <- solve(M, b)))
+print(range(b - M \%*\% z))
+stopifnot(all(abs((b - M \%*\% z)) < 2e-11))
+
+## Without pivoting:
+RFoptions(pivot=PIVOT_NONE) ## (default)
+print(system.time(z <- solvex(M, b)))
+print(range(b - M \%*\% z))
+stopifnot(all(abs((b - M \%*\% z)) < 2e-11))
+
+## Pivoting is 35% slower here:
+RFoptions(pivot=PIVOT_DO) 
+print(system.time(z <- solvex(M, b)))
+print(range(b - M \%*\% z))
+stopifnot(all(abs((b - M \%*\% z)) < 2e-11))
+
+
+
+## SECOND EXAMPLE: low rank matrix
+M <- x \%*\% t(x) + rev(x) \%*\% t(rev(x)) + y \%*\% t(y)
+b1 <- M \%*\% b0
+
+## Without pivoting, it does not work
+RFoptions(pivot=PIVOT_NONE) 
+#try(solve(M, b1))
+#try(solvex(M, b1))
+
+## Pivoting works -- the precision however is reduced :
+RFoptions(pivot=PIVOT_DO) 
+print(system.time(z1 <- solvex(M, b1)))
+print(range(b1 - M \%*\% z1))
+stopifnot(all(abs((b1 - M \%*\% z1)) < 2e-6))
+
+## Pivoting fails, when the equation system is not solvable:
+b2 <- M + runif(n)
+#try(solvex(M, b2))
+
 
 }
 

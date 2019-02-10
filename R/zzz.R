@@ -1,16 +1,16 @@
 
 .onLoad <- function(lib, pkg) {
-  .Call("attachRFoptionsUtils")
+  .Call("attachRandomFieldsUtils", interactive())
 }
 
 .onAttach <- function (lib, pkg) {
-#   packageStartupMessage("This is RandomFieldsUtils Version: 0.3.25");
+#   packageStartupMessage("This is RandomFieldsUtils Version: 0.5");
 }
 
 .onDetach <- function(lib) {
-# .Call("detachRFoptionsUtils")
+# .Call("detachRanodmFieldsUtils")
 }
 
 .onUnload <- function(lib, pkg){
-  .Call("detachRFoptionsUtils")
+  .Call("detachRandomFieldsUtils")
 }

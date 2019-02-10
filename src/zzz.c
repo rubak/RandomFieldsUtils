@@ -2,7 +2,7 @@
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
- Copyright (C) 2015 -- 2017 Martin Schlather, Reinhard Furrer
+ Copyright (C) 2015 -- 2017 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,20 +22,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#include "Basic_utils.h" // must be before anything else
 
 #include "RandomFieldsUtils.h"
-#include "init_RandomFieldsUtils.h"
+#include "zzz_RandomFieldsUtils.h"
+#include "Utils.h"
 
+ 
 static R_NativePrimitiveArgType Relax_t[] = { LGLSXP },
     int_arg[] = { INTSXP },
     host_arg[] = { STRSXP, INTSXP};
   //  static R_NativeArgStyle argin[] = {R_ARG_IN},
   //    argout[] = {R_ARG_OUT},
   //   hostarg[] = {R_ARG_OUT, R_ARG_OUT};
+
+#define CDEF(name, n, type) {#name, (DL_FUNC) & name, n, type}
 static const R_CMethodDef cMethods[]  = {
-  {"RelaxUnknownRFoption", (DL_FUNC) &RelaxUnknownRFoption, 1, Relax_t},
-  {"sleepMilli", (DL_FUNC) &sleepMilli, 1, int_arg},
- {"sleepMicro", (DL_FUNC) &sleepMicro, 1, int_arg},
- {"pid", (DL_FUNC) &pid, 1, int_arg},
- {"hostname", (DL_FUNC) &hostname, 2, host_arg},
+  CDEF(RelaxUnknownRFoption, 1, Relax_t),
+  CDEF(sleepMilli,  1, int_arg),
+  CDEF(sleepMicro, 1, int_arg),
+  CDEF(pid, 1, int_arg),
+  CDEF(hostname, 2, host_arg),
   // {"attachRFoptionsUtils", (DL_FUNC) &attachRFoptionsUtils, 0, NULL, NULL},
   // {"detachRFoptionsUtils", (DL_FUNC) &detachRFoptionsUtils, 0, NULL, NULL},
   {NULL, NULL, 0, NULL}
@@ -53,16 +57,20 @@ static R_CallMethodDef callMethods[]  = {
   CALLDEF_DO(gaussr, 2),
   CALLDEF_DO(WMr, 4),
   CALLDEF_DO(logWMr, 4),
-  CALLDEF_DO(attachRFoptionsUtils, 0),
-  CALLDEF_DO(detachRFoptionsUtils, 0),
+  CALLDEF_DO(attachRandomFieldsUtils, 1),
+  CALLDEF_DO(detachRandomFieldsUtils, 0),
   CALLDEF_DO(sortX, 4),
-  CALLDEF_DO(orderX, 4),
+  CALLDEF_DO(orderX, 4), 
   CALLDEF_DO(getChar, 0),
-#ifdef SCHLATHERS_MACHINE
-  CALLDEF_DO(scalarX, 3),
-  CALLDEF_DO(brdomain, 4),
-  CALLDEF_DO(Udiffusion, 14),
-#endif 
+  CALLDEF_DO(DivByRow, 2),
+  CALLDEF_DO(colMaxs, 1),
+  CALLDEF_DO(quadratic, 2),
+  CALLDEF_DO(dotXV, 2),
+  CALLDEF_DO(rowMeansX, 2),
+  CALLDEF_DO(rowProd, 1),
+  CALLDEF_DO(dbinorm, 2),
+  CALLDEF_DO(chol2mv, 2),
+  CALLDEF_DO(tcholRHS, 2),
   //  CALLDEF_DO(),
   {NULL, NULL, 0}
 };
@@ -87,9 +95,15 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
   CALLABLE(solvePosDef);
   CALLABLE(invertMatrix);
   
-  CALLABLE(sqrtPosDef); 
   CALLABLE(sqrtPosDefFree); 
   CALLABLE(sqrtRHS);
+  
+  CALLABLE(detPosDef);
+  CALLABLE(XCinvXdet);
+  CALLABLE(XCinvYdet);
+  CALLABLE(is_positive_definite);
+  CALLABLE(chol2inv);
+  CALLABLE(chol);
 
   CALLABLE(StruveH);
   CALLABLE(StruveL);
@@ -120,15 +134,28 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
   CALLABLE(orderingInt);
   CALLABLE(sorting);
   CALLABLE(sortingInt);
+  CALLABLE(scalarX);
+
+  CALLABLE(ToIntI);
+  //  CALLABLE(ToRealI);
+
+  CALLABLE(pid);
+  CALLABLE(sleepMicro);
+ 
 
   R_registerRoutines(dll, cMethods, callMethods, NULL, // .Fortran
 		     extMethods);
-  R_useDynamicSymbols(dll, FALSE);
+  R_useDynamicSymbols(dll, FALSE); //
 }
 
 
 
 void R_unload_RandomFieldsUtils(DllInfo *info) {
+  // just to avoid warning from compiler on my computer
+#ifdef SCHLATHERS_MACHINE  
+  if (0) Rprintf("%ld\n", (unsigned long) info);
+#endif  
   /* Release resources. */
 }
 
+ 

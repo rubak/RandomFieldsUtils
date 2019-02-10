@@ -5,7 +5,7 @@
 
  Collection of system specific auxiliary functions
 
- Copyright (C) 2001 -- 2015 Martin Schlather, 
+ Copyright (C) 2001 -- 2017 Martin Schlather, 
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,15 +22,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include <Rmath.h>
-#include <unistd.h>
+//#include <Rmath.h>
+//#include <unistd.h>
 #include "RandomFieldsUtils.h"
-#include "win_linux_aux.h"
+//#include "win_linux_aux.h"
 #include "General_utils.h"
+#include "intrinsics.h"
+//#include "Solve.h"
+#include "Utils.h"
+#include "own.h"
 
 
-SEXP getChar() {
-  ERR("does not work");
+SEXP getChar() {  ERR("does not work");
 #ifdef WIN32
   ERR("input limitations on windows");
 #endif
@@ -69,7 +72,7 @@ SEXP getChar() {
     }
   }
   //endwin();
-//printf(">%s<\n", s);
+//printf(">%.50s<\n", s);
   PROTECT(str=allocVector(STRSXP, 1));
   SET_STRING_ELT(str, 0, mkChar(s));  
   UNPROTECT(1);
@@ -78,3 +81,405 @@ SEXP getChar() {
 }
 
 
+
+
+
+
+SEXP DivByRow(SEXP M, SEXP V) {
+  int
+    l = length(V),
+    r = nrows(M),
+    c = ncols(M);
+
+  double *m = REAL(M),
+    *v = REAL(V);
+  
+  if (l != c) ERR("vector does not match matrix");
+  for (int j=0; j<c; j++) {
+    double vj = v[j];
+    for (int i=0; i<r; i++) {
+      *(m++) /= vj;
+    }
+  }
+
+  return M;
+}
+
+
+void colMaxsIint(int *M, int r, int c, int *ans) {
+#ifdef DO_PARALLEL
+#pragma omp parallel for num_threads(CORES)
+#endif  
+  for (int i=0; i<c; i++) {
+     int dummy,
+      *m = M + r * i;
+#if defined SSE4 or defined AVX2
+     int *start = algnInt(m),
+       *end = m + r;
+    uintptr_t End = (uintptr_t) (end - integers);
+    if ((uintptr_t) start < End) {
+      BlockType *m0 = (BlockType*) start,
+	Dummy = LOAD((BlockType*) m0);
+      for (m0++ ; (uintptr_t) m0 < End; m0++) {
+	Dummy = MAXINTEGER(Dummy, LOAD(m0));
+      }
+      double *d = (double *) &Dummy;
+      dummy = d[0];
+      dummy = dummy < d[1] ? d[1] : dummy;
+      dummy = dummy < d[2] ? d[2] : dummy;
+      dummy = dummy < d[3] ? d[3] : dummy;   
+#if defined AVX2
+      dummy = dummy < d[4] ? d[4] : dummy;
+      dummy = dummy < d[5] ? d[5] : dummy;   
+      dummy = dummy < d[6] ? d[6] : dummy;
+      dummy = dummy < d[7] ? d[7] : dummy;   
+
+#endif // AVX
+      for ( ; m<start; m++) dummy = dummy > *m ? dummy : *m;
+      m = (double *) m0;
+      for ( ; m<end; m++) dummy = dummy > *m ? dummy : *m;
+    } else {
+      dummy = m[0];    
+      for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+    }
+#else // SSE
+    dummy = m[0];    
+    for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+#endif    
+    ans[i] = dummy;
+  }
+}
+
+
+void colMaxsI(double *M, int r, int c, double *ans) {
+#ifdef DO_PARALLEL
+#pragma omp parallel for num_threads(CORES)
+#endif  
+  for (int i=0; i<c; i++) {
+    //  printf("i=%d\n", i);
+    double dummy,
+      *m = M + r * i;
+#if defined SSE2
+    double *start = algn(m),
+      *end = m + r;
+    uintptr_t End = (uintptr_t) (end - doubles);
+    if ((uintptr_t) start < End) {
+      Double * m0 = (Double*) start,
+	Dummy = (Double) LOAD((BlockType*) m0);
+      for (m0++ ; (uintptr_t) m0 < End; m0++) {
+	Dummy = MAXDOUBLE(Dummy, (Double) LOAD((BlockType*) m0));
+      }
+      double *d = (double *) &Dummy;
+      dummy = d[0];
+      dummy = dummy < d[1] ? d[1] : dummy;
+#if defined AVX
+      dummy = dummy < d[2] ? d[2] : dummy;
+      dummy = dummy < d[3] ? d[3] : dummy;   
+#endif
+      for ( ; m<start; m++) dummy = dummy > *m ? dummy : *m;
+      m = (double *) m0;
+      for ( ; m<end; m++) dummy = dummy > *m ? dummy : *m;
+    } else {
+      dummy = m[0];    
+      for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+    }
+#else
+    dummy = m[0];    
+    for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+#endif    
+    ans[i] = dummy;
+  }
+}
+
+
+SEXP colMaxs(SEXP M) {
+  int
+    r = nrows(M),
+    c = ncols(M);
+  if (r == 0) return R_NilValue;
+  SEXP Ans;
+  if (TYPEOF(M) == REALSXP) {
+    PROTECT(Ans = allocVector(REALSXP, c));
+    colMaxsI(REAL(M), r, c, REAL(Ans));
+  } else {
+    bool i = TYPEOF(M) == INTSXP;
+    PROTECT(Ans = allocVector(i ? INTSXP : LGLSXP, c));
+    colMaxsIint(i ? INTEGER(M) : LOGICAL(M), r, c,
+		i ? INTEGER(Ans) : LOGICAL(Ans));
+  }
+  UNPROTECT(1);
+  return Ans;
+}
+
+
+SEXP rowProd(SEXP M) {
+  int
+    r = nrows(M),
+    r4 = r / 4,
+    c = ncols(M);
+  if (r == 0) return R_NilValue;
+  SEXP Ans;
+  if (TYPEOF(M) == REALSXP) {
+    PROTECT(Ans = allocVector(REALSXP, r));
+    double *ans = REAL(Ans),
+      *m = REAL(M);
+    MEMCOPY(ans, m, sizeof(double) * r);
+    m += r;
+    for (int ic=1; ic<c; ic++) {
+      double *a = ans;
+      for (int ir=0; ir<r4; ir++) {
+	*(a++) *= *(m++);
+	*(a++) *= *(m++);
+	*(a++) *= *(m++);
+	*(a++) *= *(m++);
+      }
+      for (int ir=r4 * 4; ir<r; ir++) *(a++) *= *(m++);
+    }
+  } else {
+    // printf("type = %d", TYPEOF(M));
+    RFERROR("transform to double first") ;
+  }
+  UNPROTECT(1);
+  return Ans;
+}
+
+SEXP rowMeansX(SEXP M, SEXP Weight) {
+  // todo : SSE2 / AVX
+  int
+    r = nrows(M),
+    c = ncols(M);
+  if (r == 0 || c == 0) return R_NilValue;
+  if (length(Weight) != c && length(Weight) != 0)
+    ERR("Length of 'weight' must equal number of columns of 'x'.");
+  SEXP Ans;
+  PROTECT(Ans = allocVector(REALSXP, r));
+  double *ans = REAL(Ans);
+  for (int j=0; j<r; j++) ans[j] = 0.0;
+  if (length(Weight) == 0) {    
+#define for1					\
+    for (int i=0; i<c; i++, m+=r) {			\
+      for (int j=0; j<r; j++) ans[j] += (double) m[j];	\
+    }
+  
+    if (TYPEOF(M) == REALSXP) { double *m = REAL(M); for1; }
+    else { int *m = (int) TYPEOF(M) == INTSXP ? INTEGER(M) : LOGICAL(M); for1; }
+    
+  } else {    
+    double *weight = ToReal(Weight);
+#define for2							\
+    for (int i=0; i<c; i++, m+=r) {				\
+      double dummy = weight[i]; /* load1(weight); MULTDOUBLE */ \
+      for (int j=0; j<r; j++) ans[j] += (double) m[j] * dummy;	\
+    }
+
+    if (TYPEOF(M) == REALSXP) { double *m = REAL(M); for2; }
+    else { int *m = (int) TYPEOF(M) == INTSXP ? INTEGER(M) : LOGICAL(M); for2; }
+    
+    if (TYPEOF(Weight) != REALSXP) FREE(weight);
+  }
+  double invc = 1.0 / (double) c;
+  for (int j=0; j<r; j++) ans[j] *= invc;
+  UNPROTECT(1);
+  return Ans;
+}
+
+SEXP dbinorm(SEXP X, SEXP Sigma) { // 12'41
+  int nrow,
+    ncol = 2;
+  double *x, *y;
+  if (TYPEOF(X) == VECSXP) {
+    if (length(X) != ncol) BUG;
+    SEXP xx = VECTOR_ELT(X, 0);
+    nrow = length(xx);
+    x = REAL(xx);
+    y = REAL(VECTOR_ELT(X, 1));
+  } else {
+    if (isMatrix(X)) {
+      if (ncols(X) != ncol) BUG;
+      nrow = nrows(X);
+    } else if (isVector(X)) {
+      if (length(X) != ncol) BUG;
+      nrow = 1;
+    } else BUG;
+    x = REAL(X);
+    y = x + nrow;
+  }
+
+  
+  SEXP Ans;
+  PROTECT(Ans = allocVector(REALSXP, nrow));
+  double *ans = REAL(Ans);
+  //  int nrow4 = nrow - 4;
+  if (length(Sigma) == 0) {
+    double invtwopi = 1.0 / TWOPI;
+    /*
+      minushalfX[4] ={-0.5, -0.5, -0.5, -0.5},
+      invtwopiX [4] = {invtwopi, invtwopi, invtwopi, invtwopi};
+    int i=0;
+
+#define atonce 4
+    __m256d minushalf4 = LOADuDOUBLE(minushalfX),
+       invtwopi4 = LOADuDOUBLE(invtwopiX);
+      
+    for (; i<nrow4; i+=atonce) {
+      __m256d x4 = LOADuDOUBLE(x + i);
+      double *xx4 = (double *) &x4;
+      x4 = MULTDOUBLE(x4, x4);
+      {
+	__m256d y4 = LOADuDOUBLE(y + i);
+	y4 = MULTDOUBLE(y4, y4);
+	x4 = ADDDOUBLE(x4, y4);
+      }
+      x4 = MULTDOUBLE(minushalf4, x4);
+      xx4[0] = EXP(xx4[0]);
+      xx4[1] = EXP(xx4[1]);
+      xx4[2] = EXP(xx4[2]);
+      xx4[3] = EXP(xx4[3]);
+      x4 = MULTDOUBLE(x4, invtwopi4);
+      STOREuDOUBLE(ans + i, x4);
+    }
+    */
+    for (int i=0; i<nrow; i++) 
+      ans[i] = EXP(-0.5 * (x[i] * x[i] + y[i] * y[i])) * invtwopi;
+    } else {
+    double *sigma=REAL(Sigma),
+      sigma1 = sigma[0],
+      sigma4 = sigma[3],
+      inv2piSrtS = 1.0 / (TWOPI * SQRT(sigma1 * sigma4)),
+      invS1half = 0.5 / sigma1,
+      invS4half = 0.5 / sigma4;
+    if (sigma[1] == 0.0 && sigma[2] == 0.0) {
+      for (int i=0 ; i<nrow; i++)
+	ans[i] = EXP(- (x[i] * x[i] * invS1half + y[i] * y[i] * invS4half) )
+	  * inv2piSrtS;
+    } else BUG;
+  }
+  UNPROTECT(1);
+  return Ans;
+}
+
+bool ToFalse[1] = { false };
+double *ToRealDummy = NULL;
+int  ToRealN = 0;
+
+double *ToRealI(SEXP X, bool *create) {
+  if (TYPEOF(X) == REALSXP) { 
+    *create = false;
+    return REAL(X);
+  }
+  HELPINFO("Better use 'double' as storage mode (for one of the arguments).");
+  int len = length(X); 
+  double *y;
+  if (create || ToRealN < len) {
+    y = (double *) MALLOC(sizeof(double) * len);
+    if (y == NULL) ERR1("not enough memory for an %d vector of doubles", len);
+    if (!create) {
+      FREE(ToRealDummy);
+      ToRealDummy = y;
+      ToRealN = len;
+    }
+  } else y = ToRealDummy;
+  int *x = (int*) (TYPEOF(X)==INTSXP ? INTEGER(X) : LOGICAL(X));
+  for (int i=0; i<len; i++) y[i] = (double) x[i];
+  return y;
+}
+double *ToReal(SEXP X) {
+  if (TYPEOF(X) == REALSXP) return REAL(X);
+  return ToRealI(X, ToFalse);
+}
+
+int *ToIntDummy = NULL;
+int  ToIntN = 0;
+int *ToIntI(SEXP X, bool *create, bool round) {
+  if (TYPEOF(X) == INTSXP) {
+    *create = false;
+    return INTEGER(X);
+  }
+  if (TYPEOF(X) == LGLSXP) {
+    *create = false;
+    return LOGICAL(X);
+  }
+  HELPINFO("Better use 'integer' as storage mode (for one of the arguments).");
+  int len = length(X);
+  int *y;
+  if (create || ToIntN < len) {
+    y = (int *) MALLOC(sizeof(int) * len);    
+    if (y == NULL) ERR1("not enough memory for an %d vector of integers", len);
+    if (!create) {
+      FREE(ToIntDummy);
+      ToIntDummy = y;
+      ToIntN = len;
+    }
+  } else y = ToIntDummy;
+  double *x = (double *) REAL(X);
+  if (round) for (int i=0; i<len; i++) y[i] = (int) ROUND(x[i]);
+  else for (int i=0; i<len; i++) y[i] = (int) x[i];
+  return y;
+}
+
+int *ToInt(SEXP X) {
+  if (TYPEOF(X) == INTSXP) return INTEGER(X);
+  if (TYPEOF(X) == LGLSXP) return LOGICAL(X);
+  return ToIntI(X, ToFalse, false);
+}
+
+void freeGlobals() {
+  FREE(ToRealDummy);
+  FREE(ToIntDummy);
+}
+
+
+SEXP quadratic(SEXP x, SEXP A) {
+  SEXP ans;
+  int len = length(x);
+  if (len != nrows(A) || len != ncols(A)) ERR("'x' and 'A' do not match.");
+  PROTECT(ans = allocVector(REALSXP, 1));
+  xAx(REAL(x), REAL(A), len, REAL(ans));
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP dotXV(SEXP M, SEXP V) {
+  int
+    r = nrows(M),
+    c = ncols(M),
+    l = length(V)
+    ;
+  if (l != r) ERR("X and v do not match");
+  if (r == 0) return R_NilValue;
+  SEXP Ans;
+  PROTECT(Ans = allocMatrix(REALSXP, r, c));
+
+  // bringt nix
+  //#ifdef DO_PARALLEL
+  //#pragma omp parallel for num_threads(CORES)
+  //#endif  
+  for (int i=0; i<c; i++) {
+    //  printf("i=%d\n", i);
+#if defined SSE2_DONOTUSE_AS_SLOWER
+    double 
+      *ans = REAL(Ans) + r * i,
+      *v = REAL(V),
+      *m = REAL(M) + r * i,
+      *end = m + r - doubles;
+    for ( ; m < end; m += doubles, ans += doubles, v += doubles)
+      STOREuDOUBLE(ans, MULTDOUBLE(LOADuDOUBLE(m), LOADuDOUBLE(v)));
+    end += doubles;
+    for (; m < end; m++) *ans = *m * *v;
+#else
+    double
+      *ans = REAL(Ans) + r * i,
+      *v = REAL(V),
+      *m = REAL(M) + r * i;
+    for (int j=0; j<r; j++) {
+      ans[j] = m[j] * v[j];
+    }
+     
+#endif    
+  }
+
+  UNPROTECT(1);
+  return Ans;
+}
+
+ 

@@ -50,7 +50,6 @@ system.time(y<-order(x)[1:k])
 system.time(z<-orderx(x, from=1, to=k)) ## much faster
 stopifnot(all(x[y ]== x[z])) ## same result
 }
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 \keyword{univar}
 \keyword{manip}

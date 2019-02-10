@@ -75,7 +75,7 @@ FileExists <- function(file, printlevel=RFoptions()$basic$printlevel) {
 LockRemove <- function(file) {
   ## removes auxiliary files created by FileExists
   lock.ext <- ".lock";
-  file.remove(paste(file, lock.ext, sep=""))
+  file.remove(paste0(file, lock.ext))
 }
 
 
@@ -123,16 +123,14 @@ Print <- function(..., digits=6, empty.lines=2) { #
 
 
 
-cholx <- function(a) {
- # return(.Call("Cholesky", a, PACKAGE="RandomFieldsUtils"))
-  .Call(C_Chol, a)
- }
+cholx <- function(a) .Call(C_Chol, a)
 
 cholPosDef <- function() stop("please use 'cholx' instead of 'cholPosDef'.")
 
 solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
   stop("please use 'solvex' instead of 'solvePosDef'.")
 }
+
 solvex <- function(a, b=NULL, logdeterminant=FALSE) {
   if (logdeterminant) {
     logdet <- double(1)
@@ -181,3 +179,33 @@ orderx <- function(x, from=1, to=length(x),
 
 
 # scalar <- function(x, y, mode="1x1") .Call(C_scalarX, x, y, mode)
+
+
+confirm <- function(x, y, ...) {
+  e <- all.equal(x, y, ...)
+  if (is.logical(e) && e) {
+    cat("'", deparse(substitute(x)) , "' and '", deparse(substitute(y)),
+        "' are the same.\n", sep="")
+  } else {
+    if (R.Version()$os=="linux-gnu") stop(e)
+    else {
+      message(x)
+      cat("(under linux systems they are the same.)")
+      return(FALSE)
+    }
+  }
+}
+
+chol2mv <- function(C, n) .Call(C_chol2mv, C, as.integer(n))
+tcholRHS <- function(C, RHS) {
+  if (!is.double(RHS)) storage.mode(RHS) <- "double"
+  .Call(C_tcholRHS, C, RHS)
+}
+colMax <- function(x) .Call(C_colMaxs, x)
+rowMeansx <- function(x, weight=NULL) .Call(C_rowMeansX, x, weight)
+rowProd <- function(x) .Call(C_rowProd, x)
+SelfDivByRow <- function(x, v) .Call(C_DivByRow, x, v)
+quadratic <- function(x, v) .Call(C_quadratic, v, x)
+dotXV <- function(x, w) .Call(C_dotXV, x, w)
+
+dbinorm <- function(x, S) .Call(C_dbinorm, x, S)

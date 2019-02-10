@@ -52,8 +52,7 @@ nonstwm(x, y, nu, log=FALSE,
  }
 }
 
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 
 \seealso{
  \command{\link{matern}}.

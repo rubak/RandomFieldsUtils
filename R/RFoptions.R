@@ -1,6 +1,6 @@
 
 
-summary.RFopt <- function(object, ...) {
+summary.RFopt <- function(object, ...) {  
   object <- lapply(object, function(z) z[order(names(z))])
   object <- object[c(1, 1 + order(names(object[-1])))]
   class(object) <- "summary.RFopt"
@@ -37,21 +37,18 @@ print.RFoptElmnt <- function(x, ...) {
 RFoptions <- function(..., no.readonly=TRUE) {
 ##  on.exit(.C("RelaxUnknownRFoption", FALSE))
   ##  .C("RelaxUnknownRFoption", TRUE)
-  opt <- lapply(.External(C_RFoptions, ...),
-                function(x) {
-                  class(x) <- "RFoptElmnt"
-                  x
-                })
-  if (length(opt)!=0) {      
+  opt <- .External(C_RFoptions, ...)
+  if (length(opt) == 0) return(invisible(NULL))
+  if (is.list(opt[[1]])) {
+    opt <- lapply(opt,
+		  function(x) {
+		    class(x) <- "RFoptElmnt"
+		    x
+		})
     class(opt) <-  "RFopt"
-    if (!no.readonly) {
-      opt$readonly <- list()
-    }
+  } else class(opt) <-  "RFoptElmnt"
+  if (!no.readonly) {
+    opt$readonly <- list()
   }
-  if (length(opt)==0) {
- #   O <- opt
-#    names(O) <- NULL
-#    opt <- c(opt, unlist(O))
-    invisible(opt)
-  } else opt
+  opt
 }

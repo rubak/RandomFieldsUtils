@@ -5,7 +5,7 @@
 
  Collection of system specific auxiliary functions
 
- Copyright (C) 2001 -- 2015 Martin Schlather, 
+ Copyright (C) 2001 -- 2017 Martin Schlather, 
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -64,10 +64,10 @@ void sleepMicro(int *micro) {
 }
 
 void pid(int *i)  {
-#ifndef WIN32 
-  *i = getpid();
+#ifdef WIN32 
+  *i = _getpid();
 #else
-  *i = 0; 
+  *i = getpid(); 
 #endif
 }
 

@@ -25,8 +25,7 @@ pid()
   
 }
 
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 
 
 \examples{
@@ -37,14 +36,5 @@ cat("The name of your computer is '", hostname(),
 
 \keyword{sysdata}
 \keyword{utilities}
-
-
-
-
-
-
-
-
-
 
 %  LocalWords:  pid unix Schlather url

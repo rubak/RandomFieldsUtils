@@ -16,8 +16,7 @@ Print(..., digits = 6, empty.lines = 2)
   prints the names and the values; for vectors \command{cat}
   is used and for lists \command{str}
 } 
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-  \url{http://ms.math.uni-mannheim.de/de/publications/software}}
+\me
 
 \keyword{print}
 

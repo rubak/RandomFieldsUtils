@@ -2,7 +2,7 @@
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
- Copyright (C) 2015 -- Martin Schlather, Reinhard Furrer
+ Copyright (C) 2015 -- 2017 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,38 +28,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <Rinternals.h>
 #include "General_utils.h"
 #include "own.h"
-#include "init_RandomFieldsUtils.h"
+#include "zzz_RandomFieldsUtils.h"
+#include "Utils.h"
 
 
 
 // local
-char ERRMSG[LENERRMSG], MSG[LENERRMSG], BUG_MSG[250], MSG2[LENERRMSG];
-
-// globally needed
+#ifdef DO_PARALLEL
+#else
+char ERRMSG[LENERRMSG], MSG[LENERRMSG], MSG2[LENERRMSG];
 errorloc_type ERROR_LOC="";
 errorstring_type ERRORSTRING;
-
-
-SEXP attachRFoptionsUtils() {
-  //  NList = 0;
-  
-  // printf("UTx %ld\n", (long) getUtilsParam);
-
-  attachRFoptions(ownprefixlist, ownprefixN, ownall, ownallN,
-  		  setparameterUtils, NULL, getparameterUtils);
-
-#ifdef DO_PARALLEL
-  basic_param *gp = &(GLOBAL.basic);
-  omp_set_num_threads(gp->cores);
 #endif
-  
+
+
+SEXP attachRandomFieldsUtils(SEXP show) {
+  attachRFoptions(ownprefixlist, ownprefixN,
+		  ownall, ownallN,
+  		  setparameterUtils, NULL,
+		  getparameterUtils,
+		  delparameterUtils,
+		  0, true);
+  if (INTEGER(show)[0]) {
+#ifdef DO_PARALLEL
+   PRINTF("'RandomFieldsUtils' will use OMP\n");
+#else
+   PRINTF("'RandomFieldsUtils' will NOT use OMP\n");
+#endif
+  }
   return R_NilValue;
 }
 
-SEXP detachRFoptionsUtils(){
-#ifdef DO_PARALLEL      
-  omp_set_num_threads(1);
-#endif
+SEXP detachRandomFieldsUtils(){
   detachRFoptions(ownprefixlist, ownprefixN);
+  freeGlobals();
   return R_NilValue;
 }

@@ -43,8 +43,7 @@
     \code{file}.lock has been created}
 }
 
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 
 \examples{
 \dontrun{

@@ -16,8 +16,7 @@ sleep.micro(n)
 \value{
   No value is returned.
 }
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 
 \examples{
 ## next command waits half a second before returning

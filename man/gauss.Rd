@@ -32,8 +32,7 @@ A vector of \code{length(x)} is returned; \code{nu} is recycled;
  Stein, M. L. (1999) \emph{Interpolation of Spatial Data.} New York: Springer-Verlag 
  }
 
-\author{Martin Schlather, \email{schlather@math.uni-mannheim.de}
-}
+\me
 \seealso{  
  For more details see \command{\link[RandomFields]{RMgauss}}.
 }
@@ -45,5 +44,5 @@ A vector of \code{length(x)} is returned; \code{nu} is recycled;
 
 \examples{
 x <- 3
-stopifnot(gauss(x) == exp(-x^2))
+confirm(gauss(x), exp(-x^2))
 }
