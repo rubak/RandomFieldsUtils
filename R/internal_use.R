@@ -150,9 +150,10 @@ reverse_dependencies_with_maintainers <-
     db
   }
 
-ShowInstallErrors <- function(dir, pkgs)
+ShowInstallErrors <-
+  function(dir=".", pkgs=unlist(strsplit( dir(pattern="*.Rcheck"), ".Rcheck")))
     for (i in 1:length(pkgs)) {
-      cat(pkgs[i], "\n")
+      cat("\n\n", pkgs[i], "\n")
       for (f in c("00install.out", "00check.log"))
 	system(paste("grep [eE][rR][rR][oO][rR] ", dir, "/",  pkgs[i],
 		     ".Rcheck/", f, sep=""))

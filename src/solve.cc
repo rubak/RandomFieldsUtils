@@ -475,11 +475,11 @@ int doPosDef(double *M, int size, bool posdef,
       Pt->method = direct_formula;
       Pt->size = size;
     }
-    return calculate == DETERMINANT
-      ? logdet3(det3(M, size), posdef, logdet, sp->det_as_log)
-      : calculate  == MATRIXSQRT ? chol3(M, size, RESULT, Pt)
-      : solve3(M, size, posdef, rhs, rhs_cols, RESULT, logdet, sp->det_as_log,
-	       Pt);
+    if (calculate == DETERMINANT)
+      return logdet3(det3(M, size), posdef, logdet, sp->det_as_log);
+    else if (calculate  == MATRIXSQRT) return chol3(M, size, RESULT, Pt);
+    else return solve3(M, size, posdef, rhs, rhs_cols, RESULT, logdet,
+		       sp->det_as_log, Pt);
   }
 
   assert(SOLVE_METHODS >= 2);
@@ -1169,7 +1169,8 @@ int doPosDef(double *M, int size, bool posdef,
       if (calculate == MATRIXSQRT) {
 	for (int j=0; j<size; j++) {
 	  double dummy;
-	  dummy = D[j] < eigen2zero ? 0.0 : SQRT(D[j]);
+	  dummy = 0.0;
+	  if (D[j] >= eigen2zero) dummy = SQRT(D[j]);
 	  for (int i=0; i<size; i++, k++) RESULT[k] = U[k] * dummy;
 	}
       } else {
@@ -1239,7 +1240,8 @@ int doPosDef(double *M, int size, bool posdef,
 	for (int j=0; j<size; j++) {
 	  double dummy;
 	  if (D[j] < -eigen2zero) CERR("negative eigenvalues found.");
-	  dummy = D[j] < eigen2zero ? 0.0 : SQRT(D[j]);
+	  dummy = 0.0;
+	  if (D[j] >= eigen2zero) dummy = SQRT(D[j]);
 	  for (int i=0; i<size; i++, k++) RESULT[k] = U[k] * dummy;
 	}
  
@@ -1780,9 +1782,9 @@ SEXP Chol(SEXP M) {
   // sp.pivot = PIVOT_NONE;
   solve_storage Pt;
   solve_NULL(&Pt);
-  SEXP Ans = doPosDef(M, R_NilValue, R_NilValue, MATRIXSQRT, &Pt, &sp);
+  SEXP Ans;
+  PROTECT(Ans = doPosDef(M, R_NilValue, R_NilValue, MATRIXSQRT, &Pt, &sp));
 
-  
   if (Pt.actual_pivot == PIVOT_DO || Pt.actual_pivot ==  PIVOT_IDX) {    
     // NEVER: FREE(GLOBAL.solve.pivot_idx); See Pivot_Cholesky:
     SEXP Idx, Info1, Info3;
@@ -1803,6 +1805,7 @@ SEXP Chol(SEXP M) {
   }
   
   solve_DELETE0(&Pt);
+  UNPROTECT(1);
   return Ans;
 }
 
@@ -1936,35 +1939,48 @@ void sqrtRHS_Chol(double *U, int size, double* RHS, int RHS_size, int n,
 }
 
 SEXP tcholRHS(SEXP C, SEXP RHS) {  
-  SEXP Ans,
-    Idx = getAttrib(C, install("pivot_idx"));
+  int n_protect = 2;
+  SEXP Ans, Idx;
+  PROTECT(Idx = getAttrib(C, install("pivot_idx")));
   bool pivot = length(Idx) > 0;
   int 
     n = isMatrix(RHS) ? ncols(RHS) : 1,
     rows = isMatrix(RHS) ? nrows(RHS) : length(RHS),
     size = ncols(C),
     act_size =size;
-    if (pivot) act_size=INTEGER(getAttrib(C, install("pivot_actual_size")))[0];
-    int *pi = pivot ?  (int *) INTEGER(Idx) : NULL;
-  if (isMatrix(RHS)) PROTECT(Ans = allocMatrix(REALSXP, size, n));
-  else PROTECT(Ans = allocVector(REALSXP, size));
+  if (pivot) {
+    SEXP dummy;
+    PROTECT(dummy = getAttrib(C, install("pivot_actual_size")));
+    act_size=INTEGER(dummy)[0];
+    n_protect++;
+  }
+  int *pi = pivot ?  (int *) INTEGER(Idx) : NULL;
+    if (isMatrix(RHS)) PROTECT(Ans = allocMatrix(REALSXP, size, n));
+    else PROTECT(Ans = allocVector(REALSXP, size));
   if (rows < act_size) ERR("too few rows of RHS");
   sqrtRHS_Chol(REAL(C), size, REAL(RHS), rows, n, REAL(Ans),
 	       pivot, act_size, pi);
-  UNPROTECT(1);
+  UNPROTECT(n_protect);
   return Ans;
 }
 
 
 SEXP chol2mv(SEXP C, SEXP N) {  
-  SEXP Ans,
-    Idx = getAttrib(C, install("pivot_idx"));
+  int n_protect = 2;
+  SEXP Ans, Idx;
+  PROTECT(Idx= getAttrib(C, install("pivot_idx")));
   bool pivot = length(Idx) > 0;
-  int 
+  int
     n = INTEGER(N)[0],
     size = ncols(C),
-    act_size = pivot
-    ? INTEGER(getAttrib(C, install("pivot_actual_size")))[0] : size,
+    act_size = size;
+  if (pivot) {
+    SEXP dummy;
+    PROTECT(dummy = getAttrib(C, install("pivot_actual_size")));
+    act_size = INTEGER(dummy)[0];
+    n_protect++;
+  }
+  int
     n_act_size = n * act_size,
     *pi = pivot ? INTEGER(Idx) : NULL;
   if (n == 1) PROTECT(Ans = allocVector(REALSXP, size));
@@ -1977,7 +1993,7 @@ SEXP chol2mv(SEXP C, SEXP N) {
   sqrtRHS_Chol(REAL(C), size, gauss, act_size, n, REAL(Ans),
 	       pivot, act_size, pi);
   FREE(gauss);
-  UNPROTECT(1);
+  UNPROTECT(n_protect);
   return Ans;
 }
 

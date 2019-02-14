@@ -179,6 +179,7 @@ SEXP getRFoptions(int ListNr, int i, int local) {
   }
   getparam[ListNr](sublist, i, local);
   setAttrib(sublist, R_NamesSymbol, subnames);
+  UNPROTECT(2);
   return sublist;
 }
 
@@ -205,58 +206,61 @@ SEXP getRFoptions(int local) {
       SET_VECTOR_ELT(list, itot, getRFoptions(ListNr, i, local));
       SET_STRING_ELT(names, itot, mkChar(Allprefix[ListNr][i]));
       itot ++;
-    }    
+    } 
   }
 
   setAttrib(list, R_NamesSymbol, names);   
-  UNPROTECT(2 + 2 * itot);
+  UNPROTECT(2);
 
   return list;
 }
 
-SEXP getRFoptions(SEXP which, getlist_type *getlist, bool save, int local) {
-  SEXP list = NULL,
-    names = NULL;
+
+void getListNr(bool save, int t, int actual_nbasic, SEXP which,
+	      getlist_type *getlist,
+	      int *Nr, int *idx // output
+	      ){
+  int i, ListNr;
+  const char *z;
+  if (save && t < nbasic_options) z = basic_options[t];
+  else z = (char*) CHAR(STRING_ELT(which, t - actual_nbasic));
+  for (ListNr=0; ListNr<NList; ListNr++) {
+    int prefixN = AllprefixN[ListNr];
+    for (i=0; i<prefixN; i++)
+      if (STRCMP(Allprefix[ListNr][i], z) == 0) break;
+    if (i < prefixN) break;
+  }
+  if (ListNr >= NList) ERR("unknown value for 'GETOPTIONS'");
+  if (getlist != NULL) {
+    getlist[t].ListNr = ListNr;
+    getlist[t].i = i;
+  }
+  *Nr = ListNr;
+  *idx = i;
+}
+
   
-  int i, ListNr,
-    itot = 0;
-  int  prefixN,
+SEXP getRFoptions(SEXP which, getlist_type *getlist, bool save, int local) {
+  int ListNr, idx,
     actual_nbasic = nbasic_options * save,
-    totalN = length(which) + actual_nbasic;
+    totalN = length(which) + actual_nbasic;  
 
   if (totalN == 0) return R_NilValue;
-  if (totalN > 1) {
-    PROTECT(list = allocVector(VECSXP, totalN));
-    PROTECT(names = allocVector(STRSXP, totalN));
+  if (totalN == 1) {
+    getListNr(save, 0, actual_nbasic, which, getlist, &ListNr, &idx);
+    return getRFoptions(ListNr, idx, local);
   }
 
-  //  printf("%d %d %d\n", length(which), nbasic_options, totalN);
+  SEXP list, names;
+  PROTECT(list = allocVector(VECSXP, totalN));
+  PROTECT(names = allocVector(STRSXP, totalN));
   for (int t=0; t<totalN; t++) {
-    const char *z = save && t < nbasic_options ? basic_options[t]
-		  : (char*) CHAR(STRING_ELT(which, t - actual_nbasic));
-    for (ListNr=0; ListNr<NList; ListNr++) {
-      prefixN = AllprefixN[ListNr];
-      for (i=0; i<prefixN; i++)	if (STRCMP(Allprefix[ListNr][i], z) == 0) break;
-      if (i < prefixN) break;
-    }
-    if (ListNr >= NList) ERR("unknown value for 'GETOPTIONS'");
-    if (getlist != NULL) {
-      getlist[t].ListNr = ListNr;
-      getlist[t].i = i;
-    }
-    SEXP opt  = getRFoptions(ListNr, i, local);
-    if (totalN <= 1) {
-      UNPROTECT(2);
-      return opt;
-    }
-    SET_VECTOR_ELT(list, itot, opt);
-    SET_STRING_ELT(names, itot, mkChar(Allprefix[ListNr][i]));
-    itot++;
+    getListNr(save, t, actual_nbasic,  which, getlist, &ListNr, &idx);
+    SET_VECTOR_ELT(list, t, getRFoptions(ListNr, idx, local));
+    SET_STRING_ELT(names, t, mkChar(Allprefix[ListNr][idx]));
   }
-
   setAttrib(list, R_NamesSymbol, names);     
-  UNPROTECT(2 + 2 * totalN);
-
+  UNPROTECT(2);
   return list;
 }
 
@@ -291,7 +295,9 @@ SEXP RFoptions(SEXP options) {
      ans = R_NilValue;
   char *name, *pref;
   bool isList = false;
-  int local = isGLOBAL;
+  int 
+    local = isGLOBAL;
+  
 
     /* 
      In case of strange values of a parameter, undelete
@@ -301,25 +307,25 @@ SEXP RFoptions(SEXP options) {
   
   // PRINTF("start %10g\n", GLOBAL.gauss.exactness);
   options = CDR(options); /* skip 'name' */
-  if (options == R_NilValue) {
-    //    printf("before get %10g\n", 1.);
-    return getRFoptions(local); 
-  }
+  if (options == R_NilValue) return getRFoptions(local); 
 
-  name = (char*) (isNull(TAG(options)) ? "" : CHAR(PRINTNAME(TAG(options))));
+  if (isNull(TAG(options))) name = (char*) ""; // (char*)
+  else name = (char*) CHAR(PRINTNAME(TAG(options)));
   if (STRCMP(name, "LOCAL")==0) {
     el = CAR(options);
     local = INT;
     options = CDR(options); /* skip 'name' */
-    name = (char*) (isNull(TAG(options)) ? "" : CHAR(PRINTNAME(TAG(options))));
+    if (isNull(TAG(options))) name = (char*) "";
+    else name = (char*) CHAR(PRINTNAME(TAG(options)));
   }
   
   if ((isList = STRCMP(name, "LIST")==0)) {   
     //printf("isList\n");
+   int n_protect = 1;
     list = CAR(options);
     if (TYPEOF(list) != VECSXP)
       ERR1("'LIST' needs as argument the output of '%.50s'", RFOPTIONS);
-    names = getAttrib(list, R_NamesSymbol);   
+    PROTECT(names = getAttrib(list, R_NamesSymbol));
     lenlist = length(list);
     for (i=0; i<lenlist; i++) {
       int len;
@@ -334,7 +340,8 @@ SEXP RFoptions(SEXP options) {
 	// so, general parameters may not be lists,
 	// others yes
 	lensub = length(sublist);
-	subnames = getAttrib(sublist, R_NamesSymbol); 
+	PROTECT(subnames = getAttrib(sublist, R_NamesSymbol));
+	n_protect++;
 	for (j=0; j<lensub; j++) {
 	  name = (char*) CHAR(STRING_ELT(subnames, j));
 
@@ -349,10 +356,12 @@ SEXP RFoptions(SEXP options) {
 	  setparameter(VECTOR_ELT(sublist, j), pref, name, 
 		       isList & GLOBAL.basic.asList, NULL, local);
 	}
+	UNPROTECT(1);
       } else {   
 	splitAndSet(sublist, pref, isList, NULL, local);
       }
     }
+    UNPROTECT(1);
     //    print("end1 %10g\n", GLOBAL.TBM.linesimufactor);
   } else {    
     getlist_type *getlist = NULL;
@@ -368,13 +377,14 @@ SEXP RFoptions(SEXP options) {
 	getlist[len].ListNr = -1;
       }
       //    printf("l=%d\n", local);
-      ans = getRFoptions(getoptions, getlist, save, local);
+      PROTECT(ans = getRFoptions(getoptions, getlist, save, local));
     }
     //    printf("iok %d\n", length(CAR(options)));
      for(i = 0; options != R_NilValue; i++, options = CDR(options)) {     
       //      printf("set opt i=%d\n", i);
       el = CAR(options);
-      name = (char*) (isNull(TAG(options)) ? "" :CHAR(PRINTNAME(TAG(options))));
+      if (isNull(TAG(options))) name = (char*) "";
+      else name = (char*) CHAR(PRINTNAME(TAG(options)));
       //printf("xx %.50s %d\n", name, isList);
       splitAndSet(el, name, isList, getlist, local);
     }
@@ -390,8 +400,9 @@ SEXP RFoptions(SEXP options) {
       finalparam[i](local);
     }
 
-  //  printf("END\n");
+  if (ans != R_NilValue) UNPROTECT(1);
 
+  
   GLOBAL.basic.asList = true;
   return(ans);
 } 

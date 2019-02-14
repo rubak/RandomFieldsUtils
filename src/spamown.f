@@ -1890,7 +1890,8 @@ c-----------
 c       x = The solution of  R x = b .
 c--------------------------------------------------------------------
 c     Reinhard Furrer June 2008, April 2012
-
+      
+      k = 0
       if (r(ir(n+1)-1) .eq. 0.0 ) goto 5
       do l=1,p
          x(n,l) = b(n,l) / r(ir(n+1)-1)

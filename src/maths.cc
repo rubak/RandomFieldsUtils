@@ -244,7 +244,8 @@ double logWM(double x, double nu1, double nu2, double factor) {
   double v, y, 
     nu = 0.5 * (nu1 + nu2),
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
-    scale = factor==0.0 ? 1.0 : factor * SQRT(nuThres);
+		   scale = 1.0;
+  if (factor!=0.0) scale = factor * SQRT(nuThres);
   bool simple = nu1 == nu2 || nu > MATERN_NU_THRES;
   double bk[MATERN_NU_THRES + 1L];
 
@@ -354,9 +355,10 @@ double DDWM(double x, double nu, double factor) {
 #endif  
   double  y, v,
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
-    scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0,
-    scaleSq  = scale * scale;
-  double bk[MATERN_NU_THRES + 1L];
+		   scale = 1.0;
+  if (factor != 0.0) scale = factor * SQRT(nuThres);
+  double scaleSq  = scale * scale,
+		   bk[MATERN_NU_THRES + 1L];
   
   if (x > LOW_MATERN) {
 #ifdef DO_PARALLEL

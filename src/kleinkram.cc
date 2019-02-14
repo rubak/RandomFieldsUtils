@@ -688,10 +688,12 @@ double Real(SEXP p, char *name, int idx) {
     assert(idx < length(p));
     switch (TYPEOF(p)) {
     case REALSXP :  return REAL(p)[idx];
-    case INTSXP : return INTEGER(p)[idx]==NA_INTEGER  
-	? RF_NA : (double) INTEGER(p)[idx];
-    case LGLSXP : return LOGICAL(p)[idx]==NA_LOGICAL ? RF_NA 
-	: (double) LOGICAL(p)[idx];
+    case INTSXP :
+      if (INTEGER(p)[idx]==NA_INTEGER) return RF_NA;
+      else return((double) INTEGER(p)[idx]);
+    case LGLSXP :
+      if (LOGICAL(p)[idx]==NA_LOGICAL) return(RF_NA);
+      else return((double) LOGICAL(p)[idx]);
     default : {}
     }
   }
@@ -735,7 +737,8 @@ int Integer(SEXP p, char *name, int idx, bool nulltoNA) {
 	RFERROR2("%.50s: integer value expected. Got %10e.", name, value);
       }
     case LGLSXP :
-      return  LOGICAL(p)[idx]==NA_LOGICAL ? NA_INTEGER : (int) LOGICAL(p)[idx];
+      if (LOGICAL(p)[idx]==NA_LOGICAL) return(NA_INTEGER);
+      else return((int) LOGICAL(p)[idx]);
     default : {}
     }
   } else if (nulltoNA) return NA_INTEGER;
@@ -794,9 +797,12 @@ bool Logical(SEXP p, char *name, int idx) {
    if (p != R_NilValue)
     assert(idx < length(p));
     switch (TYPEOF(p)) {
-    case REALSXP: return ISNAN(REAL(p)[idx]) ? NA_LOGICAL : (bool) REAL(p)[idx];
+    case REALSXP:
+      if (ISNAN(REAL(p)[idx])) return NA_LOGICAL ;
+      else return (bool) REAL(p)[idx];
     case INTSXP :
-      return INTEGER(p)[idx]==NA_INTEGER ? NA_LOGICAL : (bool) INTEGER(p)[idx];
+      if (INTEGER(p)[idx]==NA_INTEGER) return NA_LOGICAL;
+      else return (bool) INTEGER(p)[idx];
     case LGLSXP : return LOGICAL(p)[idx];
     default : {}
     }

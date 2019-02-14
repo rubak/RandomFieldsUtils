@@ -430,8 +430,9 @@ SEXP sortX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
     to = MIN(INTEGER(To)[0], len);
   if (from > to) return R_NilValue; 
 
-  usr_bool nalast = LOGICAL(NAlast)[0] == NA_LOGICAL ? Nan :
-    LOGICAL(NAlast)[0] ? True : False;
+  usr_bool nalast;
+  if (LOGICAL(NAlast)[0] == NA_LOGICAL) nalast = Nan;
+  else nalast = LOGICAL(NAlast)[0] ? True : False;
   SEXP Ans;
 
   if (TYPEOF(Data) == REALSXP) {
@@ -489,8 +490,9 @@ SEXP orderX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
   SEXP Ans;
   PROTECT(Ans=allocVector(INTSXP, to - from + 1));
 
-  usr_bool nalast = LOGICAL(NAlast)[0] == NA_LOGICAL ? Nan :
-    LOGICAL(NAlast)[0] ? True : False;
+  usr_bool nalast;
+  if ( LOGICAL(NAlast)[0] == NA_LOGICAL) nalast = Nan;
+  else nalast = LOGICAL(NAlast)[0] ? True : False;
   int
     bytes = len * sizeof(int),
     *pos = (int*) MALLOC(bytes);

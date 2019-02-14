@@ -125,26 +125,26 @@ void colMaxsIint(int *M, int r, int c, int *ans) {
       }
       double *d = (double *) &Dummy;
       dummy = d[0];
-      dummy = dummy < d[1] ? d[1] : dummy;
-      dummy = dummy < d[2] ? d[2] : dummy;
-      dummy = dummy < d[3] ? d[3] : dummy;   
+      dummy = MAX(dummy, d[1]);
+      dummy = MAX(dummy, d[2]);
+      dummy = MAX(dummy, d[3]);
 #if defined AVX2
-      dummy = dummy < d[4] ? d[4] : dummy;
-      dummy = dummy < d[5] ? d[5] : dummy;   
-      dummy = dummy < d[6] ? d[6] : dummy;
-      dummy = dummy < d[7] ? d[7] : dummy;   
+      dummy = MAX(dummy, d[4]);
+      dummy = MAX(dummy, d[5]);
+      dummy = MAX(dummy, d[6]);
+      dummy = MAX(dummy, d[7]);
 
 #endif // AVX
-      for ( ; m<start; m++) dummy = dummy > *m ? dummy : *m;
+      for ( ; m<start; m++) dummy = MAX(dummy > *m);
       m = (double *) m0;
-      for ( ; m<end; m++) dummy = dummy > *m ? dummy : *m;
+      for ( ; m<end; m++) dummy = MAX(dummy, *m);
     } else {
       dummy = m[0];    
-      for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+      for (int j=1; j<r; j++) dummy = MAX(dummy, m[j]);
     }
 #else // SSE
     dummy = m[0];    
-    for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+    for (int j=1; j<r; j++) dummy = MAX(dummy, m[j]);
 #endif    
     ans[i] = dummy;
   }
@@ -165,27 +165,27 @@ void colMaxsI(double *M, int r, int c, double *ans) {
     uintptr_t End = (uintptr_t) (end - doubles);
     if ((uintptr_t) start < End) {
       Double * m0 = (Double*) start,
-	Dummy = (Double) LOAD((BlockType*) m0);
+	Dummy = (Double) LOAD((UBlockType*) m0);
       for (m0++ ; (uintptr_t) m0 < End; m0++) {
-	Dummy = MAXDOUBLE(Dummy, (Double) LOAD((BlockType*) m0));
+	Dummy = MAXDOUBLE(Dummy, (Double) LOAD((UBlockType*) m0));
       }
       double *d = (double *) &Dummy;
       dummy = d[0];
-      dummy = dummy < d[1] ? d[1] : dummy;
+      dummy = MAX(dummy, d[1]);
 #if defined AVX
-      dummy = dummy < d[2] ? d[2] : dummy;
-      dummy = dummy < d[3] ? d[3] : dummy;   
+      dummy = MAX(dummy, d[2]);
+      dummy = MAX(dummy, d[3]);
 #endif
-      for ( ; m<start; m++) dummy = dummy > *m ? dummy : *m;
+      for ( ; m<start; m++) dummy = MAX(dummy, *m);
       m = (double *) m0;
-      for ( ; m<end; m++) dummy = dummy > *m ? dummy : *m;
+      for ( ; m<end; m++) dummy = MAX(dummy, *m);
     } else {
       dummy = m[0];    
-      for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+      for (int j=1; j<r; j++) dummy = MAX(dummy, m[j]);
     }
 #else
     dummy = m[0];    
-    for (int j=1; j<r; j++) dummy = dummy > m[j] ? dummy : m[j];
+    for (int j=1; j<r; j++) dummy = MAX(dummy, m[j]);
 #endif    
     ans[i] = dummy;
   }
@@ -204,8 +204,15 @@ SEXP colMaxs(SEXP M) {
   } else {
     bool i = TYPEOF(M) == INTSXP;
     PROTECT(Ans = allocVector(i ? INTSXP : LGLSXP, c));
-    colMaxsIint(i ? INTEGER(M) : LOGICAL(M), r, c,
-		i ? INTEGER(Ans) : LOGICAL(Ans));
+    int *m, *a;
+    if (i) {
+      m = INTEGER(M);
+      a = INTEGER(Ans);
+    } else {
+      m = LOGICAL(M);
+      a = LOGICAL(Ans);
+    }
+    colMaxsIint(m, r, c, a);
   }
   UNPROTECT(1);
   return Ans;
@@ -262,7 +269,11 @@ SEXP rowMeansX(SEXP M, SEXP Weight) {
     }
   
     if (TYPEOF(M) == REALSXP) { double *m = REAL(M); for1; }
-    else { int *m = (int) TYPEOF(M) == INTSXP ? INTEGER(M) : LOGICAL(M); for1; }
+    else {
+      int *m;
+      if (TYPEOF(M) == INTSXP) m = INTEGER(M); else m = LOGICAL(M);
+      for1;
+    }
     
   } else {    
     double *weight = ToReal(Weight);
@@ -273,7 +284,11 @@ SEXP rowMeansX(SEXP M, SEXP Weight) {
     }
 
     if (TYPEOF(M) == REALSXP) { double *m = REAL(M); for2; }
-    else { int *m = (int) TYPEOF(M) == INTSXP ? INTEGER(M) : LOGICAL(M); for2; }
+    else {
+      int *m;
+      if (TYPEOF(M) == INTSXP) m = INTEGER(M); else m = LOGICAL(M);
+      for2;
+    }
     
     if (TYPEOF(Weight) != REALSXP) FREE(weight);
   }
@@ -379,7 +394,8 @@ double *ToRealI(SEXP X, bool *create) {
       ToRealN = len;
     }
   } else y = ToRealDummy;
-  int *x = (int*) (TYPEOF(X)==INTSXP ? INTEGER(X) : LOGICAL(X));
+  int *x;
+  if (TYPEOF(X)==INTSXP) x=INTEGER(X); else x=LOGICAL(X);
   for (int i=0; i<len; i++) y[i] = (double) x[i];
   return y;
 }
