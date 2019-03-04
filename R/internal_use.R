@@ -100,8 +100,9 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
       command <- paste("R < ", file.in, ">>", file.out)
     } else {
       ##stopifnot(RFoptions()$basic$print <=2 )
-      .res <- try(do.call(utils::example, list(.fct.list[.idx], ask=.ask,
-					       echo=.echo)))
+      .time <- system.time(.res <- try(do.call(utils::example,
+                                               list(.fct.list[.idx],
+                                                    ask=.ask, echo=.echo))))
       if (is(.res, "try-error")) {
 	if (.halt) {
 	  stop("\n\n\t***** ",.fct.list[.idx], " (", .idx,
@@ -113,6 +114,7 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
 	}
       }
       cat("****** '", .fct.list[.idx], "' (", .idx, ") done. ******\n")
+      print(.time)
     }
   }
   Print(.not_working, paste(.not_working_no, collapse=", ")) #
@@ -154,18 +156,28 @@ ShowInstallErrors <-
   function(dir=".", pkgs=unlist(strsplit( dir(pattern="*.Rcheck"), ".Rcheck")))
     for (i in 1:length(pkgs)) {
       cat("\n\n", pkgs[i], "\n")
-      for (f in c("00install.out", "00check.log"))
+      for (f in c("00install.out", "00check.log")) {
 	system(paste("grep [eE][rR][rR][oO][rR] ", dir, "/",  pkgs[i],
 		     ".Rcheck/", f, sep=""))
+ 	system(paste("grep \"user system elapsed\" -A 2 ", dir, "/",  pkgs[i],
+		     ".Rcheck/", f, sep=""))
+ ##	system(paste("grep \"Warning messages\" -A 4 ", dir, "/",  pkgs[i],
+        ##		     ".Rcheck/", f, sep=""))
+### find -type f -name "00*" -exec grep Warning {} \; -print
+### find -type f -name "00*" -exec grep "user system elapse" -A 3 {} \; -print
+
+        
+        }
     }
   
     
 
 Dependencies <- function(pkgs = all.pkgs, dir = "Dependencies",
                          install = FALSE, check=TRUE, reverse=FALSE,
-			 package="RandomFields") {
+  			 package="RandomFields") {
   Print(utils::packageDescription(package)) #
-  all <- reverse_dependencies_with_maintainers(package) #( , which="all")
+  all <- reverse_dependencies_with_maintainers(package #, which="Suggests")
+                                               , which="all")
   all.pkgs <- all[, 1]
   PKGS <- paste(all[,1], "_", all[,2], ".tar.gz", sep="")   
   
@@ -183,10 +195,11 @@ Dependencies <- function(pkgs = all.pkgs, dir = "Dependencies",
     }
   }
   if (!hasArg("pkgs")) {
-    if (check)
+    if (check) {
+      reverse <- if (reverse) list(repos = getOption("repos")["CRAN"]) else NULL
       tools::check_packages_in_dir(dir=dir, check_args = c("--as-cran", ""),
-                                   reverse=if (reverse) list(repos =
-                                       getOption("repos")["CRAN"]) else NULL)
+                                   reverse=reverse)
+    }
     ShowInstallErrors(dir, pkgs)
     return(NULL)
   } else { ### old:
@@ -194,7 +207,7 @@ Dependencies <- function(pkgs = all.pkgs, dir = "Dependencies",
       for (j in 1:length(pkgs)) {
 	i <- pmatch(pkgs[j], PKGS)
 	if (is.na(i)) next
-	command <- paste("(cd ", dir, "; R CMD check --as-cran", PKGS[i],")")
+	command <- paste("(cd ", dir, "; time R CMD check --as-cran", PKGS[i],")")
 	Print(command) #
 	x <- system(command)
 	ShowInstallErrors(dir, pkgs)

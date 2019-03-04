@@ -360,7 +360,7 @@
       returned and thus  should not be given. Hence \code{SAVEOPTIONS}
       is often a convenient short cut for \code{GETOPTIONS}.
       The class always included in this package is \code{"basic"}, in
-      package \pkg{RandomFields} thes are the two packages
+      package \pkg{RandomFields} these are the two classes
       \code{"basic"} and \code{"general"}.
    
       \code{SAVEOPTIONS} must always be the very first argument. In

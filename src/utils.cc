@@ -135,8 +135,8 @@ void colMaxsIint(int *M, int r, int c, int *ans) {
       dummy = MAX(dummy, d[7]);
 
 #endif // AVX
-      for ( ; m<start; m++) dummy = MAX(dummy > *m);
-      m = (double *) m0;
+      for ( ; m<start; m++) dummy = MAX(dummy, *m);
+      m = (int *) m0;
       for ( ; m<end; m++) dummy = MAX(dummy, *m);
     } else {
       dummy = m[0];    

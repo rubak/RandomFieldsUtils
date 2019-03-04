@@ -719,6 +719,9 @@ int doPosDef(double *M, int size, bool posdef,
       for (int i=0; i<size; i++) diagonal[i] = MPT[sizeP1 * i];
       
       pt->actual_pivot = PIVOT_UNDEFINED;
+
+      //      printf("sp->pivot = %d\n", sp->pivot);
+      
       if (sp->pivot == PIVOT_NONE || sp->pivot == PIVOT_AUTO) {// cholesky
 
 	// cmp for instance http://stackoverflow.com/questions/22479258/cholesky-decomposition-with-openmp
