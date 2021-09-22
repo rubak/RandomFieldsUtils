@@ -114,7 +114,7 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
 	}
       }
       cat("****** '", .fct.list[.idx], "' (", .idx, ") done. ******\n")
-      print(.time)
+      print(.time) ## OK
     }
   }
   Print(.not_working, paste(.not_working_no, collapse=", ")) #

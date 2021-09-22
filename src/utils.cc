@@ -22,13 +22,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-//#include <Rmath.h>
-//#include <unistd.h>
-#include "RandomFieldsUtils.h"
-//#include "win_linux_aux.h"
-#include "General_utils.h"
 #include "intrinsics.h"
-//#include "Solve.h"
+#include "Basic_utils.h"
+#include "RandomFieldsUtils.h"
+#include "General_utils.h"
 #include "Utils.h"
 #include "own.h"
 
@@ -113,7 +110,7 @@ void colMaxsIint(int *M, int r, int c, int *ans) {
   for (int i=0; i<c; i++) {
      int dummy,
       *m = M + r * i;
-#if defined SSE4 or defined AVX2
+#if defined SSE4 || defined AVX2
      int *start = algnInt(m),
        *end = m + r;
     uintptr_t End = (uintptr_t) (end - integers);

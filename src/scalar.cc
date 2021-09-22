@@ -31,13 +31,11 @@ PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS)  -march=native -mssse3
 
  */
 
-#define BUG assert(false);
-
-#include <assert.h>
-#include "kleinkram.h"
-#include "scalar.h"
 #include "intrinsics.h"
 #include "Basic_utils.h"
+#include "General_utils.h"
+#include "kleinkram.h"
+#include "scalar.h"
 #include "errors_messages.h"
 #include "zzz_RandomFieldsUtils.h"
 
@@ -356,7 +354,7 @@ double scalarX(double *x, double *y, int len, int n) {
     
 #ifdef DO_PARALLEL
   case SCALAR_AVX_PARALLEL :
-#if defined AVX and defined OpenMP
+#if defined AVX && defined OpenMP
     return avx_scalarprodDparallel(x, y, len);
 #endif    
   case SCALAR_BASE_PARALLEL : return scalarprodP(x, y, len);// parallel, nicht-vectoriell

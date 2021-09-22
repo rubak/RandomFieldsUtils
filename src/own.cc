@@ -19,13 +19,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
-//#include "Basic_utils.h"  // must be before anything else
-#include "RandomFieldsUtils.h"  // must be before anything else
 #ifdef DO_PARALLEL
 #include <omp.h>
 #endif
-#include <R.h>
-#include <Rinternals.h>
+#include "Basic_utils.h"
+#include "RandomFieldsUtils.h"  // must be before anything else
 #include "General_utils.h"
 #include "own.h"
 #include "zzz_RandomFieldsUtils.h"

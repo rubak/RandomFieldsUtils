@@ -33,14 +33,19 @@ PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS)  -march=native -mssse3
 
 
 
-#define BUG assert(false);
 
-#include <assert.h>
-#include "kleinkram.h"
-#include "linear.h"
 #include "intrinsics.h"
 #include "Basic_utils.h"
+#include "General_utils.h"
+#include "kleinkram.h"
+#include "linear.h"
 #include "errors_messages.h"
+
+#ifdef BUG
+#undef BUG
+#define BUG 
+#endif
+
 
 #define Nlinmodi 9
 name_type linmodi = { "1x1", "2x2", "4x4", "8x8", "near", "simple", "precise",

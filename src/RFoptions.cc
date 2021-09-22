@@ -21,6 +21,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
+#include "Basic_utils.h"
 #include "RandomFieldsUtils.h"
 #include "General_utils.h"
 #include "own.h"
@@ -162,7 +163,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList,
     if (getlist[k].ListNr < 0)
       ERR2("Option '%.50s' not allowed for this call.\n   In case you really need this option, use the command 'RFoption(%.50s=..)'", mainname, mainname);
   }
-  // printf("%.50s %d %d %d %ld \n", name, ListNr, i, j,  (long) setparam[ListNr]);
+  // printf("%.50s %d %d %d %ld \n", name, ListNr, i, j,  (Long) setparam[ListNr]);
   
   setparam[ListNr](i, j, el, name, isList, local); 
 }
@@ -396,7 +397,7 @@ SEXP RFoptions(SEXP options) {
   //printf("Nlist = %d\n", NList);
   for (i=0; i<NList; i++)
     if (finalparam[i] != NULL) {
-      //      printf("%d %ld \n", i, (long) finalparam[i]);
+      //      printf("%d %ld \n", i, (Long) finalparam[i]);
       finalparam[i](local);
     }
 

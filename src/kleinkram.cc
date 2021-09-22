@@ -19,9 +19,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
+#include "Basic_utils.h"
 #include <R_ext/Lapack.h>
-//#include "def.h" // never change this line
-#include "General_utils.h" //#include <General_utils.h>
+#include "General_utils.h" 
 #include "zzz_RandomFieldsUtils.h"
 
 
@@ -1011,7 +1011,7 @@ void GetName(SEXP el, char *name, const char * List[], int n,
 
   if (TYPEOF(el) == NILSXP) goto ErrorHandling;
   if (len_el > maxlen_ans) 
-    RFERROR2("option '%.50s' is too long. Maximum length is %d.", name, maxlen_ans);
+    RFERROR2("option '%.50s' is too large. Maximum length is %d.", name, maxlen_ans);
 
   if (TYPEOF(el) == STRSXP) {    
     for (k=0; k<len_el; k++) {
@@ -1147,7 +1147,7 @@ int addressbits(void VARIABLE_IS_NOT_USED *addr) {
 #ifndef RANDOMFIELDS_DEBUGGING  
   return 0;
 #else
-  double x = (long int) addr,
+  double x = (Long int) addr,
     cut = 1e9;
   x = x - TRUNC(x / cut) * cut;
   return (int) x;

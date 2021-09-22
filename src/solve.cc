@@ -19,12 +19,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
  
-#include "Basic_utils.h"  // must be before anything else
 #ifdef DO_PARALLEL
 #include <omp.h>
 #endif
-#include <R_ext/Lapack.h>
 
+#include "Basic_utils.h"  // must be before anything else
+#include <R_ext/Lapack.h>
 #define LOCAL_ERRORSTRING
 #define WHICH_ERRORSTRING pt->err_msg
 #include "RandomFieldsUtils.h"
@@ -538,7 +538,7 @@ int doPosDef(double *M, int size, bool posdef,
       //#endif
       for (int i=0; i<size; i++) {
 	int end = i * sizeP1;
-	long j;
+	Long j;
 	for (j=i * size; j<end; nnzA += FABS(M[j++]) >= spam_tol);
 	diag_nnzA += FABS(M[j++]) > spam_tol;
 	end = (i+1) * size;
@@ -563,7 +563,7 @@ int doPosDef(double *M, int size, bool posdef,
     diag = true;
     for (int i=0; i<size && diag; i++) {
       int end = i * sizeP1;
-      long j;
+      Long j;
       for (j=i * size; j<end; j++) {
 	//	printf("(%d %d %10g %d)\n", i, j, M[j], size);
 	if (FABS(M[j]) > spam_tol) {
@@ -1889,7 +1889,7 @@ int sqrtPosDefFree(double *M,  // in out
 #ifdef WIN32
     pt->to_be_deleted = M;
 #else
-    Free(M);
+    FREE(M);
 #endif
   }
   return err;

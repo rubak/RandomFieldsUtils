@@ -18,6 +18,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
+
+#include "Basic_utils.h"
 #include <R_ext/Lapack.h>
 #include "RandomFieldsUtils.h"
 #include "zzz_RandomFieldsUtils.h"
@@ -167,14 +169,14 @@ double I0mL0(double x){
     r = 0.5 * g2[0];
     ac = ACOS((6.0 * x - 40.0) / (x + 40.0));
     for (i=1; i<24; i++) {
-      r += g2[i] * cos(i * ac);
+      r += g2[i] * COS(i * ac);
     }
   } else {
     r = 0.5 * g3[0];
     x2 = x * x;
     ac = ACOS((800.0 - x2) / (288.0 + x2));
     for (i=1; i<24; i++) {
-      r += g3[i] * cos(i * ac);
+      r += g3[i] * COS(i * ac);
     }
     r *= T_PI /* 2/pi */ / x;
   }

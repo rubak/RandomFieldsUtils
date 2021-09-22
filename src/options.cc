@@ -21,18 +21,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
-#include "Basic_utils.h" // must be before anything else
+#include <unistd.h>
 #ifdef DO_PARALLEL
 #include <omp.h>
 #endif
-#include <unistd.h>
+#include "Basic_utils.h" // must be before anything else
 #include "General_utils.h"
 #include "kleinkram.h"
 #include "zzz_RandomFieldsUtils.h"
 
 #define PLverbose 2
 
-// IMPORTANT: all names of general must be at least 3 letters long !!!
+// IMPORTANT: all names of general must be at least 3 letters large !!!
 const char *basic[basicN] =
   { "printlevel","cPrintlevel", "seed", "cores", "skipchecks",  "asList", 
     "verbose", "kahanCorrection", "helpinfo"};
