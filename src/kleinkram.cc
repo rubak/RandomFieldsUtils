@@ -19,10 +19,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
-#include "Basic_utils.h"
+#include "Basic_utils_local.h"
 #include <R_ext/Lapack.h>
 #include "General_utils.h" 
 #include "zzz_RandomFieldsUtils.h"
+#include "extern.h"
 
 
 #define SCALAR(A,B,C) scalarX(A,B,C, SCALAR_AVX)

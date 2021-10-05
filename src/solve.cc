@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <omp.h>
 #endif
 
-#include "Basic_utils.h"  // must be before anything else
+#include "Basic_utils_local.h"  // must be before anything else
 #include <R_ext/Lapack.h>
 #define LOCAL_ERRORSTRING
 #define WHICH_ERRORSTRING pt->err_msg
@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "General_utils.h"
 #include "kleinkram.h" 
 #include "linear.h"
+#include "extern.h"
+extern const char * solve[solveN];
 
 
 
@@ -1100,7 +1102,7 @@ int doPosDef(double *M, int size, bool posdef,
       CMALLOC(workspaceD, size, double);
       CMALLOC(workspaceU, size, double);
 
-      F77_CALL(dgeqrf)(&size, &size, // QR
+      F77dgeqrf(&size, &size, // QR
 		       MPT, &size, // aijmax, &irank, inc, workspaceD, 
 		       workspaceU, workspaceD, &size, &err);     
       
@@ -1134,15 +1136,17 @@ int doPosDef(double *M, int size, bool posdef,
 	  abstol = 0.0;
 	int dummy_nr;
 
-	F77_CALL(dsyevr)("V", "A", "U", &size, // Eigen
-			 MPT, &size, &dummy, &dummy, &k, &k, 
-			 &abstol,// or DLAMCH
-			 &dummy_nr, D, U, &size, 
-			 xja, // 2 * size * sizeof(integer); nonzeros_idx
-			 pt_work, &lwork,
-			 pt_iwork, &lintwork,
-			 &err
-			 );
+	// eigenvalue decomp.
+	F77dsyevr("V", "A", "U",
+		  &size, MPT, &size,
+		  &dummy, &dummy,
+		  &k, &k, 
+		  &abstol, &dummy_nr, D,
+		  U, &size,  xja, // 2 * size * sizeof(integer); nonzeros_idx
+		  pt_work, &lwork,
+		  pt_iwork, &lintwork,
+		  &err FCONE FCONE FCONE
+		  );
 	if (i==1 || err != NOERROR || ISNAN(D[0])) break;
 	lwork = (int) optimal_work;
 	lintwork = (int) optimal_intwork;
@@ -1154,7 +1158,7 @@ int doPosDef(double *M, int size, bool posdef,
 
       
       if (err != NOERROR) {
-	if (PL>PL_ERRORS) { PRINTF("Error code F77_CALL(dsyevr) = %d\n", err);}
+	if (PL>PL_ERRORS) { PRINTF("F77 error code for 'dsyevr' = %d\n", err);}
 	CERR1("'dsyevr' failed with err=%d.", err);
 	break;
       }
@@ -1221,9 +1225,9 @@ int doPosDef(double *M, int size, bool posdef,
       CMALLOC(iwork, size8, int);
 
       for (int i=0; i<=1; i++) {
-	F77_CALL(dgesdd)("A", &size, &size, // SVD
-			 MPT, &size, D, U, &size, VT, &size, 
-			 pt_work, &lwork, iwork, &err);
+	F77dgesdd("A", &size, &size, // SVD
+		  MPT, &size, D, U, &size, VT, &size, 
+		  pt_work, &lwork, iwork, &err FCONE);
 	if (i==1 || err != NOERROR || ISNAN(D[0])) break;
 	lwork = (int) optim_lwork;
 	CMALLOC(work, lwork, double);
@@ -1231,7 +1235,7 @@ int doPosDef(double *M, int size, bool posdef,
       }
       if (err != NOERROR) {
 	if (PL>PL_ERRORS) {
-	  PRINTF("Error code F77_CALL(dgesdd) = %d\n", err);
+	  PRINTF("F77 error code for 'dgesdd' = %d\n", err);
 	}
 	CERR1("'dgesdd' failed with err=%d.", err);
 	break;
@@ -1316,7 +1320,7 @@ int doPosDef(double *M, int size, bool posdef,
       }
       
       CMALLOC(ipiv, size, int);		    
-      F77_CALL(dgetrf)(&size, &size, // LU
+      F77dgetrf(&size, &size, // LU
 		       MPT, &size, ipiv, &err);
       if (err != NOERROR) {
 	CERR1("'dgetrf' (LU) failed with err=%d.", err);
@@ -1331,9 +1335,9 @@ int doPosDef(double *M, int size, bool posdef,
       if (rhs_cols > 0) {
 	int totalRHS = size * rhs_cols;
 	if (result != NULL) MEMCOPY(RESULT, rhs, sizeof(double) * totalRHS);
-	F77_CALL(dgetrs)("N", &size, // LU rhs
+	F77dgetrs("N", &size, // LU rhs
 			 &rhs_cols, MPT, &size, ipiv, 
-			 RESULT, &size, &err);
+			 RESULT, &size, &err FCONE);
 	if (err != NOERROR) {	
 	  CERR1("'dgetrs' (LU) failed with err=%d.", err);
 	}
@@ -1342,7 +1346,7 @@ int doPosDef(double *M, int size, bool posdef,
 	double dummy,
 	  *p = &dummy;
 	for (int i=0; i<=1; i++) { 
-	  F77_CALL(dgetri)(&size, MPT, // LU solve
+	  F77dgetri(&size, MPT, // LU solve
 			   &size, ipiv, p, &lwork, &err);	
 	  if (err != NOERROR) break;
 	  lwork = (int) dummy;
@@ -1391,10 +1395,10 @@ int doPosDef(double *M, int size, bool posdef,
       CMALLOC(DD, nDD, double);
       // prepare spam
 
-      F77_CALL(spamdnscsr)(&size, &size, M, &size, DD,
-			   cols, // ja
-			   rows, // ia
-			   &spam_tol); // create spam object   
+      F77spamdnscsr(&size, &size, M, &size, DD,
+		    cols, // ja
+		    rows, // ia
+		    &spam_tol); // create spam object   
       pt->nsuper = 0;
       // calculate spam_cholesky
       err = 4; // to get into the while loop
@@ -1435,7 +1439,7 @@ int doPosDef(double *M, int size, bool posdef,
 	CMALLOC(lindx, nnzcolindices, int);	
 	CMALLOC(lnz, nnzR, double);
 	 	
-	F77_CALL(cholstepwise)(&size, &nnzA, DD, cols, rows, &doperm,
+	F77cholstepwise(&size, &nnzA, DD, cols, rows, &doperm,
 			       invp, pivotsparse, 
 			       &nnzlindx, &nnzcolindices, 
 			       lindx, // 
@@ -1467,10 +1471,10 @@ int doPosDef(double *M, int size, bool posdef,
 	
 	nnzR = xlnz[size] - 1;
 	CMALLOC(xja, nnzR, int);
-	F77_CALL(calcja)(&size, &(pt->nsuper), pt->xsuper, 
+	F77calcja(&size, &(pt->nsuper), pt->xsuper, 
 			 pt->lindx, pt->xlindx, pt->xlnz, xja);
 	for (int i=0; i<size; invp[i++]--); 
-	F77_CALL(spamcsrdns)(&size, pt->lnz, xja, pt->xlnz, RESULT);
+	F77spamcsrdns(&size, pt->lnz, xja, pt->xlnz, RESULT);
 	for (int i=0; i<size; i++) {
 	  int endfor = (i + 1) * size;
 	  for (int j = i * (size + 1) + 1; j<endfor; RESULT[j++]=0.0);
@@ -1539,7 +1543,7 @@ int doPosDef(double *M, int size, bool posdef,
 	//	  for (int ii=0; ii<size; ii++) printf("%d %10e\n", ii, RESULT[ii]);
 	//	  BUG;
 	
-	F77_CALL(backsolves)(&size, &(pt->nsuper), &RHS_COLS, 
+	F77backsolves(&size, &(pt->nsuper), &RHS_COLS, 
 			     lindx, // colindices
 			     xlindx, //colpointers
 			     lnz, 
@@ -2037,7 +2041,7 @@ int sqrtRHS(solve_storage *pt, double* RHS, double *result){
     BUG; // SEE ALSO solve, calculate, tmp_delete !!
     int one = 1;
     assert(pt->DD != NULL);
-    F77_CALL(amuxmat)(&size, &size, &one, RHS, pt->DD, pt->lnz, 
+    F77amuxmat(&size, &size, &one, RHS, pt->DD, pt->lnz, 
 		      pt->xja, pt->xlnz);
     for (int i=0; i<size; i++) result[i] = pt->DD[pt->invp[i]];
   }

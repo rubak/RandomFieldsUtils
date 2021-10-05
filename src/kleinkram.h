@@ -164,9 +164,5 @@ double ownround(double x);
 #define Mod(ZZ, modulus) ((ZZ) - FLOOR((ZZ) / (modulus)) * (modulus))
 double lonmod(double x, double modulus); 
 
-/*
-extern "C" void vectordist(double *v, int *dim, double *dist, int *diag); 
-bool is_diag(double *aniso, int dim);
-*/ 
 
 #endif

@@ -34,11 +34,7 @@ void delparameterUtils(int local);
 void set_num_threads();
 
 
-extern utilsparam GLOBAL;
 #define ownprefixN 2
-extern const char * ownprefixlist[ownprefixN],
-  **ownall[ownprefixN];
-extern int ownallN[ownprefixN];
 
 #define HELPINFO(M) if (GLOBAL.basic.helpinfo) WARN1("%.50s\nNote that you can unable the above information by 'RFoptions(helpinfo=FALSE)'.\n", M) //
 

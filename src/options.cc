@@ -22,15 +22,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <unistd.h>
-#ifdef DO_PARALLEL
-#include <omp.h>
-#endif
-#include "Basic_utils.h" // must be before anything else
+
+#include "Basic_utils_local.h" // must be before anything else
 #include "General_utils.h"
 #include "kleinkram.h"
 #include "zzz_RandomFieldsUtils.h"
+#include "extern.h"
+
+extern const char * InversionNames[nr_InversionMethods];
 
 #define PLverbose 2
+
 
 // IMPORTANT: all names of general must be at least 3 letters large !!!
 const char *basic[basicN] =
@@ -54,8 +56,6 @@ const char **ownall[ownprefixN] = {basic, solve};
 int ownallN[ownprefixN] = {basicN, solveN};
 
 
-int PL = C_PRINTLEVEL,
-  CORES = 1;
 
 utilsparam GLOBAL = {
   basic_START,

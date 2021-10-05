@@ -30,22 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Solve.h"
 
 
-#define R_PRINTLEVEL 1
-#define C_PRINTLEVEL 1
-#ifdef SCHLATHERS_MACHINE
-#define INITCORES 4
-#else
-#define INITCORES 1
-#endif
-
-extern int PL, CORES;
-
-
 #define LEN_OPTIONNAME 201
 
 #define basicN 9
 // IMPORTANT: all names of basic must be at least 3 letters large !!!
-extern const char *basic[basicN];
 typedef struct basic_param {
   int 
   Rprintlevel,
@@ -58,8 +46,6 @@ typedef struct basic_param {
       false, true, false, true				 \
       }
 
-
-extern const char * InversionNames[nr_InversionMethods];
 
 #define SOLVE_SVD_TOL 3
 #define solveN 20
@@ -88,7 +74,6 @@ typedef struct solve_param {
       400, 500, 4294967, PIVOTSPARSE_MMD, 16384,			\
 	10000, PIVOT_NONE, /* never change -- see RFoptions.Rd */	\
         PIVOT_UNDEFINED, 0, NULL, 0}
-extern const char * solve[solveN];
 
 
 typedef struct utilsparam{

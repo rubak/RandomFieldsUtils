@@ -1,9 +1,10 @@
 /*
- Authors 
- Martin Schlather, schlather@math.uni-mannheim.de
+Authors
+Martin Schlather, schlather@math.uni-mannheim.de
 
+main library for unconditional simulation of random fields
 
- Copyright (C) 2018 -- 2018 Martin Schlather
+ Copyright (C) 2021 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -17,31 +18,10 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
-*/
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/ 
 
-
-#ifndef rfutils_utils_H
-#define rfutils_utils_H 1
-
-
-
-double *ToReal(SEXP X);
-int *ToInt(SEXP X);
-//double *ToRealI(SEXP X, bool *create);
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif 
-  int *ToIntI(SEXP X, bool *create, bool round);
- void freeGlobals();
-  //  double *ToRealI(SEXP X, bool *create);
-  // int *ToIntI(SEXP X, bool *create, bool round);
-#ifdef __cplusplus
-}
-#endif
-
-
+#ifndef intrinsics_specific_H
+#define intrinsics_specific_H 1
 
 #endif

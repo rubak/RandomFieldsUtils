@@ -31,13 +31,13 @@ PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS)  -march=native -mssse3
 
  */
 
-#include "intrinsics.h"
-#include "Basic_utils.h"
+#include "Basic_utils_local.h"
 #include "General_utils.h"
 #include "kleinkram.h"
 #include "scalar.h"
 #include "errors_messages.h"
 #include "zzz_RandomFieldsUtils.h"
+#include "extern.h"
 
 
 #define Nmodi 9

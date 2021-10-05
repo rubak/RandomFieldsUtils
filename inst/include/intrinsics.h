@@ -9,7 +9,7 @@
 #include<inttypes.h> // uintptr_t
 
 
-// PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS) -mavx ODER -march=native 
+// PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS) -mavx ODER -march=native
 #ifdef __MMX__
 #define MMX __MMX__
 #endif
@@ -53,6 +53,7 @@
 #define SSEBITS 64
 #define SSEMODE 0
 #endif
+
 
 #ifndef WIN32
 // #define FMA_AVAILABLE __FMA__
@@ -104,7 +105,6 @@
 #ifdef AVX512
 //#include <immintrin.h>
 #endif
-
 
 
 

@@ -21,11 +21,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
-#include "Basic_utils.h"
+#include "Basic_utils_local.h"
 #include "RandomFieldsUtils.h"
 #include "General_utils.h"
 #include "own.h"
 #include "zzz_RandomFieldsUtils.h"
+#include "extern.h"
+
+extern const char * ownprefixlist[ownprefixN], **ownall[ownprefixN];
+extern int ownallN[ownprefixN];
 
 
 typedef struct {
@@ -409,7 +413,6 @@ SEXP RFoptions(SEXP options) {
 } 
  
 
-int PLoffset = 0;
 void attachRFoptions(const char **prefixlist, int N, 
 		     const char ***all, int *allN,
 		     setparameterfct set, finalsetparameterfct final,

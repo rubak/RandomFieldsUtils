@@ -24,7 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef rfutils_utils_H
 #define rfutils_utils_H 1
 
-extern bool ToFalse[1];
+
+
 double *ToReal(SEXP X);
 int *ToInt(SEXP X);
 //double *ToRealI(SEXP X, bool *create);

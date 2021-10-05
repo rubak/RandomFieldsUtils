@@ -1,9 +1,10 @@
+
 /*
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
 
- Copyright (C) 2018 -- 2018 Martin Schlather
+Copyright (C) 2021 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -20,28 +21,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
+// Externals:
 
-#ifndef rfutils_utils_H
-#define rfutils_utils_H 1
+#include "Basic_utils_local.h" // must be before anything else
 
+char ERRMSG[LENERRMSG], MSG2[LENERRMSG]; // MSG[LENERRMSG],;
+errorloc_type ERROR_LOC="";
+errorstring_type ERRORSTRING;
 
+int PLoffset = 0,
+  PL = C_PRINTLEVEL,
+  CORES = 1;
 
-double *ToReal(SEXP X);
-int *ToInt(SEXP X);
-//double *ToRealI(SEXP X, bool *create);
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif 
-  int *ToIntI(SEXP X, bool *create, bool round);
- void freeGlobals();
-  //  double *ToRealI(SEXP X, bool *create);
-  // int *ToIntI(SEXP X, bool *create, bool round);
-#ifdef __cplusplus
-}
-#endif
-
-
-
-#endif
+// end Externals

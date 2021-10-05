@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef rfutils_H
 #define rfutils_H 1
 
-#include "errors_messages.h"
+#include "AutoRandomFieldsUtils.h"
 #include "kleinkram.h"
 #include "Solve.h"
 #include "scalar.h"
@@ -49,13 +49,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // not SCHLATHERS_MACHINE
 #ifndef SCHLATHERS_MACHINE
-#define INTERNAL SERR("Sorry. This functionality doesn't exist currently. There is work in progress at the moment by the maintainer.")
+// #define INTERNALMSG SERR("Sorry. This functionality doesn't exist currently. There is work in progress at the moment by the maintainer.")
 #define assert(X) {}
 #define BUG {								\
     RFERROR3("Severe error occured in function '%.50s' (file '%.50s', line %d). Please contact maintainer martin.schlather@math.uni-mannheim.de .", \
 	    __FUNCTION__, __FILE__, __LINE__);				\
   }					
-#define DO_TESTS false
 //#define MEMCOPY(A,B,C) {MEMCPY(A,B,C); printf("memcpy %.50s %d\n", __FILE__, __LINE__);}
 #define MEMCOPY(A,B,C) MEMCOPYX(A,B,C)
 #define AMALLOC(ELEMENTS, SIZE) AALLOC(SIZE, (SIZE) * (ELEMENTS))
@@ -75,7 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAXALLOC 1e9
 
 // __extension__ unterdrueckt Fehlermeldung wegen geklammerter Argumente
-#define INTERNAL  {		\
+#define INTERNALMSG  {		\
     RFERROR3("made to be an internal function '%.50s' ('%.50s', line %d).", \
 	     __FUNCTION__, __FILE__, __LINE__);				\
   }
@@ -86,7 +85,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   }
 #define SHOW_ADDRESSES 1
 #define BUG { RFERROR2("BUG in '%.50s' line %d.\n",  __FUNCTION__, __LINE__);}
-#define DO_TESTS true
 
 #define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL && (C)>0 && (C)<=MAXALLOC); MEMCOPYX(A,B,C); })
 //#define MEMCOPY(A,B,C) memory_copy(A, B, C)
@@ -125,7 +123,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-extern int PLoffset;
 #define PL_IMPORTANT 1 
 #define PL_BRANCHING 2
 #define PL_DETAILSUSER 3
@@ -145,6 +142,5 @@ extern int PLoffset;
 #define BESSEL_NU_THRES 100
 #define LOW_MATERN 1e-20
 #define LOW_BESSEL 1e-20
-
 
 #endif

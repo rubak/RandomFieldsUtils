@@ -25,9 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // #define SIMD_AVAIALBLE 1
 
 
-#include "Basic_utils.h"
-#include <Rmath.h>
-#include <R.h>
+#include "Basic_utils_local.h"
 #include "RandomFieldsUtils.h"
 #include "General_utils.h"
 

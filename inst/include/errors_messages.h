@@ -37,42 +37,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ERRORMEND 12      /* a single error message -- und alles dazwischen */
  
 
-
-#define LENMSG 1000
-#define MAXERRORSTRING 1000
-#define nErrorLoc 1000
-#define LENERRMSG 1000
-typedef char errorstring_type[MAXERRORSTRING];
-typedef char errorloc_type[nErrorLoc];
-
-
-#ifdef DO_PARALLEL
-#define LOCAL_ERRMSG2 char MSG2[LENERRMSG]
-#ifndef LOCAL_ERRLOC_MSG
-#define LOCAL_ERRLOC_MSG errorloc_type ERROR_LOC=""; char ERRMSG[LENERRMSG];
-#endif
-#ifndef LOCAL_ERRORSTRING
-#define LOCAL_ERRORSTRING errorstring_type ERRORSTRING
-#endif
-
-#else  // not DO_PARALLEL
-
-#define LOCAL_ERRMSG2
-#ifndef LOCAL_ERRLOC_MSG
-#define LOCAL_ERRLOC_MSG
-#endif
-#ifndef LOCAL_ERRORSTRING
-#define LOCAL_ERRORSTRING
-#endif
 extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
   MSG2[LENERRMSG];// used at the same time with MSG and ERR()
 extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields
 
-#ifndef ERROR_LOC
-extern errorloc_type ERROR_LOC;
-#endif
-//  extern char   MSG[LENERRMSG]; // used by RandomFields in intermediate steps
-#endif
+
+#ifdef DO_PARALLEL
+
+  #define LOCAL_ERRMSG2 char MSG2[LENERRMSG]
+  #ifndef LOCAL_ERRLOC_MSG
+    #define LOCAL_ERRLOC_MSG errorloc_type ERROR_LOC=""; char ERRMSG[LENERRMSG];
+  #endif
+  #ifndef LOCAL_ERRORSTRING
+    #define LOCAL_ERRORSTRING errorstring_type ERRORSTRING
+  #endif
+
+#else  // not DO_PARALLEL
+
+  #define LOCAL_ERRMSG2
+  #ifndef LOCAL_ERRLOC_MSG
+    #define LOCAL_ERRLOC_MSG
+  #endif
+  #ifndef LOCAL_ERRORSTRING
+    #define LOCAL_ERRORSTRING
+  #endif
+
+  #ifndef ERROR_LOC
+  extern errorloc_type ERROR_LOC;
+  #endif
 
 #endif
 
@@ -83,10 +75,6 @@ extern errorloc_type ERROR_LOC;
 #ifndef LOCAL_ERROR
 #define LOCAL_ERROR(N) {}
 #endif
-
-
-// #define ERRMSG(X) if (PL>=PL_ERRORS){errorMSG(X,MSG); PRINTF("error: %.50s%.50s\n",ERROR_LOC,MSG);}
-
 
 
 #ifdef SCHLATHERS_MACHINE
@@ -212,3 +200,5 @@ extern errorloc_type ERROR_LOC;
     SPRINTF(ERR_STR, M, A,B,C,D,E,F); RFERROR(ERR_STR);}
 #define RFERROR7(M,A,B,C,D,E,F,G) {errorstring_type ERR_STR;\
     SPRINTF(ERR_STR, M, A,B,C,D,E,F,G); RFERROR(ERR_STR);}
+
+#endif

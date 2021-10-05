@@ -34,8 +34,7 @@ PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS)  -march=native -mssse3
 
 
 
-#include "intrinsics.h"
-#include "Basic_utils.h"
+#include "Basic_utils_local.h"
 #include "General_utils.h"
 #include "kleinkram.h"
 #include "linear.h"

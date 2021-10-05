@@ -19,26 +19,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
-#ifdef DO_PARALLEL
-#include <omp.h>
-#endif
-#include "Basic_utils.h"
+#include "Basic_utils_local.h"
 #include "RandomFieldsUtils.h"  // must be before anything else
 #include "General_utils.h"
 #include "own.h"
 #include "zzz_RandomFieldsUtils.h"
 #include "Utils.h"
 
-
-
-// local
-#ifdef DO_PARALLEL
-#else
-char ERRMSG[LENERRMSG], MSG[LENERRMSG], MSG2[LENERRMSG];
-errorloc_type ERROR_LOC="";
-errorstring_type ERRORSTRING;
-#endif
-
+extern const char * ownprefixlist[ownprefixN], **ownall[ownprefixN];
+extern int ownallN[ownprefixN];
 
 SEXP attachRandomFieldsUtils(SEXP show) {
   attachRFoptions(ownprefixlist, ownprefixN,

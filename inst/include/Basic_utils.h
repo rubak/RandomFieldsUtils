@@ -24,13 +24,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef basic_rfutils_h
 #define basic_rfutils_h 1
+
+#define USE_FC_LEN_T
+#define F77call F77_CALL // rename to control that USE_FC_LEN_T has been called
+#ifdef __cplusplus
+#define F77name extern "C" void F77_NAME // rename to control that USE_FC_LEN_T has been called
+#else
+#define F77name void F77_NAME 
+#endif
+
 #ifndef __cplusplus
 #include <stdbool.h>
 #endif
 
+#include <inttypes.h> // uintptr_t
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
+
 #include "AutoRandomFieldsUtils.h"
 
 
@@ -45,7 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #ifdef DO_PARALLEL
-//#undef DO_PARALLEL
+// #undef DO_PARALLEL
 #endif
 
 
@@ -76,27 +87,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // // 1
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-  void spamcsrdns_(int*, double *, int *, int*, double*);
-  void spamdnscsr_(int*, int*, double *, int*, double*, int*, int*, double*);
-  void cholstepwise_(int*, int*, double*, int*, int*, int*, int*, int*,
-		    int*, int*, int*, int*, int*, int*, double*, int*,
-		    int*, int*, int*, int*);
-  void backsolves_(int*, int*, int*, int*, int*, double*, int*, int*, int*,
-		  int*, double*, double*);
-  void calcja_(int*, int*, int*, int*, int*, int*, int*);
-  void amuxmat_(int*, int*, int*, double*, double*, double*, int*, int*);
-  //  void transpose_(int *, int *, double *, int * int *, double*, int*, int*);
-  //  void spamback_();
-  //  void spamforward();
-#ifdef __cplusplus
-}
-#endif
-
-
-
 typedef enum usr_bool {
   // NOTE: if more options are included, change ExtendedBoolean in
   // userinterface.cc of RandomFields
@@ -105,7 +95,6 @@ typedef enum usr_bool {
   //Exception=2, // for internal use only
   Nan=INT_MIN
 } usr_bool;
-
 
 
 #define RF_NA NA_REAL 
@@ -191,7 +180,30 @@ typedef enum usr_bool {
 #define PRINTF Rprintf //
 #endif
 
-#define Long long
-#define Ulong unsigned long
+
+#define R_PRINTLEVEL 1
+#define C_PRINTLEVEL 1
+
+
+#define LENMSG 1000
+#define LENERRMSG 1000
+#define MAXERRORSTRING 1000
+#define nErrorLoc 1000
+typedef char errorstring_type[MAXERRORSTRING];
+typedef char errorloc_type[nErrorLoc];
+
+
+typedef unsigned int Uint;
+typedef uint64_t  Ulong;
+typedef int64_t  Long;
+
+
+#ifdef SCHLATHERS_MACHINE
+#define INITCORES 4
+#define DO_TESTS true
+#else
+#define INITCORES 1
+#define DO_TESTS false
+#endif
 
 #endif

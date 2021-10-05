@@ -8,37 +8,8 @@
 
 #include<inttypes.h> // uintptr_t
 
-
-// PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS) -mavx ODER -march=native 
-#ifdef __MMX__
-#define MMX __MMX__
-#endif
-#ifdef __SSE__
-#define SSE __SSE__
-#endif
-#ifdef  __SSE2__
-#define SSE2 __SSE2__
-#endif
-#ifdef  __SSE3__
-#define SSE3 __SSE3__
-#endif
-#ifdef  __SSSE3__
-#define SSSE3 __SSSE3__
-#endif
-#ifdef  __SSE4A__
-#define SSE4A __SSE4A__
-#endif
-#if defined __SSE41__ || defined __SS42__
-#define SSE412 1
-#endif
-//
-#ifdef __AVX__
-#define AVX 1
-#endif
-#ifdef __AVX2__
-#define AVX2 1
-#endif
-
+#include "parallel_simd.h"
+// PKG_CXXFLAGS =  $(SHLIB_OPENMP_CXXFLAGS) -mavx ODER -march=native
 
 #if defined (AVX512)
 #define SSEBITS 512
@@ -53,6 +24,7 @@
 #define SSEBITS 64
 #define SSEMODE 0
 #endif
+
 
 #ifndef WIN32
 // #define FMA_AVAILABLE __FMA__
@@ -69,43 +41,7 @@
 //#define ALIGNED __declspec(align(SSEBITS/8))
 
 
-#ifdef MMX
-//#include <mmintrin.h>
-#endif
-
-#ifdef SSE
-#include <xmmintrin.h>
-#endif
-
-#ifdef SSE2
-//#include <emmintrin.h>
-#endif
-
-#ifdef SSE3
-//#include <pmmintrin.h>
-#endif
-
-#ifdef SSSE3
-//#include <tmmintrin.h>
-#endif
-
-#ifdef SSE4A
-//#include <ammintrin.h>
-#endif
-
-#ifdef SSE412
-//#include <smmintrin.h>
-#endif
-
-#if defined AVX || defined AVX2
-#include <x86intrin.h>
-#endif
-
-#ifdef AVX512
-//#include <immintrin.h>
-#endif
-
-
+#include <immintrin.h>
 
 
 #if defined AVX
