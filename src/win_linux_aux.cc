@@ -33,22 +33,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // gibt warnung, da ERROR mehrfach definiert !
 // deshalb auch in auxiliary.h nicht basic.h einbinden // obsolette ?!!
 #include <unistd.h>
-#include "Basic_utils.h"
+//#include "Basic_utils.h"
 #include <Rinternals.h>
 #include "win_linux_aux.h"
 
  
 void sleepMilli(int *milli) {
 #ifdef WIN32
-  Sleep((Long) *milli);
+  Sleep((long) *milli);// using_long here
+  // avoids including Basic_utils.h, which clashes with windows.h
 #else 
-  usleep((useconds_t) (1000 * (Ulong) *milli));
+  usleep((useconds_t) (1000 * (unsigned long) *milli)); // unsigned_long here
+  // avoids including Basic_utils.h, which clashes with windows.h
 #endif
 }
 
 void sleepMicro(int *micro) {
 #ifdef WIN32
-  Sleep((Long) ((*micro + 500) / 1000));
+  Sleep((long) ((*micro + 500) / 1000));// using_long here
+  // avoids including Basic_utils.h, which clashes with windows.h
 #else
   usleep((useconds_t) *micro);
 #endif

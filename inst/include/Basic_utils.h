@@ -25,13 +25,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef basic_rfutils_h
 #define basic_rfutils_h 1
 
+// #define NEW_VERSION_RFU
+
+#ifdef NEW_VERSION_RFU
 #define USE_FC_LEN_T
+#else
+extern int CORES;
+#endif
+
+
+
 #define F77call F77_CALL // rename to control that USE_FC_LEN_T has been called
 #ifdef __cplusplus
 #define F77name extern "C" void F77_NAME // rename to control that USE_FC_LEN_T has been called
 #else
 #define F77name void F77_NAME 
 #endif
+
 
 #ifndef __cplusplus
 #include <stdbool.h>
@@ -45,6 +55,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "AutoRandomFieldsUtils.h"
 
 
+#ifdef DO_PARALLEL
+// #undef DO_PARALLEL
+//  #ifdef LOCAL_ERRLOC_MSG
+//  #undef LOCAL_ERRLOC_MSG
+//  #define LOCAL_ERRLOC_MSG 
+//  #endif
+#endif
+
+
+
 #ifndef DO_PARALLEL_ALREADY_CONSIDERED
 
 #ifdef _OPENMP
@@ -55,12 +75,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #endif
 
-#ifdef DO_PARALLEL
-// #undef DO_PARALLEL
-#endif
-
 
 #endif // DO_PARALLEL_ALREADY_CONSIDERED
+
+
+#if !defined basic_rfutils_local_h
+  #ifdef INTERNAL
+    #undef INTERNAL
+  #endif
+  #define INTERNAL 
+  #if !defined DO_PARALLEL 
+    #ifndef ERRORSTRING
+      #define ERRORSTRING ERRMSG
+    //#warning ERRORSTRING DISABLED
+    #endif
+  #endif
+#endif
+
 
 
 //#ifdef WIN32
@@ -205,5 +236,18 @@ typedef int64_t  Long;
 #define INITCORES 1
 #define DO_TESTS false
 #endif
+
+
+
+//#ifdef DO_PARALLEL
+//#warning Basic DO
+//#else
+//#warning Basic NOT PARALLEL
+//#endif
+
+
+#ifdef RandomFields_V4_0
+#endif
+
 
 #endif

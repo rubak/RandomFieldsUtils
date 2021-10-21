@@ -41,10 +41,10 @@
 //#define ALIGNED __declspec(align(SSEBITS/8))
 
 
-#include <immintrin.h>
 
 
 #if defined AVX
+#include <immintrin.h>
 #define BytesPerBlock 32
 #define UBlockType __m256i 
 #define BlockType __m256i ALIGNED
@@ -62,6 +62,7 @@
 #define ZERODOUBLE _mm256_setzero_pd()
 
 #elif defined SSE2
+#include <immintrin.h>
 #define BytesPerBlock 16
 #define UBlockType __m128i
 #define BlockType __m128i ALIGNED

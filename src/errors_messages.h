@@ -39,7 +39,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
   MSG2[LENERRMSG];// used at the same time with MSG and ERR()
+
+
+#if defined DO_PARALLEL || defined basic_rfutils_local_h
 extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields
+#endif
 
 
 #ifdef DO_PARALLEL
@@ -60,7 +64,7 @@ extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields
   #endif
   #ifndef LOCAL_ERRORSTRING
     #define LOCAL_ERRORSTRING
-  #endif
+ #endif
 
   #ifndef ERROR_LOC
   extern errorloc_type ERROR_LOC;
@@ -68,7 +72,9 @@ extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields
 
 #endif
 
-#ifndef WHICH_ERRORSTRING 
+
+
+#ifndef WHICH_ERRORSTRING
 #define WHICH_ERRORSTRING ERRORSTRING
 #endif
 

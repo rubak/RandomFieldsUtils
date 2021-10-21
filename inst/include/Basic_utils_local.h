@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef basic_rfutils_local_h
 #define basic_rfutils_local_h 1
 
+#include "intrinsics.h"
 #include "Basic_utils.h"
 
 // make sure that F77 _NAME has been called

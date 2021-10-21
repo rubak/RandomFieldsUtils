@@ -1145,7 +1145,10 @@ int doPosDef(double *M, int size, bool posdef,
 		  U, &size,  xja, // 2 * size * sizeof(integer); nonzeros_idx
 		  pt_work, &lwork,
 		  pt_iwork, &lintwork,
-		  &err FCONE FCONE FCONE
+		  &err
+#ifdef USE_FC_LEN_T	  
+		  FCONE FCONE FCONE
+#endif		  
 		  );
 	if (i==1 || err != NOERROR || ISNAN(D[0])) break;
 	lwork = (int) optimal_work;
@@ -1227,7 +1230,11 @@ int doPosDef(double *M, int size, bool posdef,
       for (int i=0; i<=1; i++) {
 	F77dgesdd("A", &size, &size, // SVD
 		  MPT, &size, D, U, &size, VT, &size, 
-		  pt_work, &lwork, iwork, &err FCONE);
+		  pt_work, &lwork, iwork, &err
+#ifdef USE_FC_LEN_T	  
+		  FCONE
+#endif		  
+		  );
 	if (i==1 || err != NOERROR || ISNAN(D[0])) break;
 	lwork = (int) optim_lwork;
 	CMALLOC(work, lwork, double);
@@ -1337,7 +1344,11 @@ int doPosDef(double *M, int size, bool posdef,
 	if (result != NULL) MEMCOPY(RESULT, rhs, sizeof(double) * totalRHS);
 	F77dgetrs("N", &size, // LU rhs
 			 &rhs_cols, MPT, &size, ipiv, 
-			 RESULT, &size, &err FCONE);
+			 RESULT, &size, &err
+#ifdef USE_FC_LEN_T		  
+		  FCONE
+#endif		  
+		  );
 	if (err != NOERROR) {	
 	  CERR1("'dgetrs' (LU) failed with err=%d.", err);
 	}
