@@ -5,7 +5,7 @@
  Martin Schlather, schlather@math.uni-mannheim.de
 
 
- Copyright (C) 2015 -- 2017 Martin Schlather
+ Copyright (C) 2015 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -37,83 +37,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ERRORMEND 12      /* a single error message -- und alles dazwischen */
  
 
-extern char ERRMSG[LENERRMSG], // used by Error_utils.h. Never use elsewhere
-  MSG2[LENERRMSG];// used at the same time with MSG and ERR()
-
-
-#if defined DO_PARALLEL || defined basic_rfutils_local_h
-extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields
-#endif
-
-
-#ifdef DO_PARALLEL
-
-  #define LOCAL_ERRMSG2 char MSG2[LENERRMSG]
-  #ifndef LOCAL_ERRLOC_MSG
-    #define LOCAL_ERRLOC_MSG errorloc_type ERROR_LOC=""; char ERRMSG[LENERRMSG];
-  #endif
-  #ifndef LOCAL_ERRORSTRING
-    #define LOCAL_ERRORSTRING errorstring_type ERRORSTRING
-  #endif
-
-#else  // not DO_PARALLEL
-
-  #define LOCAL_ERRMSG2
-  #ifndef LOCAL_ERRLOC_MSG
-    #define LOCAL_ERRLOC_MSG
-  #endif
-  #ifndef LOCAL_ERRORSTRING
-    #define LOCAL_ERRORSTRING
- #endif
-
-  #ifndef ERROR_LOC
-  extern errorloc_type ERROR_LOC;
-  #endif
-
-#endif
-
-
-
-#ifndef WHICH_ERRORSTRING
-#define WHICH_ERRORSTRING ERRORSTRING
-#endif
-
-#ifndef LOCAL_ERROR
-#define LOCAL_ERROR(N) {}
-#endif
-
 
 #ifdef SCHLATHERS_MACHINE
-#define ERRLINE0 PRINTF("(ERROR in %.50s, line %d)\n", __FILE__, __LINE__); LOCAL_ERRLOC_MSG
-//#define ERRLINE ERRLINE0; LOCAL_ERRMSG2
+#define ERRLINE PRINTF("(ERROR in %s, line %d)\n", __FILE__, __LINE__)
 #else
-#define ERRLINE0 LOCAL_ERRLOC_MSG
+#define ERRLINE 
 #endif
-#define ERRLINE ERRLINE0; LOCAL_ERRMSG2
-
-
-#define W_ERRLINE0 char W_ERRMSG[LENERRMSG]
-#define W_ERRLINE  char W_MSG2[LENERRMSG]
-
 
 #define RFERROR error
-#define ERR(X) {ERRLINE0;SPRINTF(ERRMSG, "%.90s %.790s",ERROR_LOC,X);RFERROR(ERRMSG);}
-#define ERR00(X) ERRLINE;SPRINTF(ERRMSG, "%.90s %.790s", ERROR_LOC, X)
-#define ERR1(X, Y) {ERR00(X); SPRINTF(MSG2, ERRMSG, Y); RFERROR(MSG2);}
-#define ERR2(X, Y, Z) {ERR00(X); SPRINTF(MSG2, ERRMSG, Y, Z); RFERROR(MSG2);}
-#define ERR3(X, Y, Z, A) {ERR00(X); SPRINTF(MSG2, ERRMSG,Y,Z,A); RFERROR(MSG2);}
-#define ERR4(X, Y, Z, A, B) {ERR00(X); SPRINTF(MSG2,ERRMSG,Y,Z,A,B);	\
-    RFERROR(MSG2);}
-#define ERR5(X, Y, Z, A, B, C) {ERR00(X); SPRINTF(MSG2, ERRMSG,Y,Z,A,B,C); \
-    RFERROR(MSG2);}
-#define ERR6(X, Y, Z, A, B,C,D) {ERR00(X); SPRINTF(MSG2, ERRMSG,Y,Z,A,B,C,D); \
-    RFERROR(MSG2);}
-#define ERR7(X, Y, Z,A,B,C,D,E) {ERR00(X); SPRINTF(MSG2,ERRMSG,Y,Z,A,B,C,D,E); \
-    RFERROR(MSG2);}
-#define ERR8(X,Y,Z,A,B,C,D,E,F){ERR00(X);SPRINTF(MSG2,ERRMSG,Y,Z,A,B,C,D,E,F); \
-    RFERROR(MSG2);}
+#define ERR(X) {ERRLINE; RFERROR(X);}
+#define ERR00(X) ERRLINE; errorstring_type E_AUX;
+#define ERR1(X,Y) {ERR00(X);SPRINTF(E_AUX,X,Y); RFERROR(E_AUX);}
+#define ERR2(X,Y,Z) {ERR00(X);SPRINTF(E_AUX,X,Y,Z); RFERROR(E_AUX);}
+#define ERR3(X,Y,Z,A) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A); RFERROR(E_AUX);}
+#define ERR4(X,Y,Z,A,B) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B); RFERROR(E_AUX);}
+#define ERR5(X,Y,Z,A,B,C) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C); RFERROR(E_AUX);}
+#define ERR6(X,Y,Z,A,B,C,D) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D); RFERROR(E_AUX);}
+#define ERR7(X,Y,Z,A,B,C,D,E) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D,E); RFERROR(E_AUX);}
+#define ERR8(X,Y,Z,A,B,C,D,E,F) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D,E,F); RFERROR(E_AUX);}
 
-#define FERR(X) LOCAL_ERRORSTRING; STRCPY(WHICH_ERRORSTRING, X); DEBUGINFOERR
+
+
+#ifndef LOCAL_ERRORSTRING
+  #define LOCAL_ERRORSTRING errorstring_type loc_errorstring
+#endif
+#ifndef WHICH_ERRORSTRING 
+  #define WHICH_ERRORSTRING loc_errorstring
+#endif
+#define FERR(X) LOCAL_ERRORSTRING; \
+  STRNCPY(WHICH_ERRORSTRING, X, MAXERRORSTRING); DEBUGINFOERR
 #define FERR1(X,Y) LOCAL_ERRORSTRING; \
   SPRINTF(WHICH_ERRORSTRING, X, Y); DEBUGINFOERR
 #define FERR2(X,Y,Z) LOCAL_ERRORSTRING; \
@@ -129,8 +81,12 @@ extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields
 #define FERR7(X,Y,Z,A,B,C,D,E) LOCAL_ERRORSTRING; \
   SPRINTF(WHICH_ERRORSTRING,X,Y,Z,A,B,C,D,E); DEBUGINFOERR
 
+
+#ifndef LOCAL_ERROR
+  #define LOCAL_ERROR(N) {}
+#endif
 #define NERR00(N) LOCAL_ERROR(N); return N;
-#define NERR(N,X) {FERR(X); NERR00(N)}
+#define NERR(N,X) { FERR(X); NERR00(N)}
 #define NERR1(N,X,Y) { FERR1(X, Y); NERR00(N)}
 #define NERR2(N,X, Y, Z) { FERR2(X, Y, Z); NERR00(N)}
 #define NERR3(N,X, Y, Z, A) { FERR3(X, Y, Z, A); NERR00(N)}
@@ -174,37 +130,37 @@ extern errorstring_type ERRORSTRING; // used by ERRORM in RandomFields
 #define GNERR6(N,X,Y,Z,A,B,C,D) {FERR6(X,Y,Z,A,B,C,D); GNERR00(N)}
 
 #define RFWARNING warning
-#define warn(X) {RFWARNING(X);}
-#define WARN0 warn
-#define WARN1(X, Y) {W_ERRLINE; \
-    SPRINTF(W_MSG2, X, Y); RFWARNING(W_MSG2);}
-#define WARN2(X, Y, Z) {W_ERRLINE; \
-    SPRINTF(W_MSG2, X, Y, Z); RFWARNING(W_MSG2);}
-#define WARN3(X, Y, Z, A) {W_ERRLINE;\
-    SPRINTF(W_MSG2, X, Y, Z, A); RFWARNING(W_MSG2);}
-#define WARN4(X, Y, Z, A, B) {W_ERRLINE;	\
-    SPRINTF(W_MSG2, X, Y, Z, A, B); RFWARNING(W_MSG2);}
-#define WARN5(X, Y, Z, A, B, C) {W_ERRLINE;	\
-    SPRINTF(W_MSG2, X, Y, Z, A, B, C); RFWARNING(W_MSG2);}
-#define WARN6(X, Y, Z, A, B,C,D) {W_ERRLINE;	\
-    SPRINTF(W_MSG2, X, Y, Z, A, B, C, D); RFWARNING(W_MSG2);}
-#define WARN7(X, Y, Z,A,B,C,D,E) {W_ERRLINE;	\
-    SPRINTF(W_MSG2, X, Y, Z, A, B, C, D, E); RFWARNING(W_MSG2);}
+#define WARN0 RFWARNING
+#define WARN1(X, Y) {errorstring_type  W_MSG; \
+    SPRINTF(W_MSG, X, Y); RFWARNING(W_MSG);}
+#define WARN2(X, Y, Z) {errorstring_type  W_MSG; \
+    SPRINTF(W_MSG, X, Y, Z); RFWARNING(W_MSG);}
+#define WARN3(X, Y, Z, A) {errorstring_type  W_MSG;\
+    SPRINTF(W_MSG, X, Y, Z, A); RFWARNING(W_MSG);}
+#define WARN4(X, Y, Z, A, B) {errorstring_type  W_MSG;	\
+    SPRINTF(W_MSG, X, Y, Z, A, B); RFWARNING(W_MSG);}
+#define WARN5(X, Y, Z, A, B, C) {errorstring_type  W_MSG;	\
+    SPRINTF(W_MSG, X, Y, Z, A, B, C); RFWARNING(W_MSG);}
+#define WARN6(X, Y, Z, A, B,C,D) {errorstring_type  W_MSG;	\
+    SPRINTF(W_MSG, X, Y, Z, A, B, C, D); RFWARNING(W_MSG);}
+#define WARN7(X, Y, Z,A,B,C,D,E) {errorstring_type  W_MSG;	\
+    SPRINTF(W_MSG, X, Y, Z, A, B, C, D, E); RFWARNING(W_MSG);}
 
 
-#define RFERROR1(M,A) {errorstring_type ERR_STR; \
-    SPRINTF(ERR_STR, M, A); RFERROR(ERR_STR);}
-#define RFERROR2(M,A,B) {errorstring_type ERR_STR; \
-    SPRINTF(ERR_STR, M, A,B); RFERROR(ERR_STR);}
-#define RFERROR3(M,A,B,C) {errorstring_type ERR_STR;\
-    SPRINTF(ERR_STR, M, A,B,C); RFERROR(ERR_STR);}
-#define RFERROR4(M,A,B,C,D) {errorstring_type ERR_STR; \
-    SPRINTF(ERR_STR, M, A,B,C,D); RFERROR(ERR_STR);}
-#define RFERROR5(M,A,B,C,D,E) {errorstring_type ERR_STR; \
-    SPRINTF(ERR_STR, M, A,B,C,D,E); RFERROR(ERR_STR);}
-#define RFERROR6(M,A,B,C,D,E,F) {errorstring_type ERR_STR;\
-    SPRINTF(ERR_STR, M, A,B,C,D,E,F); RFERROR(ERR_STR);}
-#define RFERROR7(M,A,B,C,D,E,F,G) {errorstring_type ERR_STR;\
-    SPRINTF(ERR_STR, M, A,B,C,D,E,F,G); RFERROR(ERR_STR);}
+#define RFERROR1(M,A) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A); RFERROR(E_AUX);}
+#define RFERROR2(M,A,B) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A,B); RFERROR(E_AUX);}
+#define RFERROR3(M,A,B,C) {errorstring_type E_AUX;\
+    SPRINTF(E_AUX, M, A,B,C); RFERROR(E_AUX);}
+#define RFERROR4(M,A,B,C,D) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A,B,C,D); RFERROR(E_AUX);}
+#define RFERROR5(M,A,B,C,D,E) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A,B,C,D,E); RFERROR(E_AUX);}
+#define RFERROR6(M,A,B,C,D,E,F) {errorstring_type E_AUX;\
+    SPRINTF(E_AUX, M, A,B,C,D,E,F); RFERROR(E_AUX);}
+#define RFERROR7(M,A,B,C,D,E,F,G) {errorstring_type E_AUX;\
+    SPRINTF(E_AUX, M, A,B,C,D,E,F,G); RFERROR(E_AUX);}
+
 
 #endif

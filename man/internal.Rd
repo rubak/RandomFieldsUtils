@@ -1,5 +1,7 @@
 \name{Internal functions}
 \alias{checkExamples}
+\alias{Dependencies}
+\alias{debugging_level}
 \title{Internal functions}
 \description{
  These functions are internal and should not be used.
@@ -7,12 +9,19 @@
 \usage{
 checkExamples(exclude = NULL, include=1:length(.fct.list),
                ask=FALSE, echo=TRUE, halt=FALSE, ignore.all = FALSE,
-               path=package, package = "RandomFieldsUtils", 
-               read.rd.files=TRUE, libpath = NULL,
-               single.runs = FALSE)}
+               path=package, package = "RandomFields", 
+               read.rd.files=TRUE, local = FALSE, libpath = NULL,
+               single.runs = FALSE, reset, catcherror=TRUE)
+
+Dependencies(pkgs = all.pkgs, dir = "Dependencies",
+                         install = FALSE, check=TRUE, reverse=FALSE,
+  			 package="RandomFields")
+
+debugging_level()
+}
 \arguments{
   \item{exclude, include, ask, echo, halt, ignore.all, path, package,
-    read.rd.files,   libpath, single.runs
+    read.rd.files,  local, libpath, single.runs, reset, catcherror
   }{internal; 
     ignore.all refers to the \sQuote{all} export statement in the
     namespace -- whether this should be ignored.
@@ -21,19 +30,19 @@ checkExamples(exclude = NULL, include=1:length(.fct.list),
     then ignored. If \code{FALSE} only examples of functions (which are
     searched in the environments) are run.
   }
+  \item{pkgs, dir,install, check, reverse}{internal }
 }
 
 \me
 \keyword{spatial}
 
 \examples{
-RFoptions(seed=0) ## *ANY* simulation will have the random seed 0; set
-##                   RFoptions(seed=NA) to make them all random again
+## internal function: no examples given
 
-## internal functions: no examples given
+
 \dontshow{\dontrun{ ## OK
 ## check own examples
-checkExamples(ignore.all=TRUE, halt=!TRUE)
+checkExamples(ignore.all=TRUE, halt=!TRUE, package="RandomFieldsUtils")
 
 
 ### Check the examples of the other packages:
@@ -57,5 +66,4 @@ for (.i in 1:length(dep.packages)) {
 Print(not.working)
 }}
 
-# for (i in dep.packages) cat(maintainer(i), "\n") 
 }

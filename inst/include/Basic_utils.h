@@ -3,7 +3,7 @@
  Martin Schlather, schlather@math.uni-mannheim.de
 
 
- Copyright (C) 2015 -- 2017  Martin Schlather
+ Copyright (C) 2021 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,18 +21,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 
-
 #ifndef basic_rfutils_h
 #define basic_rfutils_h 1
 
-// #define NEW_VERSION_RFU
+// RFU 3: vor Basic kein inttypes.h ( _INTTYPES_H )  oder aber RFdef_H==1;
+// miraculix 0: vor Basic inttypes.h; Ausnahme initNerror.cc kleinkram.cc thuy.cc xport_import.cc zzz.cc
+// adoption 0: vor Basic kein inttypes.h
+            
 
-#ifdef NEW_VERSION_RFU
-#define USE_FC_LEN_T
+
+#if defined RFU_VERSION || defined RF_VERSION || defined MIRACULIX_VERSION || defined ADOPTION_VERSION || defined HAPLO_VERSION
+  #ifdef OBSOLETE_RFU
+    #undef OBSOLETE_RFU
+  #endif
 #else
-extern int CORES;
+  #if defined _INTTYPES_H
+    #define obsolete_miraculix 1
+  #endif
+  #ifndef OBSOLETE_RFU
+    #define OBSOLETE_RFU 1
+  #endif
 #endif
-
 
 
 #define F77call F77_CALL // rename to control that USE_FC_LEN_T has been called
@@ -41,13 +50,18 @@ extern int CORES;
 #else
 #define F77name void F77_NAME 
 #endif
+#define F77dgesdd F77call(dgesdd)
+#define F77dgemv F77call(dgemv)
+#define F77ddot F77call(ddot)
+#define F77dsyrk F77call(dsyrk)
 
 
 #ifndef __cplusplus
 #include <stdbool.h>
 #endif
 
-#include <inttypes.h> // uintptr_t
+#include "def.h"
+#include <inttypes.h>
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
@@ -55,69 +69,13 @@ extern int CORES;
 #include "AutoRandomFieldsUtils.h"
 
 
-#ifdef DO_PARALLEL
-// #undef DO_PARALLEL
-//  #ifdef LOCAL_ERRLOC_MSG
-//  #undef LOCAL_ERRLOC_MSG
-//  #define LOCAL_ERRLOC_MSG 
-//  #endif
-#endif
 
-
-
-#ifndef DO_PARALLEL_ALREADY_CONSIDERED
-
-#ifdef _OPENMP
-#define DO_PARALLEL 1
-#else
-#ifdef DO_PARALLEL
-#undef DO_PARALLEL
-#endif
-#endif
-
-
-#endif // DO_PARALLEL_ALREADY_CONSIDERED
-
-
-#if !defined basic_rfutils_local_h
-  #ifdef INTERNAL
-    #undef INTERNAL
-  #endif
-  #define INTERNAL 
-  #if !defined DO_PARALLEL 
-    #ifndef ERRORSTRING
-      #define ERRORSTRING ERRMSG
-    //#warning ERRORSTRING DISABLED
-    #endif
-  #endif
-#endif
-
-
-
-//#ifdef WIN32
-//#ifdef DO_PARALLEL
-//#undef DO_PARALLEL // make a comment to get parallel (part 1, see also part 2)
-//#endif
-//#endif
-
-
-#define MULTIMINSIZE(S) ((S) > 20)
+#define MULTIMINSIZE(S) ((S) > 20)// in omp parallel in DO_PARALLEL
 // #define MULTIMINSIZE(S) false
 // #define MULTIMINSIZE(S) true
 
 
-#ifndef showfree
-#define showfree !true 
-#endif
-
-
-#define DOPRINT true
-//// 1
-
-
-// // 1
-
-
+typedef char name_type[][MAXCHAR];
 typedef enum usr_bool {
   // NOTE: if more options are included, change ExtendedBoolean in
   // userinterface.cc of RandomFields
@@ -141,8 +99,9 @@ typedef enum usr_bool {
 #define MAXUNSIGNED (MAXINT * 2) + 1
 #define INFDIM MAXINT
 #define INFTY INFDIM
+#define PIDMODULUS 1000
 
-#define LENGTH length // safety, to avoid use LENGTH defined by R
+#define LENGTH length // to avoid the unvoluntiered use of LENGTH defined by R
 #define complex Rcomplex
 #define DOT "."
 #define GAUSS_RANDOM(SIGMA) rnorm(0.0, SIGMA)
@@ -163,6 +122,7 @@ typedef enum usr_bool {
 //#define LOG05 -0.69314718055994528623
 #define LOG3 1.0986122886681096913952452369225257046474905578227
 #define LOG2 M_LN2
+#define EULER_C 0.5772156649015328606065120900824024310421
 
 
 #define EPSILON     0.00000000001
@@ -171,17 +131,24 @@ typedef enum usr_bool {
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 #define MAX(A,B) ((A) > (B) ? (A) : (B))
 
-
 #define ACOS std::acos
 #define ASIN std::asin
 #define ATAN std::atan
-#define CEIL(X) std::ceil((double) X) // OK keine Klammern um X!
+#define FMIN fmin2
+#define FMAX fmax2
+#define ATANH std::atanh
+#define ACOSH std::acosh
+#define ASINH std::asinh
+#define EXPM1 std::expm1
+#define LOG1P std::log1p
+#define FROUND fround
+#define CEIL(X) std::ceil((double) X) // OK; keine Klammern um X!
 #define COS std::cos
 #define EXP std::exp
-#define FABS(X) std::fabs((double) X) // OK keine Klammern um X!
+#define FABS(X) std::fabs((double) X) // OK; keine Klammern um X!
 #define FLOOR std::floor
 #define LOG std::log
-#define POW(X, Y) R_pow((double) X, (double) Y) // OK keine Klammern um X!
+#define POW(X, Y) R_pow((double) X, (double) Y) // OK; keine Klammern um X!
 #define SIGN(X) sign((double) X) // OK
 #define SIN std::sin
 #define SQRT(X) std::sqrt((double) X) // OK
@@ -192,23 +159,24 @@ typedef enum usr_bool {
 #define STRNCPY(A, B, N) strcopyN(A, B, N) // OK
 #define TAN std::tan
 #define MEMCOPYX std::memcpy
+#define MEMMOVE std::memmove
 #define MEMSET std::memset  
+#define MEMCMP std::memcmp
 #define AALLOC std::aligned_alloc
 #define CALLOCX std::calloc
 #define MALLOCX std::malloc
 #define FREEX std::free
 #define SPRINTF std::sprintf //
 #define ROUND(X) ownround((double) X) // OK
-#define TRUNC(X) ftrunc((double) X) // OK keine Klammern um X!
+#define TRUNC(X) ftrunc((double) X) // OK; keine Klammern um X!
 #define QSORT std::qsort
 
-#define DOPRINTF if (!DOPRINT) {} else PRINTF
 #define print NEVER_USE_print_or_PRINTF_WITHIN_PARALLEL /* // */
 
-#if defined SCHLATHERS_MACHINE && defined DO_PARALLEL
+#if defined SCHLATHERS_MACHINE && defined DO_PARALLEL && defined OMP_H
 #define PRINTF if (omp_get_num_threads() > 1) { error("\n\nnever use Rprintf/PRINTF within parallel constructions!!\n\n"); } else Rprintf // OK
 #else
-#define PRINTF Rprintf //
+#define PRINTF Rprintf
 #endif
 
 
@@ -216,38 +184,212 @@ typedef enum usr_bool {
 #define C_PRINTLEVEL 1
 
 
-#define LENMSG 1000
-#define LENERRMSG 1000
 #define MAXERRORSTRING 1000
-#define nErrorLoc 1000
 typedef char errorstring_type[MAXERRORSTRING];
-typedef char errorloc_type[nErrorLoc];
 
 
 typedef unsigned int Uint;
-typedef uint64_t  Ulong;
-typedef int64_t  Long;
+typedef uint64_t Ulong;
+typedef int64_t Long;
+
+
+
+
+
+
+// not SCHLATHERS_MACHINE
+#ifndef SCHLATHERS_MACHINE
+
+#define INTERNALMSG SERR("Sorry. This functionality doesn't exist currently. There is work in progress at the moment by the maintainer.")
+#define assert(X) {}
+#define BUG {								\
+    RFERROR3("Severe error occured in function '%.50s' (file '%.50s', line %d). Please contact maintainer martin.schlather@math.uni-mannheim.de .", \
+	    __FUNCTION__, __FILE__, __LINE__);				\
+  }
+
+//#define MEMCOPY(A,B,C) {MEMCPY(A,B,C); printf("memcpy %.50s %d\n", __FILE__, __LINE__);}
+#define MEMCOPY(A,B,C) MEMCOPYX(A,B,C)
+#define AMALLOC(ELEMENTS, SIZE) AALLOC(SIZE, (SIZE) * (ELEMENTS))
+#define MALLOC MALLOCX
+#define CALLOC CALLOCX
+#define XCALLOC CALLOCX
+//
+#define FREE(X) if ((X) != NULL) {FREEX(X); (X)=NULL;}
+#define UNCONDFREE(X) {FREEX(X); (X)=NULL;}
+#endif // not SCHLATHERS_MACHINE
+
+
+
+// SCHLATHERS_MACHINE
+#ifdef SCHLATHERS_MACHINE 
+#define MAXALLOC 1000000000L
+
+// __extension__ unterdrueckt Fehlermeldung wegen geklammerter Argumente
+#define INTERNALMSG {		\
+    RFERROR3("made to be an internal function '%.50s' ('%.50s', line %d).", \
+	     __FUNCTION__, __FILE__, __LINE__);				\
+  }
+
+#define assert(X) if (!__extension__ (X)) {	     \
+    RFERROR3("'assert' failed in function '%.50s' (%.50s, line %d).", \
+	    __FUNCTION__, __FILE__, __LINE__);				\
+  }
+#define SHOW_ADDRESSES 1
+#define BUG { RFERROR2("BUG in '%.50s' line %d.\n",  __FUNCTION__, __LINE__);}
+
+#define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL && (C)>0 && (C)<=MAXALLOC); MEMCOPYX(A,B,C); })
+//#define MEMCOPY(A,B,C) memory_copy(A, B, C)
+#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=MAXALLOC); MALLOCX(X);})
+#define CALLOC(X, Y) __extension__({assert((X)>0 && (Y)>0 && ((X) * (Y))<MAXALLOC); CALLOCX(X,Y);})
+#define XCALLOC(X, Y) __extension__({assert((X)>0 && (Y)>0 && ((X) * (Y))<MAXALLOC); CALLOCX(X,Y);})
+#define FREE(X) {if ((X) != NULL) {if (!SHOWFREE) {} else PRINTF("free %.50s %ld Line %d %s\n", #X, (Long) X, __LINE__, __FILE__); FREEX(X); (X)=NULL;}}
+#define UNCONDFREE(X) { if (!SHOWFREE) {} else PRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); FREEX(X); (X)=NULL;}
+#endif // SCHLATHERS_MACHINE
+
+
+#ifdef SCHLATHER_DEBUGGING
+#undef MALLOC
+#undef CALLOC
+#undef XCALLOC
+#define MALLOC(X) __extension__({if (!DOPRINT) {} else PRINTF("(MLLC %s, line %d)\n", __FILE__, __LINE__);assert((X)>0 && (X)<=3e9); MALLOCX(X);})
+#define CALLOC(X, Y) __extension__({if (!DOPRINT) {} else PRINTF("(CLLC %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (Y)>0 && ((X) * (Y)) <MAXALLOC); CALLOCX(X,Y);})
+#define XCALLOC(X, Y) __extension__({if (!DOPRINT) {} else PRINTF("(CLLC %s, line %d)\n",__FILE__, __LINE__);assert((X)>0 && (Y)>0 && ((X) * (Y)) <MAXALLOC); CALLOCX(X,Y);})
+
+// note that DEBUGINDOERR is redefined in MachineDebugging.h
+#define DEBUGINFOERR {						\
+    errorstring_type dummy_; STRCPY(dummy_, WHICH_ERRORSTRING);		\
+    SPRINTF(WHICH_ERRORSTRING, "%.50s (%.50s, line %d)\n", dummy_, __FILE__, __LINE__); \
+  }
+#define DEBUGINFO if (!DOPRINT) {} else PRINTF("(currently at  %s, line %d)\n", __FILE__, __LINE__)
+
+#else
+#define DEBUGINFOERR if (PL >= PL_ERRORS) {PRINTF("error: %s\n", WHICH_ERRORSTRING);}
+#define DEBUGINFO
+#endif
+
+
+#define PL_IMPORTANT 1 
+#define PL_BRANCHING 2
+#define PL_DETAILSUSER 3
+#define PL_RECURSIVE 4
+#define PL_STRUCTURE 5 // see also initNerror.ERROROUTOFMETHOD
+#define PL_ERRORS  6 // only those that are caught internally
+
+#define PL_FCTN_DETAILS 7  // R
+#define PL_FCTN_SUBDETAILS 8
+
+#define PL_COV_STRUCTURE 7 // C
+#define PL_DIRECT_SEQU 8
+#define PL_DETAILS 9
+#define PL_SUBDETAILS 10
+
 
 
 #ifdef SCHLATHERS_MACHINE
+#ifndef SHOWFREE
+#define SHOWFREE false
+#endif
+#ifndef DOPRINT
+#define DOPRINT true
+#endif
+
 #define INITCORES 4
 #define DO_TESTS true
-#else
+
+#else// not schlather's machine
 #define INITCORES 1
 #define DO_TESTS false
+#endif // not schlather's machine
+
+
+
+#ifdef __GNUC__
+#define VARIABLE_IS_NOT_USED __attribute__ ((unused))
+#else
+#define VARIABLE_IS_NOT_USED
+#endif
+
+
+#if __GNUC__ >= 7
+#define FALLTHROUGH_OK __attribute__ ((fallthrough))
+#else
+#define FALLTHROUGH_OK   
 #endif
 
 
 
-//#ifdef DO_PARALLEL
-//#warning Basic DO
-//#else
-//#warning Basic NOT PARALLEL
-//#endif
 
 
-#ifdef RandomFields_V4_0
+// #define HELPINFO(M) if (OPTIONS.basic.helpinfo) { PRINTF("%s\n(Note that you can unable this information by 'RFoptions(helpinfo=FALSE)'.)\n", M); } // OK
+
+#define UTILSINFO(M) if (RFU_GLOBAL_OPTIONS->basic.helpinfo) { PRINTF("%s\n(Note that you can unable this information by 'RFoptions(helpinfo=FALSE)'.)\n", M); } // OK
+
+
+#ifdef DO_PARALLEL
+#define HAS_PARALLEL true
+#else
+#define HAS_PARALLEL false
 #endif
+
+#ifdef USEGPU
+#define HAS_GPU true
+#else
+#define HAS_GPU false
+#endif
+
+#ifndef GPU_NEEDS  // not a proper installation
+#define GPU_NEEDS Inone
+#define LINUXCPUID
+#endif					   
+
+
+#ifdef OBSOLETE_RFU
+#ifndef RFU_NEED_OBSOLETE
+#undef FALLTHROUGH_OK
+#undef HAS_PARALLEL
+#endif
+extern int CORES;  // from RF V4 on in extern.h:
+#define LENMSG MAXERRORSTRING
+#define LENERRMSG MAXERRORSTRING
+#define nErrorLoc MAXERRORSTRING
+typedef char errorloc_type[MAXERRORSTRING];
+#define utilsparam utilsoption_type
+#define solve_param solve_options
+#if defined RFdef_H
+#define isGLOBAL NA_INTEGER
+#else
+#define isGLOBAL false
+#endif
+#ifdef _OPENMP
+  #ifdef SCHLATHERS_MACHINE
+    #define DO_PARALLEL 1
+  #else
+    #define DO_PARALLEL 1
+  #endif
+#else
+  #ifdef DO_PARALLEL
+    #undef DO_PARALLEL
+  #endif
+#endif
+
+#define LOCAL_MSG char MSG[LENERRMSG]
+#ifdef DO_PARALLEL
+  #define LOCAL_ERRMSG2 char MSG2[LENERRMSG]
+#else  // not DO_PARALLEL
+  #define LOCAL_ERRMSG2
+#endif
+
+
+
+#else // NOT OBSOLETE
+#define USE_FC_LEN_T
+#define ATAN2 std::atan2
+#define COSH std::cosh
+#define SINH std::sinh
+#define TANH std::tanh
+#endif
+
+
 
 
 #endif

@@ -6,6 +6,8 @@
 \alias{SelfDivByRow}
 \alias{quadratic}
 \alias{dotXV}
+\alias{crossprodx}
+\alias{scalarx}
 
 \title{Some Further Row and Column Functions}
 \description{
@@ -15,6 +17,8 @@
   the function \command{quadratic} calculates a quadratic form\cr
   the function \command{SelfDivByRow} devides each column by a scalar;\cr
   the function \command{dotXV} calculates columnwise the dot product;\cr
+  the function \command{crossprodx} calculates the cross product (using AVX);\cr
+ the function \command{scalarx} calculates the scalar product (using AVX);\cr
 }
 \usage{
 rowMeansx(x, weight=NULL)
@@ -23,6 +27,8 @@ rowProd(x)
 SelfDivByRow(x, v)
 quadratic(x, v)
 dotXV(x, w)
+crossprodx(x,y,mode=-1)
+scalarx(x, y, mode=0) 
 }
 
 \arguments{
@@ -30,10 +36,16 @@ dotXV(x, w)
   \item{v}{vector whose length equals the number of columns of \code{x}}
   \item{w}{vector whose length equals the number of rows of \code{x}}
   \item{weight}{numerical or logical vector of length \code{nrow(x)}}
+  \item{y}{numerical matrix}
+  \item{mode}{integer between 0 and 8 or negative, indicating that the
+  default value should be used. Determine the algorithm how the scalar
+  product is calculated. These values are experimental and may change
+  their meaning.
+  }
 }
 
 \details{
-  \code{quadratic(v,x)} calculates the quadratic form \eqn{v^\top x v};
+  \code{quadratic(x, v)} calculates the quadratic form \eqn{v^\top x v};
   The matrix \code{x} must be squared.
 }
 
@@ -55,11 +67,11 @@ dotXV(x, w)
 \me
 
 
-\examples{
+\examples{% library(RandomFieldsUtils)
 
 c <- if (interactive()) 10000 else 10
 r <- if (interactive()) 20000 else 20
-M <- matrix(nc = r, nr=r, 1:(c * r))
+M <- matrix(nr=r, 1:(c * r))
 
 ## unweighted means, compare to rowMeans
 print(system.time(m1 <- rowMeans(M)))

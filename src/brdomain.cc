@@ -4,7 +4,7 @@
 
  Collection of system specific auxiliary functions
 
- Copyright (C) 2001 -- 2017 Martin Schlather, 
+ Copyright (C) 2001 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -25,10 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // #define SIMD_AVAIALBLE 1
 
 
-#include "Basic_utils_local.h"
+#include "Basic_utils_local.h" // must be before anything else
 #include "RandomFieldsUtils.h"
-#include "General_utils.h"
-
 
 
 //
@@ -43,9 +41,10 @@ SEXP brdomain(SEXP Srf, SEXP Ssigma2, SEXP Sinstances, SEXP Smaxn) {
   int
     instances = INTEGER(Sinstances)[0],
     maxn = INTEGER(Smaxn)[0],
-    nloc = nrows(Ssigma2),
-    total = instances * nloc,
     N = ncols(Srf);
+  Long
+    nloc = nrows(Ssigma2),
+    total = instances * nloc;
   SEXP Ans;
   PROTECT(Ans = allocVector(REALSXP, total));
   double *ans = REAL(Ans);

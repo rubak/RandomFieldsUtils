@@ -2,7 +2,6 @@
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
-
  Copyright (C) 2021 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
@@ -23,19 +22,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef basic_rfutils_local_h
 #define basic_rfutils_local_h 1
 
+#define RFU_VERSION 10  // ACHTUNG: in mehreren Dateien definiert!
+
 #include "intrinsics.h"
 #include "Basic_utils.h"
 
-// make sure that F77 _NAME has been called
-
-
-// I, L, M, N
 #define F77dgeqrf F77call(dgeqrf)
 #define F77dsyevr F77call(dsyevr)
-#define F77dgesdd F77call(dgesdd)
 #define F77dgetrf F77call(dgetrf)
 #define F77dgetrs F77call(dgetrs)
 #define F77dgetri F77call(dgetri)
+#define F77dgesv F77call(dgesv)
+#define F77dpotrf F77call(dpotrf)
+#define F77dtrmv F77call(dtrmv)
 
 
 F77name(spamdnscsr)(int *nrow, int* ncol, double* dns, int* ndns, double* a, int* ja, int* ia, double* eps);//
@@ -52,12 +51,6 @@ F77name(backsolves)(int*, int*, int*, int*, int*, double*  , int*, int*, int*, i
 #define F77backsolves F77call(backsolves)
 F77name(amuxmat)(int*, int*, int*, double*  , double*  , double*  , int*, int*);
 #define F77amuxmat F77call(amuxmat)
-
-/*
-#define F77dgeev F77call(dgeev)
-#define F77dsvdc F77call(dsvdc)
-#define F77zheev F77call(zheev)
-*/
 
 
 #endif

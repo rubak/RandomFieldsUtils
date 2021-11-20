@@ -2,7 +2,7 @@
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
- Copyright (C) 2017 -- 2017 Martin Schlather
+ Copyright (C) 2017 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,9 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
 */
 
-#include "Basic_utils_local.h"
+#include "Basic_utils_local.h" // must be before anything else
 #include "RandomFieldsUtils.h"
-#include "General_utils.h"
 #include "zzz_RandomFieldsUtils.h"
 
 
@@ -325,10 +324,8 @@ void sortingFromTo(double *d, int len, int from, int to, usr_bool NAlast) {
 	d[NAstart++] = swap;
       }
     }   
-    //   print("Rstart %d %d %d\n", start, end, NAstart);
    assert(NAstart == start);
   }
-  // print("Xstart %d %d\n", start, end);
   quicksort(start, end, d, from - 1, to - 1);
   // for (int i=0; i<len; i++) printf("%10g\n", d[i]); BUG;
 }

@@ -1,12 +1,9 @@
-
-
-
 /*
  Authors 
  Martin Schlather, schlather@math.uni-mannheim.de
 
 
- Copyright (C) 2015 -- 2017 Martin Schlather
+ Copyright (C) 2015 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -25,17 +22,42 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef rfutils_calls_H
 #define rfutils_calls_H 1
-  
+
+/* 
+in xport_import.cc of calling packages set 
+#ifdefine ERROR_RFU_CALLS 1
+#include "xport_import.h"
+...
+// #define CALL(what) Ext_##what = (what##_type) R_GetCCallable(importfrom, #what)
+#define CALL(what) Ext_##what = #what_err;
+
+see RandomFields, for instance
+#in clude <R_ext/Rdynload.h>
+
+
+*/
+
+#ifdef ERROR_RFU_CALLS		     
+#define RFU_ERRCALL0(V, N)				\
+  static V N##_err(){char msg[300]; SPRINTF(msg, "calling %.50s", #N); RFERROR(msg); }	
+#define RFU_ERRCALL(V, N, ...)					\
+  static V N##_err(__VA_ARGS__) { char msg[300]; SPRINTF(msg, "calling %.50s", #N); RFERROR(msg);} 
+#else
+#define RFU_ERRCALL0(V, N)
+#define RFU_ERRCALL(V, N, ...)
+#endif
+
 #define CALL0(V, N)							\
   attribute_hidden V RU_##N() {						\
-    static V(*fun)(AV) = NULL;						\
-    if (fun == NULL) fun = (V (*) ()) R_GetCCallable(MY_PACKAGE, #N);	\
-    return fun(); }
+  static N##_type fun = NULL;						\
+  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
+  return fun(); }
 #define DECLARE0(V, N)							\
   typedef V (*N##_type)();						\
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N();						\
-  V N();
+  V N();								\
+  RFU_ERRCALL0(V, N)
 
 #define CALL1(V, N, AV, AN)						\
   /* N##_type Ext_##N = NULL; */					\
@@ -47,7 +69,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN);						\
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN);					\
-  V N(AV AN);
+  V N(AV AN);								\
+  RFU_ERRCALL(V, N, AV AN)
+
 
 #define CALL2(V, N, AV, AN, BV, BN)					\
   /* N##_type Ext_##N = NULL; */					\
@@ -59,7 +83,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN);	\
   /* extern N##_type Ext_##N; */		\
   attribute_hidden V RU_##N(AV AN, BV BN);	\
-  V N(AV AN, BV BN);
+  V N(AV AN, BV BN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN)
   
 #define CALL3(V, N, AV, AN, BV, BN, CV, CN)				\
   /* N##_type Ext_##N = NULL; */					\
@@ -71,7 +96,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN);				\
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN);			\
-  V N(AV AN, BV BN, CV CN);
+  V N(AV AN, BV BN, CV CN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN)
   
 #define CALL4(V, N, AV, AN, BV, BN, CV, CN, DV, DN)			\
   /* N##_type Ext_##N = NULL; */					\
@@ -83,7 +109,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN);			\
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN);		\
-  V N(AV AN, BV BN, CV CN, DV DN);
+  V N(AV AN, BV BN, CV CN, DV DN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN)
   
 #define CALL5(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN)		\
   /* N##_type Ext_##N = NULL; */					\
@@ -95,7 +122,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN);		\
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN);		\
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN);
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN)
   
 #define CALL6(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN)	\
   /* N##_type Ext_##N = NULL; */					\
@@ -107,7 +135,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN);	\
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN);	\
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN);
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN)
   
 #define CALL7(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN) \
   /* N##_type Ext_##N = NULL; */					\
@@ -119,7 +148,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN); \
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN);
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN)
   
 #define CALL8(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN) \
   /* N##_type Ext_##N = NULL; */					\
@@ -131,7 +161,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN); \
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN);
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN)
 
 #define CALL9(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN) \
   /* N##_type Ext_##N = NULL; */					\
@@ -143,7 +174,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN); \
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN);
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN)
 
 
 #define CALL10(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN) \
@@ -156,7 +188,65 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN); \
   /* extern N##_type Ext_##N; */					\
   attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN);
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN)
+
+
+#define CALL11(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN) \
+  /* N##_type Ext_##N = NULL; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN) { \
+  static N##_type fun = NULL;						\
+  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
+  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN); }		      
+#define DECLARE11(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN) \
+  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN); \
+  /* extern N##_type Ext_##N; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN); \
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN)
+
+
+#define CALL12(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN) \
+  /* N##_type Ext_##N = NULL; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN) { \
+  static N##_type fun = NULL;						\
+  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
+  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN, LN); }		      
+#define DECLARE12(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN) \
+  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN); \
+  /* extern N##_type Ext_##N; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN); \
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN)
+
+#define CALL13(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN) \
+  /* N##_type Ext_##N = NULL; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN) { \
+  static N##_type fun = NULL;						\
+  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
+  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN, LN, MN); }	
+#define DECLARE13(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN) \
+  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN); \
+  /* extern N##_type Ext_##N; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN); \
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN);\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN)
+
+
+
+#define CALL14(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN, NV, NN) \
+  /* N##_type Ext_##N = NULL; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN) { \
+  static N##_type fun = NULL;						\
+  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
+  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN, LN, MN, NN); }	
+#define DECLARE14(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN, NV, NN) \
+  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN); \
+  /* extern N##_type Ext_##N; */					\
+  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN); \
+  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN);	\
+  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN)
+
 
 
 #endif

@@ -1,22 +1,32 @@
 
-###exportPattern("^[^\\.]")
+##########exportPattern("^[^\\.]")
 
-export(cholx, cholPosDef, Print, solvex, solvePosDef,
-       sleep.milli, sleep.micro, hostname, pid, FileExists, LockRemove,
-       sortx, orderx,
-       gauss, I0L0, matern, nonstwm, struveH, struveL, whittle,
-       RFoptions, confirm,
-       dbinorm,
+export(cholx, cholPosDef, Print, solvex, solvePosDef, chol2mv, tcholRHS,
+       crossprodx, scalarx,
        colMax, rowMeansx, rowProd, SelfDivByRow, quadratic, dotXV,
-       chol2mv, tcholRHS)
-exportPattern("^PIVOT_")
+       sleep.milli, sleep.micro,
+       hostname, pid, 
+       FileExists, LockRemove, WaitOthers,
+       sortx, orderx,
+       gauss, matern, nonstwm, whittle,
+       I0L0, struveH, struveL,
+       # besselKx,
+       RFoptions, confirm,
+       checkExamples, Dependencies, debugging_level,
+       dbinorm,
+       LA_AUTO, LA_INTERN, LA_R, LA_GPU, LA_QUERY,
+       PIVOT_NONE, PIVOT_AUTO, PIVOT_DO, PIVOT_IDX
+       )
 
 useDynLib(RandomFieldsUtils, .registration = TRUE, .fixes = "C_")
 #useDynLib(spam)
 
-importFrom("utils", "str", "packageDescription", "contrib.url")
+importFrom("utils", "str", "packageDescription", "contrib.url", "read.table",
+           "install.packages", "available.packages", "compareVersion",
+             "installed.packages")
 importFrom("methods", "hasArg", "is")
 importFrom("grDevices", "dev.off")
+importFrom("parallel", "detectCores")
 
 S3method(print, RFopt)
 S3method(summary, RFopt)

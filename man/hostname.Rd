@@ -11,6 +11,7 @@
 hostname()
 
 pid()
+
 }
 
 \details{
@@ -22,7 +23,6 @@ pid()
   \item{hostname}{returns a string}
 
   \item{pid}{returns an unsigned integer}
-  
 }
 
 \me

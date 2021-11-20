@@ -1,10 +1,10 @@
+
 /*
-Authors
-Martin Schlather, schlather@math.uni-mannheim.de
+ Authors 
+ Martin Schlather, schlather@math.uni-mannheim.de
 
-main library for unconditional simulation of random fields
 
- Copyright (C) 2021 -- 2021 Martin Schlather
+ Copyright (C) 2015 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,10 +18,27 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/ 
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
+*/
 
-#ifndef intrinsics_specific_H
-#define intrinsics_specific_H 1
+/// sysconf (_SC_NPROCESSORS_ONLN) // number of cores available
+// int get_nprocs (void) // dito
+
+#ifndef RFUdef_H
+#define RFUdef_H 1
+
+
+//// 1
+
+
+#if ! defined SCHLATHERS_MACHINE && defined SCHLATHER_DEBUGGING
+#undef SCHLATHER_DEBUGGING
+#else
+////  1
+#endif
+
+
+
+
 
 #endif

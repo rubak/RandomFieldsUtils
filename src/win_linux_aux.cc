@@ -5,7 +5,7 @@
 
  Collection of system specific auxiliary functions
 
- Copyright (C) 2001 -- 2017 Martin Schlather, 
+ Copyright (C) 2001 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,7 +22,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#ifdef WIN32
+#if defined WIN32 || defined _WIN32 || defined __WIN32__
 // #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
 #include <windows.h>
@@ -33,40 +33,46 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // gibt warnung, da ERROR mehrfach definiert !
 // deshalb auch in auxiliary.h nicht basic.h einbinden // obsolette ?!!
 #include <unistd.h>
-//#include "Basic_utils.h"
 #include <Rinternals.h>
 #include "win_linux_aux.h"
 
+
  
 void sleepMilli(int *milli) {
-#ifdef WIN32
-  Sleep((long) *milli);// using_long here
-  // avoids including Basic_utils.h, which clashes with windows.h
+#if defined WIN32 || defined _WIN32 || defined __WIN32__
+  Sleep((long) *milli); // along
 #else 
-  usleep((useconds_t) (1000 * (unsigned long) *milli)); // unsigned_long here
-  // avoids including Basic_utils.h, which clashes with windows.h
+  usleep((useconds_t) (1000 * (unsigned long) *milli));// along
 #endif
 }
 
 void sleepMicro(int *micro) {
-#ifdef WIN32
-  Sleep((long) ((*micro + 500) / 1000));// using_long here
-  // avoids including Basic_utils.h, which clashes with windows.h
+#if defined WIN32 || defined _WIN32 || defined __WIN32__
+  Sleep((long) ((*micro + 500) / 1000));// along
 #else
   usleep((useconds_t) *micro);
 #endif
 }
 
 void pid(int *i)  {
-#ifdef WIN32 
+#if defined WIN32 || defined _WIN32 || defined __WIN32__
   *i = _getpid();
 #else
   *i = getpid(); 
 #endif
 }
 
+int parentpid=0;
+bool
+  parallel() {
+    int mypid;
+    pid(&mypid);
+    return mypid != parentpid;
+  }
+
+
 void hostname(char **h, int *i){
-#ifdef WIN32
+#if defined WIN32 || defined _WIN32 || defined __WIN32__
   *h[0]=0;
 #else
   gethostname(*h, *i);

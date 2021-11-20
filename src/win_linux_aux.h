@@ -6,7 +6,7 @@
  Martin Schlather, schlather@math.uni-mannheim.de
 
 
- Copyright (C) 2015 -- 2017 Martin Schlather
+ Copyright (C) 2015 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -27,10 +27,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef WIN_LINUX_AUX_H
 #define WIN_LINUX_AUX_H 1
 
-extern "C" void sleepMilli(int *milli);
-extern "C" void sleepMicro(int *milli);
-extern "C" void pid(int *i);
-extern "C" void hostname(char **h, int *i);
+#ifdef __cplusplus
+extern "C" {
+#endif
+  void sleepMilli(int *milli);
+  void sleepMicro(int *milli);
+  void pid(int *i);
+  void hostname(char **h, int *i);
+  bool
+    parallel();
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* WIN_LINUX_AUX_H */

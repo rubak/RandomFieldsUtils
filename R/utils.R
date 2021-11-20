@@ -2,7 +2,7 @@
 ## Martin Schlather, schlather@math.uni-mannheim.de
 ##
 ##
-## Copyright (C) 2015 Martin Schlather
+## Copyright (C) 2015 -- 2021 Martin Schlather
 ##
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -72,10 +72,57 @@ FileExists <- function(file, printlevel=RFoptions()$basic$printlevel) {
   }
 }
 
+
+get.lscpu <- function(pattern) {
+  x <- system(paste0("lscpu | egrep '", pattern, "'"), intern=TRUE)
+  w <- base::options()$warn
+  base::options(warn=-1)
+  x <- Try(as.integer(sapply(strsplit(x, ":"), function(x) x[2])))
+  if (is(x, CLASS_TRYERROR)) return(NA)
+  x <- x[is.finite(x)]
+  base::options(warn = w)
+  return(if (length(x) > 0) x[1] else NA)
+}
+
+
+WaitOthers <- function(file, i, cores=NULL,
+                       ideal.processes=ceiling(cores * 1.25),
+                       max.processes=ceiling(cores * 1.5),
+                       distance=5, time=5, path="./") {
+   ## time in minutes
+  if (length(cores)==0) cores <- cores()
+  maxint <- .Machine$integer.max
+  file0 <- paste(file, "wait", sep=".")
+  wait.pattern <- paste0(path, "*.wait")
+ 
+  repeat {
+    files <- dir(pattern=wait.pattern)
+    processes <- length(files)
+    if (processes <= cores) break
+    
+    Is <- integer(processes)
+    write(file=file0, i)
+    for (f in 1:processes) {
+      j <- Try(as.integer(read.table(files[f])))
+      Is[f] <- if (is(j, CLASS_TRYERROR) || length(j) != 1) maxint else j
+    }
+    Is <- Is[is.finite(Is)]
+    if (sum(Is < maxint) <= max.processes &&
+        sum(Is <= i) <= ideal.processes &&
+        sum(Is < i - distance) <= cores) break
+    write(file=file0, maxint)
+    sleep.milli(time * 60000)
+  }
+  write(file=file0, i)
+}
+
+
 LockRemove <- function(file) {
-  ## removes auxiliary files created by FileExists
-  lock.ext <- ".lock";
-  file.remove(paste0(file, lock.ext))
+  ## removes auxiliary files created by FileExists & WaitOthers
+  for (lock.ext in c("lock", "wait")) {
+    file0 <- paste(file, lock.ext, sep=".")
+    if (file.exists(file0)) file.remove(file0)
+  }
 }
 
 
@@ -178,7 +225,9 @@ orderx <- function(x, from=1, to=length(x),
 }
 
 
-# scalar <- function(x, y, mode="1x1") .Call(C_scalarX, x, y, mode)
+scalarx <- function(x, y, mode=0) .Call(C_scalarR, x, y, as.integer(mode))
+crossprodx <- function(x, y, mode=-1)
+  .Call(C_crossprodX, x, if (missing(y)) x else y, as.integer(mode))
 
 
 confirm <- function(x, y, ...) {
@@ -205,7 +254,7 @@ colMax <- function(x) .Call(C_colMaxs, x)
 rowMeansx <- function(x, weight=NULL) .Call(C_rowMeansX, x, weight)
 rowProd <- function(x) .Call(C_rowProd, x)
 SelfDivByRow <- function(x, v) .Call(C_DivByRow, x, v)
-quadratic <- function(x, v) .Call(C_quadratic, v, x)
+quadratic <- function(x, v) .Call(C_quadratic, x, v)
 dotXV <- function(x, w) .Call(C_dotXV, x, w)
 
 dbinorm <- function(x, S) .Call(C_dbinorm, x, S)

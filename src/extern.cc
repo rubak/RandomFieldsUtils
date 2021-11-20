@@ -23,14 +23,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // Externals:
 
-#include "Basic_utils_local.h" // must be before anything else
 
-char ERRMSG[LENERRMSG], MSG2[LENERRMSG]; // MSG[LENERRMSG],;
-errorloc_type ERROR_LOC="";
-errorstring_type ERRORSTRING;
+#define RFU_NEED_OBSOLETE 1
+#include "Basic_utils.h" // must be before anything else
 
 int PLoffset = 0,
   PL = C_PRINTLEVEL,
   CORES = 1;
+
 
 // end Externals

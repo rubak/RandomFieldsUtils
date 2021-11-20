@@ -35,12 +35,13 @@ I0L0(x)
   The two arguments are recycled to that length.  
 }
 \details{
-  \code{I0L0} returns \code{\link[base]{besselI}(nu=0)}
+  \code{I0L0} returns %\code{\link[base]{besselI}(nu=0)}
+  \code{besselI(nu=0)}.
   minus \code{struveL(nu=0)}.
 }
 
 \references{
-  \itemize{
+  \itemize{% <doi:10.1090/S0025-5718-1993-1176713-8>
     \item
     MacLeod, A.J. (1993)
     Chebyshev expansions for modified Struve and 

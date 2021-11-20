@@ -1,9 +1,42 @@
 
+## Authors 
+## Martin Schlather, schlather@math.uni-mannheim.de
+##
+##
+## Copyright (C) 2015 -- 2021 Martin Schlather
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 3
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.  
+
+debugging_level <- function() .Call(C_debuggingLevel)
+
+
+Try <- function(expr) {
+  z <- tryCatch(expr, error = function(e) e)
+  if (is.list(z) && !is.null(z$message) && !is.null(z$call))
+    class(z) <- CLASS_TRYERROR
+  z
+}
+
 checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
                           ask=FALSE, echo=TRUE, halt=FALSE, ignore.all=FALSE,
-                          path=package, package="RandomFieldsUtils",
-                          read.rd.files=TRUE,
-                          libpath = NULL, single.runs = FALSE) {
+                          path=package, package="RandomFields",
+                          read.rd.files=TRUE, local = FALSE,
+                          libpath = NULL, single.runs = FALSE,
+                          reset, catcherror=TRUE) {
+
+##  print("A")
   .exclude <- exclude
   .ask <- ask
   .echo <- echo
@@ -11,17 +44,20 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
   .ignore.all <- ignore.all
   .package <- package
   .path <- path
-  useDynLib <- importClassesFrom <- import <-
-  importFrom <- exportClasses <-
-  importMethodsFrom <- exportMethods <- S3method <- function(...) NULL
+  .local <- local
+ ## useDynLib <- importClassesFrom <- import <-
+ ## importFrom <- exportClasses <-
+    ## importMethodsFrom <- exportMethods <- S3method <-
+  ##  function(...) NULL
   .env <- new.env()
-  stopifnot(is.na(RFoptions()$basic$seed))
+  stopifnot(is.na(RFoptions()$basic$seed)) # OK
 
   exportPattern <- function(p) { ## necessary to read NAMESPACE??!!
+    if (p == "^R\\.") p <- "^R."
     all.pattern <- p %in% c("^[^\\.]", "^[^.]", ".") | get("all.pattern", .env)
     if (!.ignore.all) assign("all.pattern", all.pattern, .env)
     if (all.pattern) return(NULL)
-    stopifnot(nchar(p)==2, substr(p,1,1)=="^")
+    stopifnot(nchar(p)==3, substr(p,1,1)=="^") ## OK
     assign("p", c(get("p", .env), substring(p, 2)), .env)
   }
 
@@ -33,19 +69,30 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
                                     is.character(x)))) 
       stop("... must contain names or character strings")
     z <- sapply(dots, as.character)
+    cat("export", z, "\n")
     assign("export", c(get("export", .env), z), .env)
   }
+  import <- importClassesFrom <- importMethodsFrom <- importFrom <- useDynLib <-
+    exportClasses <- S3method <- exportMethods <-
+      function(...) {
+        dots <- match.call(expand.dots = FALSE)$...
+       # cat("other:", sapply(dots, as.character), "\n")
+      }
   assign("export", NULL, .env)
   assign("all.pattern", FALSE, .env)
   assign("p", NULL, .env)
   
-  source(paste(.path, "NAMESPACE", sep="/"), local=TRUE)
+##  cat("'source' causes problems in valgrind")
+  .content <- readLines(paste(.path, "NAMESPACE", sep="/"), -1)
+  eval(parse(text = .content))      
+##  cat("\tend source\n")
   if (is.logical(read.rd.files) && !read.rd.files) {
     .package.env <- parent.env(.GlobalEnv)
     while (attr(.package.env, "name") != paste("package:", .package, sep="")) {
       .package.env <- parent.env(.package.env)
     }
     .orig.fct.list <- ls(envir=.package.env)
+
     .ok <- (get("all.pattern", .env) |
             substr(.orig.fct.list, 1, 1) %in% get("p", .env) | 
             .orig.fct.list %in% get("export", .env))
@@ -57,18 +104,28 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
     .files <- dir(.path, pattern="d$")
     .fct.list <- character(length(.files))
     for (i in 1:length(.files)) {
-      #cat(i, .path, .files[i], "\n")
-      #if (i == 152) {cat("jumped\n"); next}      
-      #Print(.path, .files[i])
-      .content <- scan(paste(.path, .files[i], sep="/") , what=character(),
-                       quiet=TRUE)
+                                        #cat(i, .path, .files[i], "\n")
+                                        #if (i == 152) {cat("jumped\n"); next} 
+                                        #Print(.path, .files[i])
+      #.content <- scan(paste(.path, .files[i], sep="/") , what=character(),
+      #                 quiet=TRUE)
+      .fn <- paste(.path, .files[i], sep="/") 
+      .content <- readLines(.fn, n = 2)
+      if (substr(.content[1], 1, 5) != "\\name" &&
+          (substr(.content[1], 1, 1) != "%" || substr(.content[2], 1, 5) != "\\name"))
+        stop(.files[i], " does not start with '\\name' -- what at least in 2018 has caused problems in valgrind")
+
+      .content <- scan(.fn, what=character(), quiet=TRUE)      
       .content <- strsplit(.content, "alias\\{")
       .content <- .content[which(lapply(.content, length) > 1)][[1]][2]
       .fct.list[i] <-
         strsplit(strsplit(.content,"\\}")[[1]][1], ",")[[1]][1]
     }
   }
-  .include <- include
+
+  .include <- if (is.numeric(include)) include else 1:99999
+  .include.name <- include
+  if (exists("RMexp")) RFoptions(graphics.close_screen = TRUE, graphics.split_screen = TRUE)
   .RFopt <- RFoptions()
   .not_working_no <- .not_working <- NULL
   .included.fl <- .fct.list[.include]
@@ -81,13 +138,23 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
     file.out <- "example..Rout"
     if (file.exists(file.out)) file.remove(file.out)
   }
-  
+
+  if (is.character(.include.name)) {
+    .include.name <- sapply(strsplit(.include.name, ".Rd"), function(x) x[1])
+  }
+
+  .allwarnings <- list()
+  .tryerror <- paste0("\"try-", "error\"");
   for (.idx in .include) {
-    try(repeat dev.off(), silent=TRUE)
+##    Print(.idx)
+    if (is.character(.include.name) && !(.fct.list[.idx] %in% .include.name))
+      next
+    tryCatch(repeat dev.off(), error = function(e) e)
     if (.idx %in% .exclude) next
     cat("\n\n\n\n\n", .idx, " ", .package, ":", .fct.list[.idx],
         " (total=", length(.fct.list), ") \n", sep="")
-    RFoptions(LIST=.RFopt)
+    RFoptions(list_=.RFopt)
+    if (!missing(reset)) do.call(reset)
     if (.echo) cat(.idx, "")
     .tryok <- TRUE
     if (single.runs) {
@@ -99,22 +166,42 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
       write(file=file.in,  txt)
       command <- paste("R < ", file.in, ">>", file.out)
     } else {
-      ##stopifnot(RFoptions()$basic$print <=2 )
-      .time <- system.time(.res <- try(do.call(utils::example,
-                                               list(.fct.list[.idx],
-                                                    ask=.ask, echo=.echo))))
-      if (is(.res, "try-error")) {
+      ##s topifnot(RFoptions()$basic$print <=2)
+      ##     Print(.fct.list[.idx], package)
+      if (catcherror)
+        .time <- system.time(.res <- try(do.call(utils::example,  ## OK
+                                                 list(.fct.list[.idx], ask=.ask,
+                                                      package=package,
+                                                    echo=.echo, local=.local))))
+      else
+        .time <- system.time(.res <- do.call(utils::example, 
+                                                 list(.fct.list[.idx], ask=.ask,
+                                                      package=package,
+                                                      echo=.echo, local=.local)))
+       w <- warnings()
+      .allwarnings <- c(.allwarnings, list(c("Help page ", .idx)), w)
+      if (length(w) > 0) print(w) ## ok
+      if (is(.res, CLASS_TRYERROR) || is(.res, .tryerror) ||
+          is(.res, "SimpleError") || is(.res, "error")) {
+        cat("ERROR:\n")
+        str(.res, give.head=FALSE) #  OK
 	if (.halt) {
 	  stop("\n\n\t***** ",.fct.list[.idx], " (", .idx,
-	       "). has failed. *****\n\n")
+	       " out of ", max(.include), "). has failed. *****\n\n")
 	} else {
 	  .not_working_no <- c(.not_working_no, .idx)
 	  .not_working <- c(.not_working, .fct.list[.idx])
 	  .tryok <- FALSE
 	}
       }
+       if (exists("RMexp")) RFoptions(storing = FALSE)
       cat("****** '", .fct.list[.idx], "' (", .idx, ") done. ******\n")
-      print(.time) ## OK
+      print(.time) #
+      if (.tryok && !is.na(RFoptions()$basic$seed)) {
+	Print(.not_working, paste(.not_working_no, collapse=", "), #
+	      RFoptions()$basic$seed)
+	stop("seed not NA: ", .fct.list[.idx])
+      }
     }
   }
   Print(.not_working, paste(.not_working_no, collapse=", ")) #
@@ -171,7 +258,7 @@ ShowInstallErrors <-
     }
   
     
-
+##   library(RandomFields); Dependencies(package="RandomFields", install=TRUE, reverse=FALSE)
 Dependencies <- function(pkgs = all.pkgs, dir = "Dependencies",
                          install = FALSE, check=TRUE, reverse=FALSE,
   			 package="RandomFields") {

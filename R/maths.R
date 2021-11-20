@@ -3,7 +3,7 @@
 ## Martin Schlather, schlather@math.uni-mannheim.de
 ##
 ##
-## Copyright (C) 2015 Martin Schlather
+## Copyright (C) 2015 -- 2021 Martin Schlather
 ##
 ## This program is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License
@@ -59,6 +59,7 @@ matern <- function(x, nu, derivative=0,
           if (is.character(scaling)) wmscale(match.arg(scaling)) else scaling)
 }
 
+besselKx <- function(x, nu) .Call(C_besselk_simd, x, nu)
  
 nonstwm <- function(x, y, nu, log=FALSE,
                     scaling=c("whittle", "matern", "handcockwallis")) {

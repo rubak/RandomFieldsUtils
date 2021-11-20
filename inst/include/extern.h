@@ -3,7 +3,7 @@
  Martin Schlather, schlather@math.uni-mannheim.de
 
 
- Copyright (C) 2015 -- 2017 Martin Schlather
+ Copyright (C) 2021 -- 2021 Martin Schlather
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,12 +23,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef randomfieldsutils_extern_H
 #define randomfieldsutils_extern_H 1
 
+#include "AutoRandomFieldsUtilsLocal.h"
+
 extern int PLoffset, PL, CORES;
-extern utilsparam GLOBAL;
+extern utilsoption_type OPTIONS; 
+
+#define prefixN 2
+extern const char * prefixlist[prefixN], **all[prefixN];
+extern int allN[prefixN];
+
+
+// AutoRFU
+extern const char *LA_NAMES[LA_LAST + 1], *PIVOT_NAMES[PIVOT_LAST + 1],
+  *INSTALL_NAMES[INSTALL_LAST + 1];
+
 //extern const char *basic[basicN];
-//extern const char * InversionNames[nr_InversionMethods];
+extern const char * InversionNames[nr_InversionMethods];
 //extern const char * solve[solveN];
 // extern bool ToFalse[1];
 //
+
+extern int parentpid;
 
 #endif

@@ -1,10 +1,14 @@
 \name{RFoptions}
 \alias{RFoptions}
-\alias{PIVOT_UNDEFINED}
 \alias{PIVOT_NONE}
 \alias{PIVOT_AUTO}
 \alias{PIVOT_DO}
 \alias{PIVOT_IDX}
+\alias{LA_AUTO}
+\alias{LA_INTERN}
+\alias{LA_R}
+\alias{LA_GPU}
+\alias{LA_QUERY}
 %\alias{PIVOT_IDXBACK}
 \alias{PIVOTSPARSE_MMD}
 \alias{PIVOTSPARSE_RCM}
@@ -14,16 +18,121 @@
  and the simulation of random fields
 }
 \usage{
- RFoptions(..., no.readonly = TRUE)
+ RFoptions(..., no.readonly = TRUE, no.class=FALSE, install.control=NULL)
 }
 \arguments{
- \item{...}{arguments in \code{tag = value} form, or a list of tagged
- values.}
- \item{no.readonly}{If \command{\link{RFoptions}} is called without
-   argument then all arguments are returned in a list. If
-   \code{no.readonly=TRUE} then only rewritable arguments are returned.
-   Currenlty all arguments are rewritable. So the list is empty.
- }
+  \item{...}{arguments in \code{tag = value} form, or a list of tagged
+    values. See \sQuote{Details} for options in package
+    \pkg{RandomFieldsUtils}.
+  }
+  \item{no.readonly}{If \command{\link{RFoptions}} is called without
+    argument then all arguments are returned in a list. If
+    \code{no.readonly=TRUE} then only rewritable arguments are returned.
+    Currently all arguments are rewritable. So, no effect for package
+    \pkg{RandomFieldsUtils}, but could have an effect in other packages.
+  }
+  \item{no.class}{logical. If \code{TRUE} the list is returned without
+    class specification.
+  }
+  \item{install.control}{list, containing any argument of
+    \command{\link[utils]{install.packages}} except \code{type}.
+    The argument \code{configure.args}
+%    (i) is merged with the presetting
+%    of \command{RFoptions}; (ii)
+    may not contain \code{'CXX_FLAGS'}
+    which should be passed as an extra argument with the list.
+    
+    Note that if this argument is given (even with value \code{NULL}),
+    an immediate installation takes place. In case the user tries to
+    force to install 0 packages, an overview over the packages is given.
+    If the user is asked whether re-installation shall take place,
+    user can pass arguments to install.packages, e.g.,
+    \code{"quiet=FALSE"}.
+    
+    If \code{install.control} is given, no further
+    argument may be passed to \command{RFoptions}.
+     
+    Additional components of \code{install.control} and special
+    behaviours are:
+    \describe{
+      \item{\code{path}}{the path to the locally saved tar balls
+      }
+      \item{\code{verbose}, \code{quiet}}{
+	They affect also the behaviour of \code{RFoptions}.
+%	Within \code{RFoptions}, \code{verbose=TRUE} by default.
+      }
+     
+      \item{\code{force}}{
+	\describe{
+	  \item{\code{TRUE}}{
+	    reinstallation of all attached libraries based on and including
+	    \pkg{RandomFieldsUtils}. I.e.,
+	    \code{RFoptions(install.control=list(force=TRUE))} is the
+	    strongest form of forcing reinstallation.
+	  }
+	  \item{\code{FALSE}}{In case some packages have to be re-installed
+	    the user will be asked.
+	  }
+	  \item{not given}{
+	    reinstallation of the attached libraries based on and including
+	    \pkg{RandomFieldsUtils} that have not been tried yet in the
+	    current session.
+	  }
+	}
+      }
+      \item{\code{pkgs=NULL}}{
+	brief overview over the installed packages based on
+	\code{RandomFieldsUtils} 
+      }
+      \item{\code{SERVER}}{logical or character. \code{SERVER} is passed to \file{configure.ac}.
+	\describe{
+	  \item{\code{"noflag"}}{
+	    No extra compiler flag is set with respect to SIMD. This is
+	    the default.
+	  }
+	  \item{\code{TRUE}}{each file is compiled with its specific SIMD/AVX
+	    compiler flags; this guarantees the compatiblity on a
+	    plattform with different sets of kernels.
+	    No SIND/AVX flag should be given by the user.
+	    Cross-compilation supported; no check is performed whether the code would
+	    run on the compiling CPU.
+	  }
+	  \item{\code{"nosimd"}}{It is assumed that no SIMD is available
+	    and the flag "-no-sse2" is set (if possible).}
+	  \item{\code{"sse2"}}{Same behaviour as \code{TRUE}, but all
+	    CPUs have  at least \code{"sse2"} available.}
+	  \item{\code{"sse3"}, \code{"ssse3"}, \code{"sse41"},
+	    \code{"avx"}, \code{"avx2"}%, \code{"avx512f"}
+	  }{
+	    Alternatives to \code{"sse2"}.
+	    Giving the highest guaranteed SIMD recognition leads to
+	    the most efficient code.
+	  }
+	  \item{\code{FALSE}}{each file is compiled with all
+	    SIMD/AVX flags recognized by both the CPU and the
+	    compiler (no cross-compilation); users may add their own
+	    SIMD/AVX flags. 
+	    This might lead to faster code, but which is not downwards
+	    compatible.
+	  }
+	  \item{\code{NA}}{Same as \code{FALSE} except
+	    that the flag \code{-mno-sse2}
+	    is set when no SIMD is needed or used.
+	  }
+	}
+	This option can  be set	to \code{"avx"} interactively if
+	\code{install="ask"}. 
+      }
+      \item{\code{SIMD_FLAGS}}{character. A subset of \code{"sse2"},
+	\code{"sse3"}, \code{"ssse3"}, \code{"sse41"}, \code{"avx"},
+	\code{"avx2"}, \code{"arch=xxx"}, etc.
+	which will be tried instead of default flags.
+	\code{SIMD_FLAGS} is passed to \file{configure.ac}.
+      }
+      \item{\code{CC_FLAGS}}{character. Flags passed to \file{configure.ac}.
+      }
+    }
+  }
 }
 \details{
   The subsections below comment on\cr
@@ -53,7 +162,12 @@
       Number of cores for multicore algorithms;
       currently only used for the Cholesky decomposition.
       
-      Default : 1
+      Default : \code{1} if the package has been compiled with
+      standard flags of CRAN and
+      \code{0.75 * cores() + 0.25 * cpus()} else.
+
+      Note that \code{cores} has not effect if set locally in this
+      package or in package miraculix.
     }
     
     \item{\code{cPrintlevel}}{
@@ -80,18 +194,85 @@
       Default: 1 \cr % [also  do].\cr
     }
 
+  
     \item{\code{helpinfo}}{logical. If \code{TRUE} then
       additional information is printed for more efficient programming
       in R.
+
+      Default: \code{TRUE}
+    }
+    
+    \item{\code{install}}{character. Only used by linux systems and
+      alike including macOS
+      The default by CRAN is that SIMD/AVX cannot be used at full extend.
+      \code{install} determines what the action if the compiled
+      version does not use the full CPU capacities. Since the use of GPU
+      is heavily hardware dependent, its auto-recompilation is only performed
+      in tow line of an AVX re-compilation.
+      The users usually use 
+      \describe{
+	\item{\code{"none"}}{no re-installation}
+	\item{\code{"ask"}}{asks whether the library should be reinstalled,
+	  using the full capacity of the CPU according to the package.}
+	\item{\code{"install"}}{performs the auto-recompilation without asking.
+	  Note that only the command
+	  \code{RFoptions(install.control=list(force=TRUE))}
+	  forces re-compilation of the currently loaded packages that are based on
+	  \pkg{RandomFieldsUtils}. 
+	}
+      }
+      Note that, in each session, a package can be reinstalled only.
+      This feature avoids trying to run jobs that cannot be done (e.g.\ due to
+      missing programs of the OS). See argument \code{install.control}
+      for overwriting this behaviour.
+      
+      Default: at starting point it is \code{"ask"} or \code{"none"},
+      but the value may change during the session.
+      
+%      The user can also indicate what whould be installed:
+%      \describe{
+%	\item{\code{"sse"}}{installs SSE}
+%	\item{\dots}
+%	\item{\code{"avx2"}}{installs AVX2}
+%      }
+
     }
 
-    \item{\code{kahanCorrection}}{
+    \item{\code{installPackages}}{logical. Read only.
+      Indicates whether packages are left to be re-installed.
+      \code{RFoptions(install="none")} sets it to \code{FALSE}.
+      \code{RFoptions(install="none", install="ask")} sets it to \code{TRUE}.
+    }
+    
+    \item{\code{kahanCorrection}}{obsolete.
       logical. If \code{TRUE}, the Kahan summation algorithm is used for
       calculating scalar products.
       
       Default: false
     }
    
+   \item{\code{la_mode}}{determines
+      \describe{
+	\item{LA_AUTO, \code{"auto"}}{
+	  If a graphic card is recognized, \code{LA_GPU} is used.
+	  In all other cases the default is primarily \code{LA_R}.
+	  Only on linux systems, the package peforms a simple speed test and
+	  takes \code{LA_INTERN} if it is faster than {LA_R}; the time,
+	  hence the choice, depends also on the number of cores used.}
+  	\item{LA_INTERN, \code{"intern"}}{mostly own algorithms, often
+	  based on SIMD/AVX. This option is of
+	  interest only if no advanced BLAS/LAPACK
+	  has been compiled into R}
+  	\item{LA_R, \code{"R"}}{BLAS/LAPACK implementation used by R}
+ 	\item{LA_GPU, \code{"GPU"}}{
+	  This option is available when the package has been compiled with nvcc.
+	}
+	\item{LA_QUERY, \code{"query"}}{Request on currently used set-up}
+      }
+	
+      Default: \code{LA_AUTO}
+    }
+
     \item{\code{printlevel}}{If \code{printlevel}\eqn{\le0}{<=0}
       there is not any output on the screen. The
       higher the number the more tracing information is given.
@@ -113,8 +294,13 @@
     \item{\code{seed}}{integer (currently only used by the package
       RandomFields). 
       If \code{NULL} or \code{NA}
-      \command{\link[base]{set.seed}} is \bold{not} called.
-      Otherwise, \code{\link[base]{set.seed}(seed)} is set
+   %   \command{\link[base]{set.seed}}
+       \command{set.seed}
+      is \bold{not} called.
+      Otherwise,
+  %    \code{\link[base]{set.seed}(seed)}
+      \code{set.seed(seed)}
+      is set
       before any simulations are performed.
       
       If the argument is set locally, i.e., within a function,
@@ -145,11 +331,58 @@
       Do not change the value of this variable except you really
       know what you do.
       
-      Default: \code{FALSE} $ %[also do]. 
+      Default: \code{FALSE}  %[also do]. 
     }
     
     \item{\code{verbose}}{logical. If \code{FALSE} it identical to
       \code{printlevel = 1} else to \code{printlevel = 2}.
+    }
+
+
+    \item{\code{warn_parallel}}{Logical.
+      \pkg{RandomFieldsUtils} and
+      packages using it, such as \pkg{RandomFields} and \pkg{miraculix},
+      should now be prepared for parallelization using package
+      \code{parallel}, for instance. Internal OMP parallelization
+      of \pkg{RandomFieldsUtils} is done, but only at a view points
+      of the subsequent packages.
+
+      As a few parts cannot be in parallel technically
+      or from a logical point of view, a hint or a
+      warning is given, if such a point is not accessed adequately.
+      These messages can be turned off by \code{warn_parallel = FALSE}.      
+      
+      Default: \code{TRUE}.
+    }
+
+  \item{\code{warn_unknown_option}}{integer.       
+      \describe{
+	\item{\code{0},\code{1},\code{-1}}{
+	  Unknown options are all ignored. If the value is positive,
+	  a hint is delivered whenever an unknown option is ignored.
+	}
+	\item{\code{-2},\code{2}}{
+	  Unknown options that start with a capital letter are ignored.
+	  All others lead to an error. (Note that all \code{RFoptions}
+	  start with a minor letter.)
+	  If the value is positive,
+	  a hint is delivered whenever an unknown option is ignored.
+	}
+	\item{\code{3},\code{-3}}{
+	  Unknown options that consists of a single capital letter are ignored.
+	  All others lead to an error. (Note that all \code{RFoptions}
+	  start with a minor letter.)
+	  If the value is positive,
+	  a hint is delivered whenever an unknown option is ignored.	  
+	}
+	\item{\code{4}}{(and other values) Any unknown option leads to
+	  an error.}
+      }
+
+      Default for \pkg{RandomFieldsUtils}: \code{3}
+
+      Default for \pkg{RandomFields}: \code{1}
+      
     }
   }
 
@@ -168,6 +401,7 @@
       
       Default: \code{1e-12}
     }
+
     \item{\code{max_chol}}{integer. Maximum number of rows of a matrix in
       a Cholesky decomposition
       
@@ -178,22 +412,26 @@
       
       Default: \eqn{10000}
     }
-    
+
+    \item{\code{pivot_partialdet}}{logical. If \code{TRUE} then in case
+      of low-rank matrices the determinant is calculated only in the part
+      with positive eigenvalues}
+      
     \item{\code{pivot}}{Type of pivoting for the Cholesky
       decomposition. Possible values are 
       \describe{
-	\item{PIVOT_NONE}{No pivoting.}
-	\item{PIVOT_AUTO}{If the  matrix has a size greater than
+	\item{PIVOT_NONE, \code{"none"}}{No pivoting.}
+	\item{PIVOT_AUTO, \code{"auto"}}{If the  matrix has a size greater than
 	  3x3 and Choleskey fails without pivoting, privoting
 	  is done. For matrices of size less than 4x4, no pivoting and
 	  no checks are performed. See also \code{PIVOT_DO}}
- 	\item{PIVOT_DO}{Do always pivoting.
+ 	\item{PIVOT_DO, \code{"do"}}{Do always pivoting.
 	  NOTE: privoted Cholesky decomposition yields only very approximately
 	  an upper triangular matrix L, but still L^t L = M holds true.
 %	  The information about the pivoting sequence are attributed to
 %	  the result.
 	}
- 	\item{PIVOT_IDX}{uses the same pivoting as in the previous
+ 	\item{PIVOT_IDX, \code{"idx"}}{uses the same pivoting as in the previous
 	  pivoted decomposition. This option becomes relevant only when
 	  simulations with different parameters or different models shall be
 	  performed with the same seed so that also the pivoting must be
@@ -206,7 +444,8 @@
 %	\code{RFoptions()$solve$pivot_idx}.}
       }
 
-      Default: \code{PIVOT_NONE}
+      Default: \code{PIVOT_NONE} 
+      
     }
     
     \item{\code{pivot_actual_size}}{integer.
@@ -251,6 +490,12 @@
       
       Default: \code{1e-10}
     }
+
+    \item{\code{pseudoinverse}}{logical. In case of a singular matrix \eqn{M},
+      shall the pseudo inverse be returned for \code{solvex(M)}?
+      
+      Default: \code{FALSE}
+    }
     
     \item{\code{pivot_max_reldeviation}}{positive number.
 	Together with \code{pivot_max_deviation} it determines
@@ -264,9 +509,12 @@
    \item{\code{solve_method}}{
       vector of at most 3 integers that gives the sequence of methods
       in order to inverse a matrix or to calculate its square root:
-      \code{"cholesky"}, \code{"svd"}, \code{"eigen"} \code{"sparse"},
+      \code{"cholesky"}, \code{"svd"}, \code{"lu"}, % \code{"qr"},
+      \code{"eigen"} \code{"sparse"},
       \code{"method undefined"}. In the latter case, the algorithm decides
-      which method might suit best. 
+      which method might suit best.
+
+    %  Note that \code{"qr"} returns only the transposed of the inverse!
       
       Note that if \code{use_spam} is not \code{false} the algorithm
       checks whether a sparse matrix algorithm should be used and which is
@@ -281,16 +529,20 @@
     }
     
     \item{\code{spam_min_n}}{
-      integer. THe minimal size for a matrix to apply a
-      sparse matrix algorithms automatically.
+      integer vector of size 2. The minimal size for a matrix to apply a
+      sparse matrix algorithms automatically. The second value is used
+      in case the GPU is activated.
       
-      Default: 400
+      Default: \code{c(400, 4000)}
     }
+    
     \item{\code{spam_min_p}}{
       number in \eqn{(0,1)} giving the proportion of
-      zero about which an sparse matrix algorithm is used.
+      zero above which an sparse matrix algorithm is used.
+      The second value is used
+      in case the GPU is activated.
       
-      Default: \code{0.8}
+      Default: \code{c(0.8, 0.8)}
     }
     \item{\code{spam_pivot}}{
       integer. Pivoting algorithm for sparse matrices:
@@ -338,14 +590,14 @@
 
   \bold{3. Reserved Words}
   \describe{
-    \item{\code{LIST}}{
-      \code{LIST} usually equals the output of \code{RFoptions()}.
+    \item{\code{list_}}{
+      \code{list_} usually equals the output of \code{RFoptions()}.
       This argument is used to reset the RFoptions.
       Some of the options behave differently if passed through
-      \code{LIST}. E.g. a warning counter is not reset.
-      The argument \code{LIST} cannot be combined with any other arguments.
+      \code{list_}. E.g. a warning counter is not reset.
+      The argument \code{list_} cannot be combined with any other arguments.
     }
-    \item{\code{GETOPTIONS}}{string vector of prefixes that indicate
+    \item{\code{getoptions_}}{string vector of prefixes that indicate
       classes of options. In this package they
       can be \code{"basic"} and \code{"solve"}. (E.g. package
       \pkg{RandomFields} has many more classes of options.)
@@ -353,18 +605,27 @@
       returned by \code{RFoptions()}. Note that the values are the
       previous values.
       
-      \code{GETOPTIONS} must always be the very first argument.
+      \code{getoptions_} must always be the very first argument.
     }
-    \item{\code{SAVEOPTIONS}}{string vector of prefixes. Same as for
-      \code{GETOPTIONS}, except that important classes are always
-      returned and thus  should not be given. Hence \code{SAVEOPTIONS}
-      is often a convenient short cut for \code{GETOPTIONS}.
+    \item{\code{saveoptions_}}{string vector of prefixes. Same as for
+      \code{getoptions_}, except that important classes are always
+      returned and thus  should not be given. Hence \code{saveoptions_}
+      is often a convenient short cut for \code{getoptions_}.
       The class always included in this package is \code{"basic"}, in
       package \pkg{RandomFields} these are the two classes
       \code{"basic"} and \code{"general"}.
    
-      \code{SAVEOPTIONS} must always be the very first argument. In
-      particular, it may not given at the same time with \code{GETOPTIONS}.
+      \code{saveoptions_} must always be the very first argument. In
+      particular, it may not given at the same time with \code{getoptions_}.
+    }
+    \item{\code{local_}}{logical. This options is allowed only when
+      advanced packages are used, see \pkg{RandomFields}.
+    }
+    \item{\code{warnUnknown_}}{integer. Same as option
+      \code{warn_unknown_option}, except that its value overwrites
+      the value of \code{warn_unknown_option} in the current command
+      \code{RFoptions}. This options must be placed between \code{CODE}
+      and \code{getoptions_}, if the latter are used.
     }
   }
 }
@@ -379,16 +640,25 @@
 \me
 
 \examples{
+%   library(RandomFieldsUtils)
+n <- 10
+M <- matrix(1, ncol=n, nrow=n)
 
-if (FALSE) {
-  n <- 500
-  M <- matrix(rnorm(n * n), nc=n)
-  M <- M \%*\% t(M)
-  system.time(chol(M))
-  system.time(cholesky(M))
-  RFoptions(cores = 2)
-  system.time(cholesky(M))
+\dontrun{
+try(chol(M)) ## error, as M is not strictly positive definite
+try(cholx(M)) ## also fails
 }
+
+%cholx(M) ## works
+
+RFoptions(la_mode=LA_INTERN, pivot=PIVOT_AUTO)
+cholx(M) ## works
+RFoptions(la_mode=LA_R)
+
+
+RFoptions(solve_method="svd", pseudoinverse=TRUE)
+solvex(M)
+RFoptions(solve_method="method undefined", pseudoinverse=FALSE)
 
 }
 

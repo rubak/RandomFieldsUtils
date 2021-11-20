@@ -2,6 +2,7 @@
 \alias{FileExists}
 \alias{LockRemove}
 \alias{LockFile}
+\alias{WaitOthers}
 
 \title{Files}
 \description{
@@ -14,10 +15,21 @@
    FileExists(file, printlevel=RFoptions()$basic$printlevel)
    LockFile(file, printlevel=RFoptions()$basic$printlevel)
    LockRemove(file)
+   WaitOthers(file, i, cores, ideal.processes=ceiling(cores * 1.25),
+                       max.processes=ceiling(cores * 1.5),
+                       distance=5, time=5, path="./")
 }
 \arguments{
   \item{file}{name of the data file}
   \item{printlevel}{if \code{PrintLevel<=1} no messages are displayed}
+  \item{i}{integer; current value of process, usually the number of a
+    loop index}
+  \item{cores}{the number of cores on the machine}
+  \item{ideal.processes,max.processes,distance}{integer. See Details}
+  \item{time}{in minutes a process waits until it rechecks its
+    environment}
+  \item{path}{the current path of \code{file}}
+  
 }
 
 \details{
@@ -31,6 +43,16 @@
 
   \code{LockFile} is the same as \code{FileExists} except that it does
   not check whether \code{file} already exists.
+
+  \command{WaitOthers} waits for others if more than \code{ideal.processes}
+  processes have 
+  their value is less than \code{i}
+  or if more than \code{cores}
+  processes have 
+  their value is less than \code{i}-\code{distance}.
+  It also waits if there are alreay \code{max.processes} are active.
+  Note that \command{WaitOthers} write a file with ending
+  \sQuote{.wait}, which is also deleted be \command{LockRemove}.
 }
 
 \value{
