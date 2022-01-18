@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef basic_rfutils_local_h
 #define basic_rfutils_local_h 1
 
-#define RFU_VERSION 10  // ACHTUNG: in mehreren Dateien definiert!
+#define RFU_LOCAL 1  
 
 #include "intrinsics.h"
 #include "Basic_utils.h"

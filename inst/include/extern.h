@@ -23,14 +23,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef randomfieldsutils_extern_H
 #define randomfieldsutils_extern_H 1
 
+
 #include "AutoRandomFieldsUtilsLocal.h"
 
 extern int PLoffset, PL, CORES;
 extern utilsoption_type OPTIONS; 
 
-#define prefixN 2
-extern const char * prefixlist[prefixN], **all[prefixN];
-extern int allN[prefixN];
+#define prefixN 3
+extern const char * prefixlist[prefixN], **allOptions[prefixN];
+extern int allOptionsN[prefixN];
 
 
 // AutoRFU

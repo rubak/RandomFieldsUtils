@@ -244,7 +244,7 @@ double logWM(double x, double nu1, double nu2, double factor) {
 		   scale = 1.0;
   if (factor!=0.0) scale = factor * SQRT(nuThres);
   bool simple = nu1 == nu2 || nu > MATERN_NU_THRES;
-  double bk[MATERN_NU_THRES + 1L];
+  double bk[MATERN_NU_THRES + 1U];
 
   if (x > LOW_MATERN && nu < RF_INF) {
     if (x == RF_INF) return RF_NEGINF;
@@ -284,7 +284,7 @@ double logWM(double x, double nu1, double nu2, double factor) {
       v += lgammafn(nu)- 0.5 * (lgammafn(nu1) + lgammafn(nu2)); // !nuThres
     }
     
-    // if (!R_FINITE(v)) ERR("non-finite value in the whittle-matern model -- value of 'nu' is much too large");
+    // if (!R_FINITE(v)) ERR0("non-finite value in the whittle-matern model -- value of 'nu' is much too large");
 
     //if (nu>100) printf("v=%10g \n", v);
   }
@@ -304,7 +304,7 @@ double DWM(double x, double nu, double factor) {
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
 		   scale = 1.0;
   if (factor != 0.0) scale = factor * SQRT(nuThres);
-  double bk[MATERN_NU_THRES + 1L];
+  double bk[MATERN_NU_THRES + 1U];
   
   if (x > LOW_MATERN && nu < RF_INF) {
     if (x == RF_INF) return 0.0;
@@ -338,7 +338,7 @@ double DDWM(double x, double nu, double factor) {
 		   scale = 1.0;
   if (factor != 0.0) scale = factor * SQRT(nuThres);
   double scaleSq  = scale * scale,
-		   bk[MATERN_NU_THRES + 1L];
+		   bk[MATERN_NU_THRES + 1U];
   
   if (x > LOW_MATERN && nu < RF_INF) {
     if (x == RF_INF) return 0.0;
@@ -373,7 +373,7 @@ double D3WM(double x, double nu, double factor) {
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
     scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0,
     scaleSq  = scale * scale;
-   double bk[MATERN_NU_THRES + 1L];
+   double bk[MATERN_NU_THRES + 1U];
  
   if (x > LOW_MATERN && nu < RF_INF) {
     if (x == RF_INF) return 0.0;
@@ -408,7 +408,7 @@ double D4WM(double x,  double nu, double factor) {
     nuThres = nu < MATERN_NU_THRES ? nu : MATERN_NU_THRES,
     scale = (factor != 0.0) ? factor * SQRT(nuThres) : 1.0,
     scaleSq  = scale * scale;
-  double bk[MATERN_NU_THRES + 1L];
+  double bk[MATERN_NU_THRES + 1U];
 
   //  printf("x=%10g nu=%10g\n", x, nuThres);
   
@@ -450,7 +450,7 @@ typedef double (*primfct3)(double, double, double);
   double *x = REAL(X);				\
   int n = length(X),				\
     deriv = INTEGER(Derivative)[0];					\
-  if (deriv < 0 || deriv > 4) ERR("value of 'derivative' out of range"); \
+  if (deriv < 0 || deriv > 4) ERR0("value of 'derivative' out of range"); \
   PRIMFCTN F = fctns[deriv];						\
 									\
   SEXP Ans;								\
@@ -489,8 +489,8 @@ SEXP logWMr(SEXP X, SEXP Nu1, SEXP Nu2, SEXP Factor) {
     factor = REAL(Factor)[0];
   double *x = REAL(X);				
   //  int n = length(X);	
-  if (nu1 <= 0.0 || nu2 <= 0.0) ERR("'nu' must be positive");
-  if (factor < 0.0) ERR("'factor' must be positive");
+  if (nu1 <= 0.0 || nu2 <= 0.0) ERR0("'nu' must be positive");
+  if (factor < 0.0) ERR0("'factor' must be positive");
  									
   SEXP Ans;								
   PROTECT(Ans=allocVector(REALSXP, 1));					
@@ -545,7 +545,7 @@ double incomplete_gamma(double start, double end, double s) {
 
 
 SEXP besselk_simd(SEXP X, SEXP Nu) {
-  if (length(Nu) != 1) ERR("Length of nu must be 1.");
+  if (length(Nu) != 1) ERR0("Length of nu must be 1.");
   SEXP Ans = R_NilValue;
 #if defined AVX2
   int L = length(X);
@@ -553,7 +553,7 @@ SEXP besselk_simd(SEXP X, SEXP Nu) {
   bes_k_simd(REAL(X), REAL(Nu)[0], L, REAL(Ans));
   UNPROTECT(1);
 #else
-  ERR("'AVX2' not available.");
+  ERR0("'AVX2' not available.");
 #endif  
   return Ans;
 }

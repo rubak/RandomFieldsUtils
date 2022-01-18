@@ -30,16 +30,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cuda_runtime.h>
 #include <chrono>
 #include <vector>
+#include "parallel_simd.h"
+#ifdef TIME_AVAILABLE
 #include <time.h>
+#endif
 
+#include "Basic_utils.h"
 #include "errors_messages.h"
 #include "RandomFieldsUtils.h"
 #include "solve_gpu.h"
 #include "options.h"
+#include "xport_import.h"
 
 
 
 
+ASSERT_SIMD(mma_61, gpu)
 
 __global__ void logdet_kernel(double *d_matrix, Uint *d_size, double *d_logdet){
     __shared__ double logdet_loc;
@@ -49,18 +55,20 @@ __global__ void logdet_kernel(double *d_matrix, Uint *d_size, double *d_logdet){
     int idx = blockDim.x * blockIdx.x + threadIdx.x,
         thread = threadIdx.x;
     if(idx < *d_size){
-        if(THREADS_PER_BLOCK<=thread ) printf("Size %d, access %d",THREADS_PER_BLOCK,thread );
+    //     if(THREADS_PER_BLOCK<=thread && PL >= PL_RECURSIVE)
+	//   PRINTF("Size %d, access %d",THREADS_PER_BLOCK,thread );
         submatrix[thread] = d_matrix[idx * (*d_size +1)];
     }
     __syncthreads();
-    atomicAdd(&logdet_loc, idx >= *d_size ? 0 : (log(submatrix[thread])));
+    atomicAdd(&logdet_loc, idx >= *d_size ? 0 : (LOG(submatrix[thread])));
 
     __syncthreads();
     if(threadIdx.x ==0){atomicAdd(d_logdet, logdet_loc);
     };
 };
 
-int cholGPU(bool copy, double *matrix, Uint input_size, double *B, Uint rhs_cols,
+int cholGPU(bool copy, double *matrix, Uint input_size, double *B,
+	    Uint rhs_cols,
      double *LogDet, double *RESULT){
     /*
         This function solves the problem
@@ -74,9 +82,18 @@ int cholGPU(bool copy, double *matrix, Uint input_size, double *B, Uint rhs_cols
             vector: contains solution x after the function has been called
     */
 
+  KEY_type *KT = KEYT();
+  installNrun_options *iNr = &(KT->global_utils.installNrun);
+  int *devices = iNr->gpu_devices;
+  int N = iNr->Ngpu_devices;
+  assert(iNr->Ngpu_devices <= MAX_GPU_DEVICES);
+  int maxStreams = iNr->maxStreams;
+
+#ifdef TIME_AVAILABLE  
     clock_t start = clock();
+#endif    
     //declare/define process variables
-    unsigned long size = (unsigned long) input_size;
+    Ulong size = (Ulong) input_size;
     int bufferSize = 0;
     int *info = NULL;
     int h_info = 0;
@@ -107,7 +124,8 @@ int cholGPU(bool copy, double *matrix, Uint input_size, double *B, Uint rhs_cols
     cudaMalloc((void**)&d_B, sizeof(double) * size * rhs_cols);
     cudaMemset(info, 0, sizeof(int));
 
-    printf("Size of alloc %ld",  sizeof(double) * size * size);
+    // if (PL > PL_RECURSIVE)
+    //   PRINTF("Size of alloc %ld",  sizeof(double) * size * size);
     //copy data to device
     cudaMemcpy(d_matrix, matrix, sizeof(double) * size * size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, B, sizeof(double) * size * rhs_cols, cudaMemcpyHostToDevice);
@@ -169,7 +187,10 @@ int cholGPU(bool copy, double *matrix, Uint input_size, double *B, Uint rhs_cols
     cudaFree(d_B);
     cusolverDnDestroy(handle);
     cudaStreamDestroy(stream);
-    PRINTF("Time: %.3f", (double)(clock() - start) / CLOCKS_PER_SEC);
+#ifdef TIME_AVAILABLE
+    // if (PL >= PL_RECURSIVE)
+    // PRINTF("Time: %.3f", (double)(clock() - start) / CLOCKS_PER_SEC);
+#endif    
     return 0;
 };
 
@@ -269,10 +290,10 @@ int cholGPU(bool copy, double *matrix, Uint input_size, double *B, Uint rhs_cols
 
 
 //     // Allocate arrays of device pointers which point at the memory allocated on each device
-//     array_d_A = (double**) malloc (sizeof(double*) * nbGpus );
-//     array_d_B = (double**)malloc(sizeof(double*)*nbGpus);
-//     array_d_work = (double**)malloc(sizeof(double*)*nbGpus);
-//     memset(array_d_work, 0, sizeof(void*)*nbGpus);
+//     array_d_A = (double**) MALLOC (sizeof(double*) * nbGpus );
+//     array_d_B = (double**)MALLOC(sizeof(double*)*nbGpus);
+//     array_d_work = (double**)MALLOC(sizeof(double*)*nbGpus);
+//     MEMSET(array_d_work, 0, sizeof(void*)*nbGpus);
 
 //     // Calculate block size on device
 //     const int A_num_blks = ( N + T_A - 1) / T_A;
@@ -412,5 +433,5 @@ int cholGPU(bool copy, double *matrix, Uint input_size, double *B, Uint rhs_cols
 //         cudaSetDevice(deviceList[i]);
 //         cudaDeviceReset();
 //     }
-//     free(array_d_A); free(array_d_B); free(array_d_work);
+//     FREE(array_d_A); FREE(array_d_B); FREE(array_d_work);
 // }

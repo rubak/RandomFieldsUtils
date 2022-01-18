@@ -4,26 +4,32 @@ AC_INIT([RandomFieldsUtils], 1.0)
 ##################################################
 ## debugging options
 ##################################################
-#SERVER="avx" 
-#SERVER="nosimd"
-#SERVER="noflags"
-#SERVER="FALSE"
-#SERVER="TRUE"
-#SERVER="NA"
+#CROSS="arm32"
+#CROSS="avx2"
+#CROSS="nosimd"
+#CROSS="noflags"
+#CROSS="FALSE"
+#CROSS="TRUE"
+#CROSS="NA"
 #USE_GPU="try"
 #USE_GPU="yes"
 #CXX_FLAGS="-march=native"
 #CXX_FLAGS="-nonsense"
-
+#USERASKED="TRUE"
+#USERASKED="FALSE"
+#MEM_IS_ALIGNED="TRUE"
+#MEM_IS_ALIGNED="FALSE"
 
 ##################################################
 ## explicit options passed by RandomFieldsUtils
 ##################################################
 ## CXX_FLAGS (including omp)
-## SERVER
+## CROSS
 ## SIMD_FLAGS  # superset of what is needed and recognized
 ## USE_GPU
 ## CUDA_HOME
+## USERASKED     
+## MEM_IS_ALIGNED
 
 
 ##################################################
@@ -45,19 +51,22 @@ AC_INIT([RandomFieldsUtils], 1.0)
 #MY_MAX_AVX512F
 #MY_CU_FILES
 #MY_C_FILES
+
 ##################################################
 ## RandomFieldsUtils
 ##################################################
+
+##CROSS=
 
 MY_SSE2=""
 MY_SSE3=""
 MY_SSSE3=""
 MY_SSE41=""
-MY_AVX="avx.o"
-MY_AVX2="avx2.o"
+MY_AVX="avx_fctns.o"
+MY_AVX2="avx2_fctns.o"
 MY_AVX512F=""
-MY_CU_FILES="solve_gpu.o"
-MY_C_FILES="AutoRandomFieldsUtils.o beskf.o brdomain.o extern.o kleinkram.o maths.o options.o RFoptions.o solve.o sort.o utils.o win_linux_aux.o xport_import.o zzz.o bckslvmodified.o cholmodified.o spamown.o obsolete.o"
+MY_CU_FILES="solve_61.o gpu_info_61.o"
+MY_C_FILES="AutoRandomFieldsUtils.o beskf.o brdomain.o extern.o kleinkram.o maths.o options.o RFoptions.o solve.o sort.o utils.o win_linux_aux.o xport_import.o zzz.o gpu_info.o bckslvmodified.o cholmodified.o spamown.o obsolete.o"
 
 
 ##################################################
@@ -68,12 +77,29 @@ AC_PROG_CXX
 AC_LANG(C++)
 SAVE_CXXFLAGS="$CXX_FLAGS"
 MY_CUDA_HOME="${CUDA_HOME}"
-if test "x${SERVER}" == x ; then
-   SERVER=noflags
-elif test "x${SERVER}" == xTRUE || test "x${SERVER}" == xFALSE || test "x${SERVER}" == xNA; then
-  SERVER_BOOL=yes
+if test "x${CROSS}" == x ; then
+  CROSS=noflags
+elif test "x${CROSS}" == xTRUE || test "x${CROSS}" == xFALSE || test "x${CROSS}" == xNA; then
+  CROSS_BOOL=yes
 fi 
-AC_MSG_NOTICE([value of 'SERVER' is '${SERVER}'.])
+AC_MSG_NOTICE([value of 'CROSS' is '${CROSS}'.])
+
+if test "x${USERASKED}" == x ; then
+  USERASKED_FLAG=""
+elif test "x${USERASKED}" == xTRUE ; then
+  USERASKED_FLAG="-DUSERASKED=true"
+else
+  USERASKED_FLAG="-DUSERASKED=false"
+fi 
+
+#AC_MSG_NOTICE([value of 'MEM_IS_ALIGNED' is '${MEM_IS_ALIGNED}'.])
+if test "x${MEM_IS_ALIGNED}" == x ; then
+  MEM_IS_ALIGNED_FLAG="-DMEMisALIGNED=Nan"
+elif test "x${MEM_IS_ALIGNED}" == xTRUE ; then
+  MEM_IS_ALIGNED_FLAG="-DMEMisALIGNED=True -DMEM_IS_ALIGNED"
+else
+  MEM_IS_ALIGNED_FLAG="-DMEMisALIGNED=False"
+fi 
 
 
 ######################################################################
@@ -89,7 +115,9 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE(
    int main(){int B=1, s[[4]]; __cpuid(s, B);} ])],
    [CPUID_FLAG="-DWINCPUID"],
    [])
-if test "x${CPUID_FLAG}" == x ; then
+if test "x${CPUID_FLAG}" != x ; then
+  AC_MSG_RESULT([via intrin.h])
+else
   AC_MSG_RESULT([no])
   AC_MSG_CHECKING([whether cpuid works under asm])
   AC_COMPILE_IFELSE([AC_LANG_SOURCE(
@@ -101,14 +129,25 @@ if test "x${CPUID_FLAG}" == x ; then
       "=d"(s[[3]]):"a"(B),"c"(0));	} ])],
       [CPUID_FLAG="-DLINUXCPUID"],
     [])
-  if test "x${CPUID_FLAG}" == x ; then
-    AC_MSG_RESULT([no])
-  else
-    AC_MSG_RESULT([yes])
-  fi
-else
+if test "x${CPUID_FLAG}" != x ; then
   AC_MSG_RESULT([yes])
+else
+AC_COMPILE_IFELSE([AC_LANG_SOURCE(
+    [[#]include <cpuid.h>	
+     [#]include <inttypes.h>
+     int main(){uint32_t a,b,c,d,level=0;
+     __cpuid(level, a, b, c, d);
+     	} ])],
+      [CPUID_FLAG="-DMINGWCPUID"],
+    [])
+if test "x${CPUID_FLAG}" != x ; then
+  AC_MSG_RESULT([via cpuid.h])
+else
+  AC_MSG_RESULT([no])
 fi
+fi
+fi
+
 
 
 ######################################################################
@@ -125,24 +164,22 @@ if test "x${MY_CU_FILES}" != x && test "x${CPUID_FLAG}" != "x-DWINCPUID" ; then
 GPU_FLAG=" -DGPU_NEEDS=Igpu"
 if test "x${USE_GPU}" != x ; then
 ## both cuda and graphics card available?
-  AC_MSG_NOTICE([values of 'USE_GPU' is '${USE_GPU}'.])
+  AC_MSG_NOTICE([value of 'USE_GPU' is '${USE_GPU}'.])
   AC_MSG_CHECKING([whether CUDA_HOME is set])
   if test -z "${MY_CUDA_HOME}"; then
-    AC_MSG_RESULT([CUDA_HOME not set; using /usr/local/cuda])
+    AC_MSG_RESULT([no -- using /usr/local/cuda])
     MY_CUDA_HOME="/usr/local/cuda"
   else
     AC_MSG_RESULT(using CUDA_HOME=${MY_CUDA_HOME})
   fi
-  AC_CHECK_FILE([${MY_CUDA_HOME}/bin/nvcc], CUDA_INSTALLED=true,)
-  if test "${CUDA_INSTALLED}" ; then
-    AC_MSG_CHECKING([whether this is the 64 bit version of CUDA (linux and alike)])
+  AC_CHECK_FILE([${MY_CUDA_HOME}/bin/nvcc], CUDA_INSTALLED=yes,
+  CUDA_INSTALLED=no)
+  if test ${CUDA_INSTALLED} == yes ; then
+    AC_MSG_NOTICE([${CUDA_INSTALLED}])
     AC_CHECK_FILE([${MY_CUDA_HOME}/lib64/libcublas.so], , 
-      AC_MSG_ERROR([this package only works with 64 bit installations of CUDA]))
-    AC_SUBST(CUDA_INSTALLED)
+    AC_MSG_ERROR([this package only works with 64 bit installations of CUDA]))
     GPU_FLAG="-DGPU_NEEDS=Inone -DUSEGPU"
     MY_CUDA_LIBS="-L${MY_CUDA_HOME}/lib64 -lcudart -lcublas -lcusolver -lcusolverMg"
-#    MY_CUDA="${MY_CU_FILES}:${MY_CUDA_HOME} -std=c++11 -Xcompiler -fopenmp \$(arch_flags) --expt-extended-lambda \$(CLINK_CPPFLAGS) -I \$(R_INCLUDE_DIR) -I${MY_CUDA_HOME}/include  -Xcompiler -fpic -DUSEGPU  -g -x cu"
-    AC_MSG_NOTICE([$(MY_CUDA)])
   else
     if test "x${USE_GPU}" == xtry ; then
       MY_CU_FILES=""
@@ -164,7 +201,7 @@ fi
 
 
 if test "x${SIMD_FLAGS}" == x ; then
-  AC_MSG_CHECKING([SIMD requirements by CC files]) ##
+  AC_MSG_CHECKING([SIMD options for some CC files]) ##
   if test "x${MY_MAX_AVX}" != x || test "x${MY_MAX_AVX2}" != x || test "x${MY_MAX_AVX512F}" != x ; then
     ANY_MAX_AVX=yes
   fi
@@ -197,7 +234,7 @@ fi
 
 m4_if([$2],[],[pushdef(prog, [int main(){}])], [pushdef(prog, [$2])])
 ## which of SIMD_FLAGS are recognized?
-if test "x${SERVER_BOOL}" == xyes ; then
+if test "x${CROSS_BOOL}" == xyes ; then
   ## sysctl -a | grep "cpu.features:" # for OS X
   AC_CHECK_PROG(LSCPU, [lscpu], yes, no)
   if test "x${LSCPU}" == xyes ; then
@@ -224,7 +261,7 @@ if test "x${SERVER_BOOL}" == xyes ; then
     AC_MSG_RESULT([${SIMD_FLAGS}])
     USE_AVX="yes"
   fi
-elif test "x${SERVER}" != xnosimd && test "x${SERVER}" != xnoflags ; then
+elif test "x${CROSS}" != xnosimd && test "x${CROSS}" != xnoflags ; then
   USE_AVX="yes"
 fi
 
@@ -234,45 +271,49 @@ fi
 # which counterpart "-mno-xxx" exists?
 NOT_EQUAL_OR_HIGHER_FLAG=""
 AC_MSG_CHECKING([which downwards controls might be used])
-if test "x${SERVER}" == xnoflags ; then
+if test "x${CROSS}" == xnoflags ; then
   CXXFLAGS=""
+elif test "x${CROSS}" == xarm32 ; then
+  CXXFLAGS="-mfpu=neon -funsafe-math-optimizations"
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])],[CROSS_FLAG="${CXXFLAGS}"],[CROSS_FLAG=""])
 else
   CXXFLAGS="-mno-sse2"
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])],[NOT_SSE2="${CXXFLAGS}"],[CXXFLAGS=""])
-fi  
+fi
+
 if test "x${USE_AVX}" != xyes ; then
   AC_MSG_RESULT([${NOT_SSE2}.])
 else 
-  if test "x${SERVER}" != xmmx ; then
+  if test "x${CROSS}" != xmmx ; then
     DO_SSE2="-msse2"
     CXXFLAGS="-mno-sse3"
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [NOT_SSE3="${CXXFLAGS}"],[CXXFLAGS=""])
-    if test "x${SERVER}" != xsse2 ; then
+    if test "x${CROSS}" != xsse2 ; then
       DO_SSE3="-msse3"
       CXXFLAGS="-mno-ssse3"
       AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [NOT_SSSE3="${CXXFLAGS}"],[CXXFLAGS=""])
-      if test "x${SERVER}" != xsse3 ; then
+      if test "x${CROSS}" != xsse3 ; then
         DO_SSSE3="-mssse3"
         CXXFLAGS="-mno-sse4.1"
         AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [NOT_SSE41="${CXXFLAGS}"],[CXXFLAGS=""])
-        if test "x${SERVER}" != xssse3 ; then
+        if test "x${CROSS}" != xssse3 ; then
 	  DO_SSE41="-msse4.1"
           CXXFLAGS="-mno-avx"
           AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [NOT_AVX="${CXXFLAGS}"],[CXXFLAGS=""])
- 	  if test "x${SERVER}" != xsse41 ; then
+ 	  if test "x${CROSS}" != xsse41 ; then
  	    DO_AVX="-mavx"
             CXXFLAGS="-mno-avx2"
             AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [NOT_AVX2="${CXXFLAGS}"],[CXXFLAGS=""])
-	    if test "x${SERVER}" != xavx ; then
+	    if test "x${CROSS}" != xavx ; then
  	      DO_AVX2="-mavx2"
               CXXFLAGS="-mno-avx512f" ## name is obligatory
               AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [NOT_AVX512F="${CXXFLAGS}"],[CXXFLAGS=""])
-	      if test "x${SERVER}" != xavx2 ; then
+	      if test "x${CROSS}" != xavx2 ; then
 	        DO_AVX512F="-mavx512f"
-                if test "x${SERVER_BOOL}" == xyes ; then
+                if test "x${CROSS_BOOL}" == xyes || test "x${CROSS}" == xavx512f ; then
                   CXXFLAGS=""
                 else
-                  AC_MSG_ERROR([unrecognized SERVER option '${SERVER}'])
+                  AC_MSG_ERROR([unrecognized CROSS option '${CROSS}'])
                 fi
               fi
 	    fi
@@ -281,7 +322,7 @@ else
       fi
     fi
   fi  
-  if test "x${SERVER_BOOL}" != xyes ; then ## and USE_AVX=yes
+  if test "x${CROSS_BOOL}" != xyes ; then ## and USE_AVX=yes
     NOT_EQUAL_OR_HIGHER_FLAG="${CXXFLAGS}"
   fi
   AC_MSG_RESULT([${NOT_AVX512F} ${NOT_AVX2} ${NOT_AVX} ${NOT_SSE41} ${NOT_SSSE3} ${NOT_SSE3} ${NOT_SSE2}.])
@@ -291,8 +332,8 @@ else
     ## if supported by compiler)
     CXXFLAGS="$SAVE_CXXFLAGS -m$SET" ## name is obligatory
     flag_test=0
-    ## test only necesary if SERVER not in {TRUE, FALSE, nosimd},
-    ## but performed also cases except SERVER=nosimd
+    ## test only necesary if CROSS not in {TRUE, FALSE, nosimd},
+    ## but performed also cases except CROSS=nosimd
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [flag_test=1], [flag_test=0])
     if test $flag_test == 0 ; then
       AC_MSG_ERROR([compilation failure for '$SAVE_CXXFLAGS -m$SET'])
@@ -377,15 +418,15 @@ if test "x${DO_SSE2}" != x && test "x${MAX_FILES}" != x ; then
   MAX_FILES=""
 fi
 
-#AC_MSG_NOTICE([XXXuseavx=${USEAVX} less than ${NOT_EQUAL_OR_HIGHER_FLAG}; server=${SERVER}])
+#AC_MSG_NOTICE([XXXuseavx=${USEAVX} less than ${NOT_EQUAL_OR_HIGHER_FLAG}; server=${CROSS}])
 
 
-## determine the SIMD upper bound in case of SERVER=TRUE
+## determine the SIMD upper bound in case of CROSS=TRUE
 if test "x${USE_AVX}" != xyes ; then
-  if test "x$SERVER" != xFALSE &&  test "x$SERVER" != xnoflags ; then
+  if test "x$CROSS" != xFALSE &&  test "x$CROSS" != xnoflags ; then
     NOT_EQUAL_OR_HIGHER_FLAG="${NOT_SSE2}"    
   fi
-elif test "x$SERVER" == xTRUE ; then
+elif test "x$CROSS" == xTRUE ; then
   if test "x${MY_AVX512F}" != x ; then
     NOT_EQUAL_OR_HIGHER_FLAG=""
   elif test "x${MY_AVX2}" != x ; then
@@ -405,27 +446,32 @@ elif test "x$SERVER" == xTRUE ; then
   fi
 fi
 
-#AC_MSG_NOTICE([useavx=${USEAVX} less than ${NOT_EQUAL_OR_HIGHER_FLAG}; server=${SERVER}])
+#AC_MSG_NOTICE([useavx=${USEAVX} less than ${NOT_EQUAL_OR_HIGHER_FLAG}; server=${CROSS}])
 
-## prepare SERVER flags for Makevars.in
-if test "x$SERVER" == xTRUE ; then
-  SERVER_FLAG="-DREQUIRED_SIMD -DSERVER_CAPACITY=${NOT_EQUAL_OR_HIGHER_FLAG}"
-elif test "x$SERVER" == xFALSE ; then
-  SERVER_FLAG="-DREQUIRED_SIMD=3"
-elif test "x$SERVER" == xNA ; then
-  SERVER_FLAG="-DREQUIRED_SIMD=2"
-elif test "x$SERVER" == xnoflags ; then
-  SERVER_FLAG="-DREQUIRED_SIMD=3"
-elif test "x$SERVER" != xnosimd ; then
-  SERVER_FLAG="-DSERVER_CAPACITY=${SERVER}" 
-elif test "x${NOT_SSE2}" == x ; then # && SERVER = nosimd
-  SERVER_FLAG="-DREQUIRED_SIMD=0"
-else ## SERVER = nosimd, no explicit limitation possible
-  SERVER_FLAG="-DREQUIRED_SIMD=1"
+## prepare CROSS flags for Makevars.in
+
+
+
+if test "x$CROSS" == xTRUE ; then
+  CROSS_FLAG="-DREQUIRED_SIMD -DCROSS_CAPACITY=${NOT_EQUAL_OR_HIGHER_FLAG}"
+elif test "x$CROSS" == xFALSE ; then
+  CROSS_FLAG="-DREQUIRED_SIMD=3"
+elif test "x$CROSS" == xNA ; then
+  CROSS_FLAG="-DREQUIRED_SIMD=2"
+elif test "x$CROSS" == xnoflags ; then
+  CROSS_FLAG=""
+elif test "x$CROSS" == xarm32 ; then
+  CROSS_FLAG="${CROSS_FLAG} -DREQUIRED_SIMD=4" ## higher 3 reservered for ARM
+elif test "x$CROSS" != xnosimd ; then
+  CROSS_FLAG="-DCROSS_CAPACITY=${CROSS}" 
+elif test "x${NOT_SSE2}" == x ; then # && CROSS = nosimd
+  CROSS_FLAG="-DREQUIRED_SIMD=0"
+else ## CROSS = nosimd, no explicit limitation possible
+  CROSS_FLAG="-DREQUIRED_SIMD=1"
 fi
 
 OMP="\$(SHLIB_OPENMP_CXXFLAGS)"
-MY_PKG_FLAGS="${SAVE_CXXFLAGS} ${CPUID_FLAG} ${GPU_FLAG} ${EXOTIC_SIMD_FLAGS} ${NOT_EQUAL_OR_HIGHER_FLAG} ${SERVER_FLAG}"
+MY_PKG_FLAGS="${SAVE_CXXFLAGS} ${CPUID_FLAG} ${GPU_FLAG} ${EXOTIC_SIMD_FLAGS} ${NOT_EQUAL_OR_HIGHER_FLAG} ${CROSS_FLAG} ${MEM_IS_ALIGNED_FLAG} ${USERASKED_FLAG}"
 MY_C_FILES="$MY_C_FILES $MY_SSE2 $MY_SSE3 $MY_SSSE3 $MY_SSE41 $MY_AVX $MY_AVX2 $MY_AVX512F $MAX_FILES"
 MY_LIB_FLAGS="$LIB_FLAGS ${OMP}"
 TMP="PKG_CXXFLAGS = ${MY_PKG_FLAGS} ${OMP} "

@@ -54,22 +54,21 @@ extern "C" {
     **Allprefix[MAXNLIST],
     ***Allall[MAXNLIST];
   extern  char pkgnames[MAXNLIST][PKGNAMELENGTH+1];
-  extern setoptions_fctn setoption_fct_list[MAXNLIST];
-  extern getoptions_fctn getoption_fct_list[MAXNLIST];
+  extern setoptions_fctn setoption_fct_list[MAXNLIST][MAXNLIST];
+  extern getoptions_fctn getoption_fct_list[MAXNLIST][MAXNLIST];
   extern finalsetoptions_fctn finaloption_fct_list[MAXNLIST];
   extern deleteoptions_fctn deloption_fct_list[MAXNLIST];
   extern bool installed [MAXNLIST];
-  extern install_modes min_avx_needs[MAXNLIST],
+  extern install_modes min_simd_needs[MAXNLIST],
     min_gpu_needs[MAXNLIST];
-  extern Uint avx_infos [MAXNLIST];
+  extern Uint simd_infos [MAXNLIST];
   extern bool obsolete_package_in_use;
 
   setparameterfct setparam[MAXNLIST] = {NULL, NULL, NULL, NULL, NULL};
   getparameterfct getparam[MAXNLIST] = {NULL, NULL, NULL, NULL, NULL};
   finalsetparameterfct finalparam[MAXNLIST] = { NULL, NULL, NULL, NULL, NULL };
   deleteparameterfct delparam[MAXNLIST] = { NULL, NULL, NULL, NULL, NULL };
-  
-  
+    
   void attachRFoptions(const char **PKGprefixlist, int N, 
 		       const char ***PKGall, int *PKGallN,
 		     setparameterfct set, finalsetparameterfct final,
@@ -77,9 +76,9 @@ extern "C" {
 		       int pl_offset, bool basicopt) {
     char pkgname[] = "obsolete package";
     obsolete_package_in_use = true;
-    RFU_GLOBAL_OPTIONS->solve.eigen2zero = 1e-10;
-    RFU_GLOBAL_OPTIONS->basic.la_mode = 
-      RFU_GLOBAL_OPTIONS->basic.la_usr = LA_INTERN;
+    OPTIONS.solve.eigen2zero = 1e-10;
+    OPTIONS.installNrun.la_mode = 
+      OPTIONS.installNrun.la_usr = LA_INTERN;
      
     for (int ListNr=0; ListNr<NList; ListNr++) {    
       if (AllprefixN[ListNr] == N && 
@@ -99,9 +98,9 @@ extern "C" {
     Allall[NList] = PKGall;
     AllallN[NList] = PKGallN;
     
-    setoption_fct_list[NList] = NULL;
+    setoption_fct_list[NList][NList] = NULL;
+    getoption_fct_list[NList][NList] = NULL;
     finaloption_fct_list[NList] = NULL;
-    getoption_fct_list[NList] = NULL;
     deloption_fct_list[NList] = NULL;
     
     setparam[NList] = set;
@@ -109,21 +108,42 @@ extern "C" {
     getparam[NList] = get;
     delparam[NList] = del;
     
-    min_avx_needs[NList] = min_gpu_needs[NList] = Inone;
+    min_simd_needs[NList] = min_gpu_needs[NList] = Inone;
      
     NList++;
     PLoffset = pl_offset;
     PL = OPTIONS.basic.Cprintlevel = OPTIONS.basic.Rprintlevel + PLoffset;
     CORES = OPTIONS.basic.cores;
-  }
+   }
   
   void detachRFoptions(const char **PKGprefixlist, int N) { detachRFUoptions(PKGprefixlist,  N); }
 
-void getUtilsParam(utilsoption_type **global) { 
-  *global = RFU_GLOBAL_OPTIONS; // OK!
-}
+  void getUtilsParam(utilsoption_type **global) { 
+    *global = &OPTIONS; // OK!
+  }
 
+  
+  bool is_positive_definite( double * C, int  dim) { return Is_positive_definite( C, dim, 1);}
+  double detPosDef(double * M,  int size) { return DetPosDef( M,  size, 1) ;} 
+  int invertMatrix(double * M, int size) { return  InvertMatrix( M, size, 1);}
+  double detPosDefsp(double * M, int size, solve_options * sp) { return DetPosDefsp( M, size,  sp, 1) ;}
+ int XCinvXdet(double* M, int size, double *X, int X_cols,
+	  double * XCinvX, double * det, bool log, solve_storage *PT) { return xCinvXdet( M, size, X, X_cols,XCinvX,  det, log, PT, 1)  ;}
+ int XCinvYdet(double* M, int size, bool posdef,
+	    double * X, double * Y, int cols,
+	    double * XCinvY, double * det, bool log, solve_storage *PT) { return
+     xCinvYdet( M, size, posdef, X,  Y, cols,XCinvY,  det, log, PT, 1)   ;}
+ int chol(double * MPT, int size) { return cholesky( MPT, size, 1)  ;}
+ int solvePosDef(double* M, int size, bool posdef, 
+	   double * rhs, int rhs_cols, double * logdet, solve_storage * PT) { return  SolvePosDef( M, size, posdef, rhs, rhs_cols,  logdet,  PT, 1);}
+  int solvePosDefSp(double * M, int size, bool posdef,
+	   double * rhs, int rhs_cols, double *logdet,
+	   solve_storage * Pt, solve_options *sp) { return   SolvePosDefSp( M, size, posdef,rhs, rhs_cols, logdet, Pt, sp, 1);}
+  int sqrtPosDefFree(double * M, int size, solve_storage * pt,
+	   solve_options * sp) { return  SqrtPosDefFree( M, size,  pt,sp, 1) ;}
+ 
 
+  
   
 #ifdef __cplusplus
 }

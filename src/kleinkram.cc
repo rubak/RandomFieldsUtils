@@ -20,7 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 
-#define RFU_VERSION 10
+#define RFU_LOCAL 1  
+
+
 #include "Basic_utils.h"
 #include <R_ext/Lapack.h>
 #include <R_ext/Linpack.h>
@@ -30,11 +32,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "xport_import.h"
 
 
+const char // constants cannot be exported; 
+*KKR_TYPE_NAMES[LAST_R_TYPE_NAME + 1] = { // never change ! see AutoRFU.cc
+  "NILSXP" /* 0 */,
+  "SYMSXP", "LISTSXP", "CLOSXP", "ENVSXP", "PROMSXP",
+  "LANGSXP", "SPECIALSXP", "BUILTINSXP", "CHARSXP", "LGLSXP" /* 10 */,
+  "??", "??", "INTSXP", "REALSXP", "CPLXSXP",
+  "STRSXP", "DOTSXP", "ANYSXP", "ECSXP", "EXPRSXP" /*20 */,
+  "BCODESXP", "EXTPTRSXP", "WEAKREFSXP", "RAWSXP", "S4SXP" /* 25 */,
+  "", "", "", "", "NEWSXP" /* 30 */,
+  "FREESXP", "??SXP"};
 
-#define USE_OWN_ALGXX(SCALAR_LEN, PARALLEL)				\
-  (PARALLEL < 8 || OPTIONS.basic.LaMaxTakeIntern >= SCALAR_LEN) // OK
+
+
 #define USE_OWN_ALG(SCALAR_LEN, PARALLEL) true
-
 #define USE_OWN_SCALAR_PROD true
 
 #define SCALAR(A,B,C) scalarX(A,B,C, SCALAR_AVX)
@@ -47,11 +58,11 @@ void strcopyN(char *dest, const char *src, int n) {
   dest[n] = '\0';
 }
 
-void AtA(double *a, Long nrow, Long ncol, double *C) {
+void AtA(double *a, Long nrow, Long ncol, double *C, int VARIABLE_IS_NOT_USED cores) {
   // C =  A^T %*% A
   if (USE_OWN_ALG(nrow, ncol) || nrow * ncol > MAXINT) {   
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) if (MULTIMINSIZE(ncol)) schedule(dynamic, 20)
+#pragma omp parallel for num_threads(cores) schedule(dynamic, 20) if (MULTIMINSIZE(ncol)) 
 #endif  
     for (Long i=0; i<ncol; i++) {
       double 
@@ -90,13 +101,13 @@ void xA_noomp(double *x, double*A, Long nrow, Long ncol, double *y) {
 }
 
 
-void xA(double *x, double*A, Long nrow, Long ncol, double *y) {
+void xA(double *x, double*A, Long nrow, Long ncol, double *y, int VARIABLE_IS_NOT_USED cores) {
   if (A == NULL) {
     if (nrow != ncol || nrow <= 0) BUG;
     MEMCOPY(y, x, sizeof(double) * nrow);
   } else {
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) if (MULTIMINSIZE(ncol) && MULTIMINSIZE(nrow))
+#pragma omp parallel for num_threads(cores) schedule(static) if (MULTIMINSIZE(ncol) && MULTIMINSIZE(nrow))
 #endif  
    for (Long i=0; i<ncol; i++) y[i] = SCALAR(x, A + i * nrow, nrow);
   } 
@@ -119,18 +130,19 @@ void xA(double *x1, double *x2,  double*A, Long nrow, Long ncol, double *y1,
 }  
   
 
-double xAx(double *x, double*A, Long nrow) {
+double xAx(double *x, double*A, Long nrow, int VARIABLE_IS_NOT_USED cores) {
   if (USE_OWN_SCALAR_PROD || nrow * nrow > MAXINT) {
     double sum = 0.0;
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) reduction(+:sum) if (MULTIMINSIZE(nrow) && MULTIMINSIZE(nrow))
+#pragma omp parallel for num_threads(cores) reduction(+:sum) schedule(static) if (MULTIMINSIZE(nrow) && MULTIMINSIZE(nrow))
 #endif  
-    for (Long i=0; i<nrow; i++) sum += x[i] * SCALAR(x, A + i * nrow, nrow);
+    for (Long i=0; i<nrow; i++)
+      sum += x[i] * SCALAR(x, A + i * nrow, nrow);
     return sum;
   } else {
    double alpha = 1.0,
-      beta = 0.0;
-    int incx = 1L;
+     beta = 0.0;
+    int incx = 1;
     double *y = (double*)  MALLOC(nrow * sizeof(double));
     // z = x^\top A
     int nrow0 = nrow;
@@ -142,13 +154,13 @@ double xAx(double *x, double*A, Long nrow) {
   }
 }
 
-void Ax(double *A, double*x, Long nrow, Long ncol, double *y) {
+void Ax(double *A, double*x, Long nrow, Long ncol, double *y, int VARIABLE_IS_NOT_USED cores) {
   if (A == NULL) {
     if (nrow != ncol || nrow <= 0) BUG;
     MEMCOPY(y, x, sizeof(double) * nrow);
   } else {
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) if (MULTIMINSIZE(ncol) && MULTIMINSIZE(nrow))
+#pragma omp parallel for num_threads(cores) schedule(static) if (MULTIMINSIZE(ncol) && MULTIMINSIZE(nrow))
     for (Long j=0; j<nrow; j++) {
       double dummy = 0.0;
       Long k = j;
@@ -187,7 +199,8 @@ void Ax(double *A, double*x1, double*x2, Long nrow, Long ncol, double *y1,
 }
 
 
-double XkCXtl(double *X, double *C, Long nrow, Long dim, Long k, Long l) {
+double XkCXtl(double *X, double *C, Long nrow, Long dim, Long k, Long l,
+	      int VARIABLE_IS_NOT_USED cores) {
   // (k-th row of X) * C * (l-th row of X)
   // X is nrow x dim matrix
   // C is dim x dim matrix
@@ -198,7 +211,7 @@ double XkCXtl(double *X, double *C, Long nrow, Long dim, Long k, Long l) {
   Long size = nrow * dim;
   
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) reduction(+:result)
+#pragma omp parallel for num_threads(cores) schedule(static) reduction(+:result)
 #endif
   for (Long j=0; j<size; j+=nrow) {
     double scalar = 0.0;
@@ -210,7 +223,7 @@ double XkCXtl(double *X, double *C, Long nrow, Long dim, Long k, Long l) {
 }
 
 
-void XCXt(double *X, double *C, double *V, Long nrow, Long dim /* dim of C */) {
+void XCXt(double *X, double *C, double *V, Long nrow, Long dim /* dim of C */, int VARIABLE_IS_NOT_USED cores) {
   Long size = nrow * dim;
   double  
     *endpX = X + nrow,
@@ -218,7 +231,7 @@ void XCXt(double *X, double *C, double *V, Long nrow, Long dim /* dim of C */) {
   if (dummy == NULL) RFERROR("XCXt: memory allocation error in XCXt");
  
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores)  schedule(static)
 #endif
   for (double *pX = X; pX < endpX; pX++) {
     double *pdummy = dummy + (pX - X);
@@ -233,7 +246,7 @@ void XCXt(double *X, double *C, double *V, Long nrow, Long dim /* dim of C */) {
 
   // V = dummy X^t
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores)  schedule(dynamic, 20)
 #endif
   for (Long rv=0; rv<nrow; rv++) {
     for (Long cv=rv; cv<nrow; cv++) {
@@ -249,12 +262,12 @@ void XCXt(double *X, double *C, double *V, Long nrow, Long dim /* dim of C */) {
 }
 
 
-double xUy(double *x, double *U, double *y, Long dim) {
+double xUy(double *x, double *U, double *y, Long dim, int VARIABLE_IS_NOT_USED cores) {
   // U a symmetric matrix given by its upper triangular part
   double xVy = 0.0;
   Long    dimM1 = dim - 1;
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) if (MULTIMINSIZE(dim)) reduction(+:xVy) 
+#pragma omp parallel for num_threads(cores) schedule(static) if (MULTIMINSIZE(dim)) reduction(+:xVy) 
 #endif  
   for (Long d=0; d<dim; d++) {
     Long i, 
@@ -273,7 +286,7 @@ double xUy(double *x, double *U, double *y, Long dim) {
   assert(z != NULL);
   Long   dimM1 = dim - 1;
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) if (MULTIMINSIZE(dim))
+#pragma omp parallel for num_threads(cores) schedule(static) if (MULTIMINSIZE(dim))
 #endif  
   for (Long d=0; d<dim; d++) {
     double dummy;
@@ -289,11 +302,11 @@ double xUy(double *x, double *U, double *y, Long dim) {
 
  */
 
-double xUxz(double *x, double *U, Long dim, double *z) {
+double xUxz(double *x, double *U, Long dim, double *z, int VARIABLE_IS_NOT_USED cores) {
  double xVx = 0.0;
   Long dimM1 = dim - 1;
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) reduction(+:xVx)
+#pragma omp parallel for num_threads(cores) schedule(static) reduction(+:xVx)
 #endif
   for (Long d=0; d<dim; d++) {
     Long i, 
@@ -307,16 +320,16 @@ double xUxz(double *x, double *U, Long dim, double *z) {
   return xVx;
 }
 
-double xUx(double *x, double *U, Long dim) {
-    return xUxz(x, U, dim, NULL);
+double xUx(double *x, double *U, Long dim, int VARIABLE_IS_NOT_USED cores) {
+  return xUxz(x, U, dim, NULL, cores);
 }
 
-double x_UxPz(double *x, double *U, double *z, Long dim) {
+double x_UxPz(double *x, double *U, double *z, Long dim, int VARIABLE_IS_NOT_USED cores) {
 // x^t (Ux + z); U dreieckmatrix
   double xVx = 0.0;
   Long    dimM1 = dim - 1;
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) reduction(+:xVx)
+#pragma omp parallel for num_threads(cores) schedule(static) reduction(+:xVx)
 #endif
   for (Long d=0; d<dim; d++) {
     Long i,
@@ -331,10 +344,11 @@ double x_UxPz(double *x, double *U, double *z, Long dim) {
 
 
 
-void matmult(double *a, double *b, double *c, Long l, Long m, Long n) {
+void matmult(double *a, double *b, double *c, Long l, Long m, Long n,
+	     int VARIABLE_IS_NOT_USED cores) {
 // multiplying an lxm- and an mxn-matrix, saving result in C
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores) schedule(static)
 #endif
    for (Long i=0; i<l; i++) {
      double *A = a + i,
@@ -349,17 +363,19 @@ void matmult(double *a, double *b, double *c, Long l, Long m, Long n) {
 }
 
 
-double *matrixmult(double *m1, double *m2, Long dim1, Long dim2, Long dim3) {
+double *matrixmult(double *m1, double *m2, Long dim1, Long dim2, Long dim3,
+		   int VARIABLE_IS_NOT_USED cores) {
   double *m0 = (double*) MALLOC(sizeof(double) * dim1 * dim3);
-  matmult(m1, m2, m0, dim1, dim2, dim3);
+  matmult(m1, m2, m0, dim1, dim2, dim3, cores);
   return m0;
 }
 
 
-void Xmatmult(double *A, double *B, double *C, Long l, Long m, Long n) {
+void Xmatmult(double *A, double *B, double *C, Long l, Long m, Long n,
+	      int VARIABLE_IS_NOT_USED cores) {
 // multiplying an lxm- and an mxn-matrix, saving result in C
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores) schedule(static)
 #endif
   for (Long i=0; i<l; i++) {
     for (Long jl=i, jm=0, j=0; j<n; j++, jl+=l, jm+=m) {
@@ -371,11 +387,12 @@ void Xmatmult(double *A, double *B, double *C, Long l, Long m, Long n) {
   }
 }
 
-void matmulttransposed(double *A, double *B, double *c, Long m, Long l, Long n) {
+void matmulttransposed(double *A, double *B, double *c, Long m, Long l, Long n,
+		       int VARIABLE_IS_NOT_USED cores) {
 // multiplying t(A) and B with dim(A)=(m,l) and dim(B)=(m,n),
 // saving result in C
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores) schedule(static)
 #endif
   for (Long i=0; i<l; i++) {    
     double *C = c + i,
@@ -390,7 +407,7 @@ void matmulttransposedInt(int *A, int *B, int *c, Long m, Long l, Long n) {
 // multiplying t(A) and B with dim(A)=(m,l) and dim(B)=(m,n),
 // saving result in C
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores) schedule(static)
 #endif
   for (Long i=0; i<l; i++) {    
     int *C = c + i,
@@ -403,11 +420,12 @@ void matmulttransposedInt(int *A, int *B, int *c, Long m, Long l, Long n) {
 
 
 
-void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m, Long n) {
+void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m, Long n,
+		       int VARIABLE_IS_NOT_USED cores) {
 // multiplying A and t(B) with dim(A)=(l, m) and dim(B)=(n, m),
 // saving result in C
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) if (l * m * n > 1000)
+#pragma omp parallel for num_threads(cores) schedule(static) if (l * m * n > 1000)
 #endif
   for (Long i=0; i<l; i++) {
     double *C = c + i,
@@ -422,12 +440,13 @@ void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m, Long n) 
 }
 
 
-void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m) {
+void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m,
+		       int VARIABLE_IS_NOT_USED cores) {
 // multiplying A and t(B) with dim(A)=(l, m) and dim(B)=(l, m),
 // saving result in C
   Long lm = l  * m;
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) if (l * m * l > 1000)
+#pragma omp parallel for num_threads(cores) schedule(static) if (l * m * l > 1000)
 #endif
   for (Long i=0; i<l; i++) {
     double *C = c + i,
@@ -443,11 +462,12 @@ void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m) {
 
 
 
-void Xmatmulttransposed(double *A, double *B, double *C, Long m, Long l, Long n) {
+void Xmatmulttransposed(double *A, double *B, double *C, Long m, Long l, Long n,
+			int VARIABLE_IS_NOT_USED cores) {
 // multiplying t(A) and B with dim(A)=(m,l) and dim(B)=(m,n),
 // saving result in C
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores) schedule(static)
 #endif
   for (Long i=0; i<l; i++) {
     Long im = i * m;
@@ -462,11 +482,12 @@ void Xmatmulttransposed(double *A, double *B, double *C, Long m, Long l, Long n)
 
 
 
-void matmult_tt(double *a, double *B, double *c, Long m, Long l, Long n) {
+void matmult_tt(double *a, double *B, double *c, Long m, Long l, Long n,
+		int VARIABLE_IS_NOT_USED cores) {
 // calculating t(A B) with dim(A)=(m,l) and dim(B)=(m,n),
 // saving result in C
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(RFU_GLOBAL_OPTIONS->basic.cores) 
+#pragma omp parallel for num_threads(cores) schedule(static)
 #endif
   for (Long i=0; i<l; i++) {
     double *A = a + i,
@@ -723,12 +744,17 @@ SEXP String(int *V, const char * List[], Long n, Long endvalue) {
   if (V==NULL || n <= 0) return allocVector(STRSXP, 0);
   Long k;
   for (k=0; k<n; k++) {
+    //    printf("k=%d %d: %d %d\n", k,n, V[k], NoInversionMethod);
+    assert(V[k] <= endvalue);
     if (V[k] == endvalue) break;
   }
   PROTECT(str = allocVector(STRSXP, k)); 
   for (Long i=0; i<k; i++) {
+    //printf("i=%d %d %d\n", i,k, V[i]);
+    //    printf("i=%d %d %s\n", i,k, List[V[i]]);
     SET_STRING_ELT(str, i, mkChar(List[V[i]]));
   }
+  //  printf("ense\n");
   UNPROTECT(1);
   return str;
 }
@@ -749,7 +775,10 @@ double Real(SEXP p, char *name, Long idx) {
   }
 
   RFERROR2("'%.50s' can not be transformed to double! (got'%.50s')\n",
-	   name, R_TYPE_NAMES[TYPEOF(p)]);  
+	   name,
+	   TYPEOF(p) <= LAST_R_TYPE_NAME ? KKR_TYPE_NAMES[TYPEOF(p)] :
+	   "something else"
+	   );  
   return RF_NA;  // to avoid warning from compiler
 }
 
@@ -793,10 +822,13 @@ int Integer(SEXP p, char *name, Long idx, bool nulltoNA) {
     default : {}
     }
   } else if (nulltoNA) return NA_INTEGER;
-  
+
   RFERROR2("%.50s: incorrect type. Got '%.50s'.",
-	   name, R_TYPE_NAMES[TYPEOF(p)]);
-  return NA_INTEGER; // compiler warning vermeiden
+	   name,
+	   TYPEOF(p) <= LAST_R_TYPE_NAME ? KKR_TYPE_NAMES[TYPEOF(p)]
+	   : "something else");
+
+ return NA_INTEGER; // compiler warning vermeiden
 }
 
 int Integer(SEXP p, char *name, Long idx) {
@@ -940,8 +972,8 @@ int PositiveInteger(SEXP el, char *name) {
   int num = INT;
   if (num<=0) {
     WARN2("'%.50s', which has been %.50s, is set 1.\n",
-	  name, num==0L ? "0" : "negative");
-    num=1L;
+	  name, num ? "negative" : "0");
+    num=1;
   }
    return num;
 }
@@ -1046,17 +1078,16 @@ int Match(char *name, const char * List[], int n) {
 void GetName(SEXP el, char *name, const char * List[], int n,
 	     int defaultvalue, int endvalue, int *ans, int maxlen_ans) {
   char dummy[1000];
-  int 
-    k = 0,
+  int
+    k = 0, // globale variable !
     len_el = length(el);
 
-  if (TYPEOF(el) == NILSXP) goto ErrorHandling;
   if (len_el > maxlen_ans) 
     RFERROR2("option '%.50s' is too lengthy. Maximum length is %d.",
 	     name, maxlen_ans);
-
+  
   if (TYPEOF(el) == STRSXP) {    
-    for (k=0; k<len_el; k++) {
+    for ( ; k<len_el; k++) {
       ans[k] = Match((char*) CHAR(STRING_ELT(el, k)), List, n);
       if (ans[k] < 0) {
 	if (STRCMP((char*) CHAR(STRING_ELT(el, k)), " ") == 0 ||
@@ -1066,13 +1097,24 @@ void GetName(SEXP el, char *name, const char * List[], int n,
 	goto ErrorHandling0;
       }
     }
-    for (; k<maxlen_ans; k++) ans[k] = endvalue;
-    return;
+  } else {
+    Integer(el, name, ans, maxlen_ans);
+    for (k=0; k<len_el; k++)
+      if (ans[k] < 0 || ans[k] >= n) goto ErrorHandling0;
   }
+ 
+  for (k=len_el; k<maxlen_ans; k++) ans[k] = endvalue;
+  return;
 
 ErrorHandling0:
-  SPRINTF(dummy, "'%.50s': unknown value '%.50s'. Possible values are:", 
-	  name, CHAR(STRING_ELT(el, k)));
+  if (TYPEOF(el) == STRSXP)
+    SPRINTF(dummy, "'%.50s': unknown value '%.50s'. Possible values are:", 
+	    name, CHAR(STRING_ELT(el, k)));
+  else 
+     SPRINTF(dummy,
+	     "'%.50s':  value '%d' not in {0,...%d}. Other possible values are:", 
+	     name, ans[k], n-1);
+  
   //  printf("'%s': ", CHAR(STRING_ELT(el, k)));
   int i;
   for (i=0; i<n-1; i++) {

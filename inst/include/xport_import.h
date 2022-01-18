@@ -28,7 +28,6 @@ typedef
 struct option_type option_type;
 utilsoption_type *WhichOptionList(bool local);
 
-extern utilsoption_type *RFU_GLOBAL_OPTIONS;
 extern const char *R_TYPE_NAMES[LAST_R_TYPE_NAME + 1];
 
 #endif

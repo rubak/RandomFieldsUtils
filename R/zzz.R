@@ -35,8 +35,11 @@
                   0.25 * parallel::detectCores(logical=TRUE))
   if (!is.na(n)) .C("setCPUs", n) # or 1 if not fully installed
   n <- .C("recompilationNeeded", n)
-  if (n[[1]]) packageStartupMessage("Consider immediate use of one of \n\tRFoptions(install.control=list(force=FALSE)) # beginners\n\tRFoptions(install.control=list(repos=NULL)) # advanced user\n\tRFoptions(install.control=NULL) # advanced user, alternative\n")
-}
+  if (n[[1]] > 0) packageStartupMessage(paste("Consider the use of one of \n\tRFoptions(install.control=list(force=FALSE))\n\tRFoptions(install.control=list(repos=NULL))\n\tRFoptions(install.control=NULL)\nIf you use it, the package might run faster the next time it is loaded.\nRecompilation is your own risk. There is currently no guarantee that it will work.\nIn case of problems:", CONTACT))
+  else if (n[[1]] < 0)
+    packageStartupMessage(paste(if (n[[1]] == -1) "R" else "Auto-r",
+                                "ecompilation didn't (fully) succeed, see 'RFoptions(install.control=list(pkgs=NULL))'.\n"))
+ }
 
 .onDetach <- function(lib) {
 ## do not use the following commmands in .onDetach!

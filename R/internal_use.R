@@ -180,11 +180,11 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
                                                       echo=.echo, local=.local)))
        w <- warnings()
       .allwarnings <- c(.allwarnings, list(c("Help page ", .idx)), w)
-      if (length(w) > 0) print(w) ## ok
+      if (length(w) > 0) print(w) ## OK
       if (is(.res, CLASS_TRYERROR) || is(.res, .tryerror) ||
           is(.res, "SimpleError") || is(.res, "error")) {
         cat("ERROR:\n")
-        str(.res, give.head=FALSE) #  OK
+        str(.res, give.head=FALSE) # OK
 	if (.halt) {
 	  stop("\n\n\t***** ",.fct.list[.idx], " (", .idx,
 	       " out of ", max(.include), "). has failed. *****\n\n")
@@ -196,15 +196,15 @@ checkExamples <- function(exclude=NULL, include=1:length(.fct.list),
       }
        if (exists("RMexp")) RFoptions(storing = FALSE)
       cat("****** '", .fct.list[.idx], "' (", .idx, ") done. ******\n")
-      print(.time) #
+      print(.time) # OK
       if (.tryok && !is.na(RFoptions()$basic$seed)) {
-	Print(.not_working, paste(.not_working_no, collapse=", "), #
+	Print(.not_working, paste(.not_working_no, collapse=", "), # OK
 	      RFoptions()$basic$seed)
 	stop("seed not NA: ", .fct.list[.idx])
       }
     }
   }
-  Print(.not_working, paste(.not_working_no, collapse=", ")) #
+  Print(.not_working, paste(.not_working_no, collapse=", ")) # OK
   .ret <- list(.not_working, .not_working_no)
   names(.ret) <- c(.package, "")
   return(.ret)
@@ -217,7 +217,7 @@ reverse_dependencies_with_maintainers <-
     ## function taken from CRAN developer website. 
     repos <- getOption("repos")["CRAN"]
     ## if (substr(repos, 1, 1) == "@") repos <- "http://cran.r-project.org"
-    Print(repos) #
+    Print(repos) # OK
     contrib.url(repos, "source") # trigger chooseCRANmirror() if required
     description <- sprintf("%s/web/packages/packages.rds", repos)
     con <- if(substring(description, 1L, 7L) == "file://")
@@ -262,7 +262,7 @@ ShowInstallErrors <-
 Dependencies <- function(pkgs = all.pkgs, dir = "Dependencies",
                          install = FALSE, check=TRUE, reverse=FALSE,
   			 package="RandomFields") {
-  Print(utils::packageDescription(package)) #
+  Print(utils::packageDescription(package)) # OK
   all <- reverse_dependencies_with_maintainers(package #, which="Suggests")
                                                , which="all")
   all.pkgs <- all[, 1]
@@ -295,7 +295,7 @@ Dependencies <- function(pkgs = all.pkgs, dir = "Dependencies",
 	i <- pmatch(pkgs[j], PKGS)
 	if (is.na(i)) next
 	command <- paste("(cd ", dir, "; time R CMD check --as-cran", PKGS[i],")")
-	Print(command) #
+	Print(command) # OK
 	x <- system(command)
 	ShowInstallErrors(dir, pkgs)
 	if (x != 0) stop(PKGS[i], "failed")

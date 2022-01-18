@@ -38,7 +38,7 @@ extern "C" {
   SEXP WMr(SEXP X, SEXP Nu, SEXP Derivative, SEXP Factor);
   SEXP logWMr(SEXP X, SEXP Nu1, SEXP Nu2, SEXP Factor);
 
-  SEXP SolvePosDef(SEXP M, SEXP rhs, SEXP logdet);
+  SEXP SolvePosDefR(SEXP M, SEXP rhs, SEXP logdet);
   SEXP Chol(SEXP M);
   
   SEXP RFoptions(SEXP options);
@@ -49,7 +49,6 @@ extern "C" {
   SEXP sortX(SEXP Data, SEXP From, SEXP To, SEXP NAlast);
   SEXP orderX(SEXP Data, SEXP From, SEXP To, SEXP NAlast);
 
-  SEXP getChar();
   SEXP colMaxs(SEXP M);
   SEXP rowMeansX(SEXP M, SEXP Factor);
   SEXP rowProd(SEXP M);
@@ -64,10 +63,15 @@ extern "C" {
 
   SEXP DebugCall();
   SEXP getPackagesToBeInstalled(SEXP Force);
+  SEXP isGPUavailable();
+  SEXP isNEONavailable();
+  SEXP isX86_64();
   void setCPUs(int *n);
   void recompilationNeeded(int *n);
-  SEXP AVXmessages(SEXP pkgs);
+  SEXP SIMDmessages(SEXP pkgs);
   SEXP debuggingLevel();
+  SEXP gpu_info(SEXP DEVICES);
+  SEXP instruction_set(SEXP which,  SEXP pkgs, SEXP used);
 
 #ifdef __cplusplus
 }

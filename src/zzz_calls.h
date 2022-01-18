@@ -38,214 +38,184 @@ see RandomFields, for instance
 */
 
 #ifdef ERROR_RFU_CALLS		     
-#define RFU_ERRCALL0(V, N)				\
-  static V N##_err(){char msg[300]; SPRINTF(msg, "calling %.50s", #N); RFERROR(msg); }	
-#define RFU_ERRCALL(V, N, ...)					\
-  static V N##_err(__VA_ARGS__) { char msg[300]; SPRINTF(msg, "calling %.50s", #N); RFERROR(msg);} 
+#define RFU_ERRCALL0(TYPE, FCTN)				\
+  static TYPE FCTN##_err(){char msg[300]; SPRINTF(msg, "calling %.50s", #N); RFERROR(msg); }	
+#define RFU_ERRCALL(TYPE, FCTN, ...)					\
+  static TYPE FCTN##_err(__VA_ARGS__) { char msg[300]; SPRINTF(msg, "calling %.50s", #N); RFERROR(msg);} 
 #else
-#define RFU_ERRCALL0(V, N)
-#define RFU_ERRCALL(V, N, ...)
+#define RFU_ERRCALL0(TYPE, FCTN)
+#define RFU_ERRCALL(TYPE, FCTN, ...)
 #endif
 
-#define CALL0(V, N)							\
-  attribute_hidden V RU_##N() {						\
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(); }
-#define DECLARE0(V, N)							\
-  typedef V (*N##_type)();						\
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N();						\
-  V N();								\
-  RFU_ERRCALL0(V, N)
+#define DECLARE0(TYPE, FCTN)			\
+  typedef TYPE (*FCTN##_type)();		\
+  attribute_hidden TYPE RU_##FCTN();		\
+  TYPE FCTN();					\
+  RFU_ERRCALL0(TYPE, FCTN)
 
-#define CALL1(V, N, AV, AN)						\
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN) {					\
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN); }						
-#define DECLARE1(V, N, AV, AN)						\
-  typedef V (*N##_type)(AV AN);						\
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN);					\
-  V N(AV AN);								\
-  RFU_ERRCALL(V, N, AV AN)
+#define DECLARE1(TYPE, FCTN, A)			\
+  typedef TYPE (*FCTN##_type)(A);		\
+  attribute_hidden TYPE RU_##FCTN(A);		\
+  TYPE FCTN(A);					\
+  RFU_ERRCALL(TYPE, FCTN, A)
 
-
-#define CALL2(V, N, AV, AN, BV, BN)					\
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN) {			\
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN); }					       
-#define DECLARE2(V, N, AV, AN, BV, BN)		\
-  typedef V (*N##_type)(AV AN, BV BN);	\
-  /* extern N##_type Ext_##N; */		\
-  attribute_hidden V RU_##N(AV AN, BV BN);	\
-  V N(AV AN, BV BN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN)
+#define DECLARE2(TYPE, FCTN, A, B)		\
+  typedef TYPE (*FCTN##_type)(A, B);		\
+  attribute_hidden TYPE RU_##FCTN(A, B);	\
+  TYPE FCTN(A, B);				\
+  RFU_ERRCALL(TYPE, FCTN, A, B)
   
-#define CALL3(V, N, AV, AN, BV, BN, CV, CN)				\
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN) {		\
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN); }						
-#define DECLARE3(V, N, AV, AN, BV, BN, CV, CN)				\
-  typedef V (*N##_type)(AV AN, BV BN, CV CN);				\
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN);			\
-  V N(AV AN, BV BN, CV CN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN)
+#define DECLARE3(TYPE, FCTN, A, B, C)		\
+  typedef TYPE (*FCTN##_type)(A, B, C);		\
+  attribute_hidden TYPE RU_##FCTN(A, B, C);	\
+  TYPE FCTN(A, B, C);\
+  RFU_ERRCALL(TYPE, FCTN, A, B, C)
   
-#define CALL4(V, N, AV, AN, BV, BN, CV, CN, DV, DN)			\
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN) {	\
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN); }					
-#define DECLARE4(V, N, AV, AN, BV, BN, CV, CN, DV, DN)			\
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN);			\
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN);		\
-  V N(AV AN, BV BN, CV CN, DV DN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN)
+#define DECLARE4(TYPE, FCTN, A, B, C, D)	\
+  typedef TYPE (*FCTN##_type)(A, B, C, D);	\
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D);	\
+  TYPE FCTN(A, B, C, D);			\
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D)
   
-#define CALL5(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN)		\
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN) {	\
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN); }					
-#define DECLARE5(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN)		\
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN);		\
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN);		\
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN)
+#define DECLARE5(TYPE, FCTN, A, B, C, D, E)		\
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E);		\
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E);	\
+  TYPE FCTN(A, B, C, D, E);				\
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E)
   
-#define CALL6(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN)	\
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN) { \
-    static N##_type fun = NULL;						\
-      if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-      return fun(AN, BN, CN, DN, EN, FN); }				
-#define DECLARE6(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN)	\
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN);	\
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN);	\
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN)
+#define DECLARE6(TYPE, FCTN, A, B, C, D, E, F)		\
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F);	\
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F);	\
+  TYPE FCTN(A, B, C, D, E, F);				\
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F)
   
-#define CALL7(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN) { \
-    static N##_type fun = NULL;						\
-      if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-      return fun(AN, BN, CN, DN, EN, FN, GN); }			       
-#define DECLARE7(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN)
+#define DECLARE7(TYPE, FCTN, A, B, C, D, E, F, G)	\
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F, G);	\
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F, G); \
+  TYPE FCTN(A, B, C, D, E, F, G);			\
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F, G)
   
-#define CALL8(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN) { \
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN, FN, GN, HN); }		      
-#define DECLARE8(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN)
+#define DECLARE8(TYPE, FCTN, A, B, C, D, E, F, G, H)	   \
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F, G, H);	   \
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F, G, H); \
+  TYPE FCTN(A, B, C, D, E, F, G, H);			   \
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F, G, H)
 
-#define CALL9(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN) { \
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN); }		      
-#define DECLARE9(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN)
+#define DECLARE9(TYPE, FCTN, A, B, C, D, E, F, G, H, I)	      \
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F, G, H, I);     \
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F, G, H, I); \
+  TYPE FCTN(A, B, C, D, E, F, G, H, I);			      \
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F, G, H, I)
 
+#define DECLARE10(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J)	 \
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F, G, H, I, J);	 \
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F, G, H, I, J); \
+  TYPE FCTN(A, B, C, D, E, F, G, H, I, J);			 \
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J)
 
-#define CALL10(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN) { \
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN); }		      
-#define DECLARE10(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN)
+#define DECLARE11(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J, K)	    \
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F, G, H, I, J, K);	    \
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F, G, H, I, J, K); \
+  TYPE FCTN(A, B, C, D, E, F, G, H, I, J, K);			    \
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J, K)
 
+#define DECLARE12(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J, K, L)      \
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F, G, H, I, J, K, L);     \
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F, G, H, I, J, K, L); \
+  TYPE FCTN(A, B, C, D, E, F, G, H, I, J, K, L);		       \
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J, K, L)
 
-#define CALL11(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN) { \
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN); }		      
-#define DECLARE11(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN)
+#define DECLARE13(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J, K, L, M)	\
+  typedef TYPE (*FCTN##_type)(A, B, C, D, E, F, G, H, I, J, K, L, M);	\
+  attribute_hidden TYPE RU_##FCTN(A, B, C, D, E, F, G, H, I, J, K, L, M); \
+  TYPE FCTN(A, B, C, D, E, F, G, H, I, J, K, L, M);			\
+  RFU_ERRCALL(TYPE, FCTN, A, B, C, D, E, F, G, H, I, J, K, L, M)
+
+#define DECLARE14(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N);			\
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N)
 
 
-#define CALL12(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN) { \
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN, LN); }		      
-#define DECLARE12(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN)
+#define DECLARE15(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O); \
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O)
 
-#define CALL13(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN) { \
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN, LN, MN); }	
-#define DECLARE13(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN);\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN)
+  
+#define DECLARE16(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P);		\
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P)
 
 
+#define DECLARE17(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q); \
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q)
 
-#define CALL14(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN, NV, NN) \
-  /* N##_type Ext_##N = NULL; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN) { \
-  static N##_type fun = NULL;						\
-  if (fun == NULL) fun = (N##_type) R_GetCCallable(MY_PACKAGE, #N);	\
-  return fun(AN, BN, CN, DN, EN, FN, GN, HN, IN, JN, KN, LN, MN, NN); }	
-#define DECLARE14(V, N, AV, AN, BV, BN, CV, CN, DV, DN, EV, EN, FV, FN, GV, GN, HV, HN, IV, IN, JV, JN, KV, KN, LV, LN, MV, MN, NV, NN) \
-  typedef V (*N##_type)(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN); \
-  /* extern N##_type Ext_##N; */					\
-  attribute_hidden V RU_##N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN); \
-  V N(AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN);	\
-  RFU_ERRCALL(V, N, AV AN, BV BN, CV CN, DV DN, EV EN, FV FN, GV GN, HV HN, IV IN, JV JN, KV KN, LV LN, MV MN, NV NN)
+
+#define DECLARE18(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R);	\
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R)
+
+
+#define DECLARE19(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R, S) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R, S); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R, S); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R, S); \
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N, O, P, Q, R, S)
+
+
+#define DECLARE20(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T); \
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T)
+
+
+#define DECLARE21(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U) \
+  typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U); \
+  attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U); \
+  TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U);			\
+  RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U)
+
+
+#define DECLARE22(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V) \
+	typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V); \
+	attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V); \
+	TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V); \
+	RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V)
+
+#define DECLARE23(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W) \
+	typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W); \
+	attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W); \
+	TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W); \
+	RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W)
+
+#define DECLARE24(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X) \
+	typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X); \
+	attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X); \
+	TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X); \
+	RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X)
+
+#define DECLARE25(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y) \
+	typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y); \
+	attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y); \
+	TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y); \
+	RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y)
+
+#define DECLARE26(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y, Z) \
+	typedef TYPE (*FCTN##_type)(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y, Z); \
+	attribute_hidden TYPE RU_##FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y, Z); \
+	TYPE FCTN(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y, Z); \
+	RFU_ERRCALL(TYPE, FCTN, A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V, W, X, Y, Z)
 
 
 

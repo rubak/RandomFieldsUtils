@@ -23,10 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef parallel_omp__H
 #define parallel_omp__H 1
 
-// #define NEVER_OMP 1c
+// #define NEVER_OMP 1
+#define NEVER_AVX512 1
 // #define NEVER_AVX 1
 // #define NEVER_SSE 1
-
 
 #include "parallel_base.h"
 

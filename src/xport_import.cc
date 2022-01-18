@@ -27,9 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "zzz_RandomFieldsUtils.h"
 #include "RandomFieldsUtils.h"
 #include "extern.h"
-//#include "zzz_RandomFieldsUtils.h" // always last
-
-AVAILABLE_SIMD
 
 
 KEY_type *PIDKEY[PIDMODULUS];
@@ -80,8 +77,10 @@ KEY_type *KEYT() {
     neu->visitingpid = 0;
     neu->ok = true;
     if (PIDKEY[mypid % PIDMODULUS] != neu) BUG;
-    KEY_type_NULL(neu);    
-    WARN_PARALLEL;
+    KEY_type_NULL(neu);
+    
+    //if (basic.warn_parallel && mypid == parentpid)  PRINTF("Do not forget to run 'RFoptions(storing=FALSE)' after each call of a parallel command (e.g. from packages 'parallel') that calls a function in 'RandomFields'. (OMP within RandomFields is not affected.) This message can be suppressed by 'RFoptions(warn_parallel=FALSE)'.") /*// OK */
+    
    return neu;
   }
   while (p->pid != mypid && p->next != NULL) {
@@ -132,32 +131,32 @@ void deloptions(bool VARIABLE_IS_NOT_USED local) {
 }
 
 
-
-ASSERT_ANYSIMD(xport) 
-D_ASSERT_SIMD(avx2file);
-D_ASSERT_SIMD(avxfile);
-// D_ASSERT_SIMD(avx512ffile);
+THIS_FILE_ANYSIMD;
+EXTERN_SIMD_CHECK(avx2_fctns);
+EXTERN_SIMD_CHECK(avx_fctns);
+EXTERN_SIMD_CHECK(mma_61);
 void loadoptions() {
-  if (!sse)
-    RFERROR("programm does not run on machine that old (even not having sse)\n");
-  C_ASSERT_ANYSIMD(xport);
-  C_ASSERT_SIMD(avxfile, avx);
-  C_ASSERT_SIMD(avx2file, avx2);
-  // C_ASSERT_SIMD(avx512ffile, avx512f);
+  if (!sseAvail)
+    RFERROR("programm does not run on machines that old (not having sse)\n");
+  CHECK_THIS_FILE_ANYSIMD;
+  CHECK_FILE(avx_fctns);
+  CHECK_FILE(avx2_fctns);
+  CHECK_FILE(mma_61);
 
   MEMSET(PIDKEY, 0, PIDMODULUS * sizeof(KEY_type *));
   pid(&parentpid);
   attachRFUoptions((char *) "RandomFieldsUtils",
 		   prefixlist, prefixN,
-		   all, allN,
+		   allOptions, allOptionsN,
 		   setoptions,
-		   NULL, // final
 		   getoptions,
+		   NULL, // final
 		   deloptions,
+		   NULL, NULL,
 		   0, true,
 		   GPU_NEEDS, // from configure.ac
-		   AVX_INFO,
-		   RFU_VERSION);
+		   SIMD_INFO,
+		   RFU_VERSION, RFU_VERSION, MEMisALIGNED);
   //finalizeoptions();
   SetLaMode();
 }
@@ -169,7 +168,7 @@ utilsoption_type *WhichOptionList(bool local) {
     if (KT == NULL) BUG;
     return &(KT->global_utils);
   }
-  return RFU_GLOBAL_OPTIONS;
+  return &OPTIONS;
 } 
  
 void PIDKEY_DELETE() {

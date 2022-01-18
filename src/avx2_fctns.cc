@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <R_ext/Linpack.h>
 #include "RandomFieldsUtils.h"
 #include "kleinkram.h"
-#include "zzz_RandomFieldsUtils.h"
+#include "options.h"
 #include "Utils.h"
 #include "xport_import.h"
 #include "extern.h"
@@ -35,11 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #if defined AVX2
 
-AVAILABLE_SIMD
+ASSERT_SIMD(avx2_fctns, avx2);
 
-ASSERT_SIMD(avx2file, avx2);
-
-#define algn_general(X)  ((1L + (uintptr_t) (((uintptr_t) X - 1L) / BytesPerBlock)) * BytesPerBlock)
+#define algn_general(X)  ((1U + (uintptr_t) (((uintptr_t) X - 1U) / BytesPerBlock)) * BytesPerBlock)
 
 #if defined SSE41 || defined AVX2
 int static inline *algnInt(int *X) {
@@ -51,9 +49,9 @@ int static inline *algnInt(int *X) {
 void colMaxsIint256(int *M, Long r, Long c, int *ans) {
   if (r < 32
 #if defined AVX2
-      || !avx2
+      || !avx2Avail
 #elif defined  SSE41
-      || !sse41
+      || !sse41Avail
 #endif      
        ) {
     for (int i=0; i<c; i++) {
@@ -65,7 +63,7 @@ void colMaxsIint256(int *M, Long r, Long c, int *ans) {
     return;
   }
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(CORES)
+#pragma omp parallel for num_threads(CORES) schedule(static)
 #endif    
   for (int i=0; i<c; i++) {
      int dummy,
@@ -112,7 +110,7 @@ void colMaxsIint256(int *M, Long r, Long c, int *ans) {
 void colMaxsIint(int *M, Long r, Long c, int *ans);
 void colMaxsIint256(int *M, Long r, Long c, int *ans) {colMaxsIint(M, r, c, ans); }
 
-ASSERT_SIMD_MISS(avx2file, avx2)
+SIMD_MISS(avx2_fctns, avx2);
 
 #endif
 

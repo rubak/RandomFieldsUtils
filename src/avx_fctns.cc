@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <R_ext/Linpack.h>
 #include "RandomFieldsUtils.h"
 #include "kleinkram.h"
-#include "zzz_RandomFieldsUtils.h"
+#include "options.h"
 #include "Utils.h"
 #include "xport_import.h"
 #include "extern.h"
@@ -35,12 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #if defined AVX
 
-AVAILABLE_SIMD
+ASSERT_SIMD(avx_fctns, avx);
 
-ASSERT_SIMD(avxfile, avx);
-//ASSERT_SIMD_MISS(avx512ffile, avx512f);
-
-#define algn_general(X)  ((1L + (uintptr_t) (((uintptr_t) X - 1L) / BytesPerBlock)) * BytesPerBlock)
+#define algn_general(X)  ((1U + (uintptr_t) (((uintptr_t) X - 1U) / BytesPerBlock)) * BytesPerBlock)
 double static inline *algn(double *X) {
   assert(algn_general(X)>=(uintptr_t)X); return (double *) algn_general(X);
 }
@@ -48,9 +45,9 @@ double static inline *algn(double *X) {
 void colMaxsI256(double *M, Long r, Long c, double *ans) {
   if (r < 16
 #if defined AVX
-       || !avx
+       || !avxAvail
 #elif defined  SSE2
-      || !sse2
+      || !sse2Avail
 #endif      
       ) {
     for (Long i=0; i<c; i++) {
@@ -62,7 +59,7 @@ void colMaxsI256(double *M, Long r, Long c, double *ans) {
     return;
   }
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(CORES)
+#pragma omp parallel for num_threads(CORES) schedule(static)
 #endif  
   for (Long i=0; i<c; i++) {
     double dummy,
@@ -73,9 +70,9 @@ void colMaxsI256(double *M, Long r, Long c, double *ans) {
     uintptr_t End = (uintptr_t) (end - doubles);
     if ((uintptr_t) start < End) {
       Double * m0 = (Double*) start,
-	Dummy = (Double) LOAD((BlockType0*) m0);
+	Dummy = LOADuDOUBLE((double *)m0);
       for (m0++ ; (uintptr_t) m0 < End; m0++) {
-	Dummy = MAXDOUBLE(Dummy, (Double) LOAD((BlockType0*) m0));
+	Dummy = MAXDOUBLE(Dummy, (Double) LOADuDOUBLE((double*) m0));
       }
       double *d = (double *) &Dummy;
       dummy = d[0];
@@ -325,7 +322,7 @@ double avx_scalarprodDP(double * x, double * y, Long len) {
    double *D  = (double *) &sum1;
   if ( len >= atonce) {
     for (; i < lenM; ) {
-      Long lenMM = i + vectorlen * (repet * 10 + 1L);
+      Long lenMM = i + vectorlen * (repet * 10L + 1L);
       if (lenMM > lenM) lenMM = lenM;
       sum0 = MULTDOUBLE(LOADuDOUBLE(x + i), LOADuDOUBLE(y + i));
       i += vectorlen;
@@ -400,10 +397,7 @@ double avx_scalarprodDP(double * x, double * y, Long L) {
 double avx_scalarprodDK(double * x, double * y, Long L) {
   return scalarprod4by4(x,y,L);}
 
-ASSERT_SIMD_MISS(avxfile, avx)
-
-//#include "zzz_RandomFieldsUtils.h"
-//AVAILABLE ASSERT_SIMD(avx512ffile, avx512f);
+SIMD_MISS(avx_fctns, avx);
 
 #endif
 

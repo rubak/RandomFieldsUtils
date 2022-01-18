@@ -172,7 +172,7 @@ void orderingFromTo(double *d, int len, int dim, int *pos, int from, int to,
     end = len-1;
     start = 0;
   } else {
-    if (dim != 1) ERR("NAs only allowed for scalars");
+    if (dim != 1) ERR0("NAs only allowed for scalars");
     if (NAlast == True) {
        start = 0;
        end = -1;
@@ -221,7 +221,7 @@ void orderingIntFromTo(int *d, int len, int dim, int *pos, int from, int to,
     end = len-1;
     start = 0;
   } else {
-    if (dim != 1) ERR("NAs only allowed for scalars");
+    if (dim != 1) ERR0("NAs only allowed for scalars");
     if (NAlast == True) {
        start = 0;
        end = -1;
@@ -462,14 +462,14 @@ SEXP sortX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
     ans = INTEGER(Ans);
     for (int i=from ; i<to; i++) ans[i - from] = data[i];
     FREE(data);
-  } else ERR("Data must be real valued or integer valued.");
+  } else ERR0("Data must be real valued or integer valued.");
 
   
  ErrorHandling :
   UNPROTECT(1);
 
   switch(err) {
-  case ERRORMEMORYALLOCATION : ERR("not enough memory");
+  case ERRORMEMORYALLOCATION : ERR0("not enough memory");
   default:;
   }
 
@@ -517,8 +517,8 @@ SEXP orderX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
   UNPROTECT(1);
   
   switch(err) {
-  case ERRORFAILED : ERR("Data must be real valued or integer valued.");
-  case ERRORMEMORYALLOCATION : ERR("not enough memory");
+  case ERRORFAILED : ERR0("Data must be real valued or integer valued.");
+  case ERRORMEMORYALLOCATION : ERR0("not enough memory");
   default:;
   }
 
@@ -556,7 +556,7 @@ SEXP orderX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
     orderingInt(data, len, dim, pos, from, to, nalast);
     from--;
     for (int i=from ; i<to; i++) ans[i - from] = data[pos[i]];
-  } else ERR("Data must be real valued or integer valued.");
+  } else ERR0("Data must be real valued or integer valued.");
   UNPROTECT(1);
   f ree(pos);
   return Ans;

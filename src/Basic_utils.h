@@ -27,11 +27,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // RFU 3: vor Basic kein inttypes.h ( _INTTYPES_H )  oder aber RFdef_H==1;
 // miraculix 0: vor Basic inttypes.h; Ausnahme initNerror.cc kleinkram.cc thuy.cc xport_import.cc zzz.cc
 // adoption 0: vor Basic kein inttypes.h
-            
+
+#define RFU_VERSION 10
 
 
-#if defined RFU_VERSION || defined RF_VERSION || defined MIRACULIX_VERSION || defined ADOPTION_VERSION || defined HAPLO_VERSION
-  #ifdef OBSOLETE_RFU
+#if defined RFU_LOCAL || defined RF_VERSION || defined MIRACULIX_VERSION || defined ADOPTION_VERSION || defined HAPLOBLOCKER_VERSION
+  #if defined OBSOLETE_RFU
     #undef OBSOLETE_RFU
   #endif
 #else
@@ -68,6 +69,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "AutoRandomFieldsUtils.h"
 
+#define RFERROR error
+
+#define RFERROR1(M,A) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A); RFERROR(E_AUX);}
+#define RFERROR2(M,A,B) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A,B); RFERROR(E_AUX);}
+#define RFERROR3(M,A,B,C) {errorstring_type E_AUX;\
+    SPRINTF(E_AUX, M, A,B,C); RFERROR(E_AUX);}
+#define RFERROR4(M,A,B,C,D) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A,B,C,D); RFERROR(E_AUX);}
+#define RFERROR5(M,A,B,C,D,E) {errorstring_type E_AUX; \
+    SPRINTF(E_AUX, M, A,B,C,D,E); RFERROR(E_AUX);}
+#define RFERROR6(M,A,B,C,D,E,F) {errorstring_type E_AUX;\
+    SPRINTF(E_AUX, M, A,B,C,D,E,F); RFERROR(E_AUX);}
+#define RFERROR7(M,A,B,C,D,E,F,G) {errorstring_type E_AUX;\
+    SPRINTF(E_AUX, M, A,B,C,D,E,F,G); RFERROR(E_AUX);}
 
 
 #define MULTIMINSIZE(S) ((S) > 20)// in omp parallel in DO_PARALLEL
@@ -142,16 +159,20 @@ typedef enum usr_bool {
 #define EXPM1 std::expm1
 #define LOG1P std::log1p
 #define FROUND fround
-#define CEIL(X) std::ceil((double) X) // OK; keine Klammern um X!
 #define COS std::cos
 #define EXP std::exp
 #define FABS(X) std::fabs((double) X) // OK; keine Klammern um X!
+#if ! defined MALLOCX
+#define MALLOCX std::malloc
 #define FLOOR std::floor
+#define SQRT(X) std::sqrt((double) X) // OK
+#define CEIL(X) std::ceil((double) X) // OK; keine Klammern um X!
+#define FREEX std::free
+#endif
 #define LOG std::log
 #define POW(X, Y) R_pow((double) X, (double) Y) // OK; keine Klammern um X!
 #define SIGN(X) sign((double) X) // OK
 #define SIN std::sin
-#define SQRT(X) std::sqrt((double) X) // OK
 #define STRCMP(A, B) std::strcmp(A, B) // OK
 #define STRCPY(A, B) std::strcpy(A, B) // OK
 #define STRLEN std::strlen
@@ -164,9 +185,7 @@ typedef enum usr_bool {
 #define MEMCMP std::memcmp
 #define AALLOC std::aligned_alloc
 #define CALLOCX std::calloc
-#define MALLOCX std::malloc
-#define FREEX std::free
-#define SPRINTF std::sprintf //
+#define SPRINTF std::sprintf // Rprint 
 #define ROUND(X) ownround((double) X) // OK
 #define TRUNC(X) ftrunc((double) X) // OK; keine Klammern um X!
 #define QSORT std::qsort
@@ -200,21 +219,26 @@ typedef int64_t Long;
 // not SCHLATHERS_MACHINE
 #ifndef SCHLATHERS_MACHINE
 
-#define INTERNALMSG SERR("Sorry. This functionality doesn't exist currently. There is work in progress at the moment by the maintainer.")
+#define INTERNALMSG SERR0("Sorry. This functionality doesn't exist currently. There is work in progress at the moment by the maintainer.")
+#if ! defined assert
 #define assert(X) {}
+#endif
 #define BUG {								\
-    RFERROR3("Severe error occured in function '%.50s' (file '%.50s', line %d). Please contact maintainer martin.schlather@math.uni-mannheim.de .", \
-	    __FUNCTION__, __FILE__, __LINE__);				\
+    RFERROR4("Severe error occured in function '%.50s' (file '%.50s', line %d).%.200s", \
+	     __FUNCTION__, __FILE__, __LINE__, CONTACT);			\
   }
 
 //#define MEMCOPY(A,B,C) {MEMCPY(A,B,C); printf("memcpy %.50s %d\n", __FILE__, __LINE__);}
 #define MEMCOPY(A,B,C) MEMCOPYX(A,B,C)
 #define AMALLOC(ELEMENTS, SIZE) AALLOC(SIZE, (SIZE) * (ELEMENTS))
+#if ! defined MALLOC
 #define MALLOC MALLOCX
+#define FREE(X) if ((X) == NULL) {} else {FREEX(X); (X)=NULL;}
+#endif
 #define CALLOC CALLOCX
 #define XCALLOC CALLOCX
 //
-#define FREE(X) if ((X) != NULL) {FREEX(X); (X)=NULL;}
+
 #define UNCONDFREE(X) {FREEX(X); (X)=NULL;}
 #endif // not SCHLATHERS_MACHINE
 
@@ -226,28 +250,31 @@ typedef int64_t Long;
 
 // __extension__ unterdrueckt Fehlermeldung wegen geklammerter Argumente
 #define INTERNALMSG {		\
-    RFERROR3("made to be an internal function '%.50s' ('%.50s', line %d).", \
+    RFERROR4("made to be an internal function '%.50s' ('%.50s', line %d).", \
 	     __FUNCTION__, __FILE__, __LINE__);				\
   }
 
-#define assert(X) if (!__extension__ (X)) {	     \
-    RFERROR3("'assert' failed in function '%.50s' (%.50s, line %d).", \
-	    __FUNCTION__, __FILE__, __LINE__);				\
-  }
+#if ! defined assert
+#define assert(X) if (__extension__ (X)) {} else 			\
+    RFERROR4("'assert' failed in function '%.50s' (%.50s, line %d) %.200s.", \
+	     __FUNCTION__, __FILE__, __LINE__, CONTACT)		   
+#endif
 #define SHOW_ADDRESSES 1
-#define BUG { RFERROR2("BUG in '%.50s' line %d.\n",  __FUNCTION__, __LINE__);}
+#define BUG { RFERROR3("BUG in '%.50s' of '%.50s' at line %d.\n",  __FUNCTION__, __FILE__, __LINE__);}
 
 #define MEMCOPY(A,B,C) __extension__ ({ assert((A)!=NULL && (B)!=NULL && (C)>0 && (C)<=MAXALLOC); MEMCOPYX(A,B,C); })
 //#define MEMCOPY(A,B,C) memory_copy(A, B, C)
-#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=MAXALLOC); MALLOCX(X);})
 #define CALLOC(X, Y) __extension__({assert((X)>0 && (Y)>0 && ((X) * (Y))<MAXALLOC); CALLOCX(X,Y);})
 #define XCALLOC(X, Y) __extension__({assert((X)>0 && (Y)>0 && ((X) * (Y))<MAXALLOC); CALLOCX(X,Y);})
-#define FREE(X) {if ((X) != NULL) {if (!SHOWFREE) {} else PRINTF("free %.50s %ld Line %d %s\n", #X, (Long) X, __LINE__, __FILE__); FREEX(X); (X)=NULL;}}
+#if ! defined MALLOC
+#define MALLOC(X) __extension__ ({assert((X)>0 && (X)<=MAXALLOC); MALLOCX(X);})
+#define FREE(X) if ((X) == NULL) {} else {if (!SHOWFREE) {} else PRINTF("free %.50s %ld Line %d %s\n", #X, (Long) X, __LINE__, __FILE__); FREEX(X); (X)=NULL;}
+#endif
 #define UNCONDFREE(X) { if (!SHOWFREE) {} else PRINTF("(free in %s, line %d)\n", __FILE__, __LINE__); FREEX(X); (X)=NULL;}
 #endif // SCHLATHERS_MACHINE
 
 
-#ifdef SCHLATHER_DEBUGGING
+#if defined SCHLATHER_DEBUGGING
 #undef MALLOC
 #undef CALLOC
 #undef XCALLOC
@@ -263,7 +290,7 @@ typedef int64_t Long;
 #define DEBUGINFO if (!DOPRINT) {} else PRINTF("(currently at  %s, line %d)\n", __FILE__, __LINE__)
 
 #else
-#define DEBUGINFOERR if (PL >= PL_ERRORS) {PRINTF("error: %s\n", WHICH_ERRORSTRING);}
+#define DEBUGINFOERR if (PL < PL_ERRORS) {} else PRINTF("error: %s\n", WHICH_ERRORSTRING)
 #define DEBUGINFO
 #endif
 
@@ -317,12 +344,7 @@ typedef int64_t Long;
 #endif
 
 
-
-
-
-// #define HELPINFO(M) if (OPTIONS.basic.helpinfo) { PRINTF("%s\n(Note that you can unable this information by 'RFoptions(helpinfo=FALSE)'.)\n", M); } // OK
-
-#define UTILSINFO(M) if (RFU_GLOBAL_OPTIONS->basic.helpinfo) { PRINTF("%s\n(Note that you can unable this information by 'RFoptions(helpinfo=FALSE)'.)\n", M); } // OK
+#define UTILSINFO(M) if (!KEYT()->global_utils.basic.helpinfo) {} else PRINTF("%s\n(Note that you can unable this information by 'RFoptions(helpinfo=FALSE)'.)\n", M) // OK
 
 
 #ifdef DO_PARALLEL
@@ -339,54 +361,63 @@ typedef int64_t Long;
 
 #ifndef GPU_NEEDS  // not a proper installation
 #define GPU_NEEDS Inone
-#define LINUXCPUID
-#endif					   
+#endif				   
 
 
 #ifdef OBSOLETE_RFU
-#ifndef RFU_NEED_OBSOLETE
-#undef FALLTHROUGH_OK
-#undef HAS_PARALLEL
-#endif
-extern int CORES;  // from RF V4 on in extern.h:
-#define LENMSG MAXERRORSTRING
-#define LENERRMSG MAXERRORSTRING
-#define nErrorLoc MAXERRORSTRING
-typedef char errorloc_type[MAXERRORSTRING];
-#define utilsparam utilsoption_type
-#define solve_param solve_options
-#if defined RFdef_H
-#define isGLOBAL NA_INTEGER
-#else
-#define isGLOBAL false
-#endif
-#ifdef _OPENMP
-  #ifdef SCHLATHERS_MACHINE
-    #define DO_PARALLEL 1
+  #if defined SHOW_ADDRESSES
+    #undef SHOW_ADDRESSES
+  #endif
+
+  #if ! defined RFU_NEED_OBSOLETE
+    #undef FALLTHROUGH_OK
+    #undef HAS_PARALLEL
+  #endif
+  extern int CORES;  // from RF V4 on in extern.h:
+  #define LENMSG MAXERRORSTRING
+  #define LENERRMSG MAXERRORSTRING
+  #define nErrorLoc MAXERRORSTRING
+  typedef char errorloc_type[MAXERRORSTRING];
+  #define utilsparam utilsoption_type
+  #define solve_param solve_options
+  #if defined RFdef_H
+    #define isGLOBAL NA_INTEGER
   #else
-    #define DO_PARALLEL 1
+    #define isGLOBAL false
   #endif
-#else
+  #ifdef _OPENMP
+    #ifdef SCHLATHERS_MACHINE
+      #define DO_PARALLEL 1
+    #else
+      #define DO_PARALLEL 1
+    #endif
+  #else
+    #if defined DO_PARALLEL
+      #undef DO_PARALLEL
+    #endif
+  #endif
+
+  // #define LOCAL_MSG char MSG[LENERRMSG]
   #ifdef DO_PARALLEL
-    #undef DO_PARALLEL
+    #define LOCAL_ERRMSG2 char MSG2[LENERRMSG]
+  #else  // not DO_PARALLEL
+    #define LOCAL_ERRMSG2
   #endif
-#endif
 
-#define LOCAL_MSG char MSG[LENERRMSG]
-#ifdef DO_PARALLEL
-  #define LOCAL_ERRMSG2 char MSG2[LENERRMSG]
-#else  // not DO_PARALLEL
-  #define LOCAL_ERRMSG2
-#endif
+//#if defined ERR
+//#undef ERR
+//#endif
 
-
+  #ifndef ERR
+    #define ERR ERR0
+  #endif
 
 #else // NOT OBSOLETE
-#define USE_FC_LEN_T
-#define ATAN2 std::atan2
-#define COSH std::cosh
-#define SINH std::sinh
-#define TANH std::tanh
+  #define USE_FC_LEN_T
+  #define ATAN2 std::atan2
+  #define COSH std::cosh
+  #define SINH std::sinh
+  #define TANH std::tanh
 #endif
 
 

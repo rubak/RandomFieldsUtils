@@ -115,57 +115,6 @@ int *ToInt(SEXP X) {
 
 
 
-SEXP getChar() {  ERR("does not work");
-#if defined WIN32 || defined _WIN32 || defined __WIN32__
-  ERR("input limitations on windows");
-#endif
-#define maxGetChar 255
-  //typedef char intchar[sizeof(int) / sizeof(char)];
-  //typedef char intchar[sizeof(int) / sizeof(char)];
-  SEXP str;
-  int //g,
-    i = -1;
-  char // c, *t = NULL,
-    *s = NULL
-    ;
-  s = (char*) MALLOC(sizeof(char) * maxGetChar);
-  // initscr();
-  //  fflush(stdin);
-  //  nocbreak();
-  while (++i < maxGetChar) {
-    // g = getchar();       
-    //s[i] = ((intchar*) &g)[0][0];
-    // g = scanf("%c\n", s); s[1] = '\0'; break;
-    //t = fgets(s, 2, stdin); break;
-    //    s[i] = getch();
-    //fflush(stdin);
-    if (false) {
-      s[i+1] = '\0';
-      // printf("%d i=%d  '%c' '%c' '%c' '%c' '%c'\n", g, i,  s[i],
-      // ((intchar*) &g)[0][0],
-      //  ((intchar*) &g)[0][1],
-      // ((intchar*) &g)[0][2],
-      // ((intchar*) &g)[0][3]
-      // );
-    }
-    if (s[i] == '\n') {
-      s[i] = '\0';
-      break;
-    }
-  }
-  //endwin();
-//printf(">%.50s<\n", s);
-  PROTECT(str=allocVector(STRSXP, 1));
-  SET_STRING_ELT(str, 0, mkChar(s));  
-  UNPROTECT(1);
-  FREE(s);
-  return str;
-}
-
-
-
-
-
 
 SEXP DivByRow(SEXP M, SEXP V) {
   Long
@@ -176,7 +125,7 @@ SEXP DivByRow(SEXP M, SEXP V) {
   double *m = REAL(M),
     *v = REAL(V);
   
-  if (l != c) ERR("vector does not match matrix");
+  if (l != c) ERR0("vector does not match matrix");
   for (Long j=0; j<c; j++) {
     double vj = v[j];
     for (Long i=0; i<r; i++) {
@@ -187,7 +136,7 @@ SEXP DivByRow(SEXP M, SEXP V) {
   return M;
 }
 
-#define algn_general(X)  ((1L + (uintptr_t) (((uintptr_t) X - 1L) / BytesPerBlock)) * BytesPerBlock)
+#define algn_general(X)  ((1U + (uintptr_t) (((uintptr_t) X - 1U) / BytesPerBlock)) * BytesPerBlock)
 
 double static inline *algn(double *X) {
   assert(algn_general(X)>=(uintptr_t)X); return (double *) algn_general(X);
@@ -204,9 +153,9 @@ int static inline *algnInt(int *X) {
 void colMaxsIint(int *M, Long r, Long c, int *ans) {
   if (r < 32
 #if defined AVX2
-      || !avx2
+      || !avx2Avail
 #elif defined  SSE41
-      || !sse41
+      || !sse41Avail
 #endif      
        ) {
     for (Long i=0; i<c; i++) {
@@ -218,7 +167,7 @@ void colMaxsIint(int *M, Long r, Long c, int *ans) {
     return;
   }
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(CORES)
+#pragma omp parallel for num_threads(CORES) schedule(static)
 #endif    
   for (Long i=0; i<c; i++) {
      int dummy,
@@ -263,9 +212,9 @@ void colMaxsIint(int *M, Long r, Long c, int *ans) {
 void colMaxsI(double *M, Long r, Long c, double *ans) {
   if (r < 16
 #if defined AVX2
-       || !avx2
+      || !avx2Avail
 #elif defined  SSE2
-      || !sse2
+      || !sse2Avail
 #endif      
       ) {
     for (Long i=0; i<c; i++) {
@@ -277,7 +226,7 @@ void colMaxsI(double *M, Long r, Long c, double *ans) {
     return;
   }
 #ifdef DO_PARALLEL
-#pragma omp parallel for num_threads(CORES)
+#pragma omp parallel for num_threads(CORES) schedule(static)
 #endif  
   for (Long i=0; i<c; i++) {
     double dummy,
@@ -325,7 +274,7 @@ SEXP colMaxs(SEXP M) {
   SEXP Ans;
   if (TYPEOF(M) == REALSXP) {
     PROTECT(Ans = allocVector(REALSXP, c));
-     if (avx2)colMaxsI256(REAL(M), r, c, REAL(Ans));
+    if (avx2Avail) colMaxsI256(REAL(M), r, c, REAL(Ans));
      else colMaxsI(REAL(M), r, c, REAL(Ans));
   } else {
     bool i = TYPEOF(M) == INTSXP;
@@ -338,7 +287,7 @@ SEXP colMaxs(SEXP M) {
       m = LOGICAL(M);
       a = LOGICAL(Ans);
     }
-    if (avx2) colMaxsIint(m, r, c, a);
+    if (avx2Avail) colMaxsIint(m, r, c, a);
     else colMaxsIint256(m, r, c, a);
   }
   UNPROTECT(1);
@@ -384,7 +333,7 @@ SEXP rowMeansX(SEXP M, SEXP Weight) {
     c = ncols(M);
   if (r == 0 || c == 0) return R_NilValue;
   if (length(Weight) != c && length(Weight) != 0)
-    ERR("Length of 'weight' must equal number of columns of 'x'.");
+    ERR0("Length of 'weight' must equal number of columns of 'x'.");
   SEXP Ans;
   PROTECT(Ans = allocVector(REALSXP, r));
   double *ans = REAL(Ans);
@@ -417,7 +366,7 @@ SEXP rowMeansX(SEXP M, SEXP Weight) {
       for2;
     }
     
-    if (TYPEOF(Weight) != REALSXP) FREE(weight);
+    if (TYPEOF(Weight) != REALSXP) { FREE(weight); }
   }
   double invc = 1.0 / (double) c;
   for (Long j=0; j<r; j++) ans[j] *= invc;
@@ -504,6 +453,8 @@ SEXP dbinorm(SEXP X, SEXP Sigma) { // 12'41
 
 
 SEXP test(SEXP AA, SEXP CC, SEXP X) {
+  KEY_type *KT = KEYT();
+  int cores = KT->global_utils.basic.cores;
   Long nrow = nrows(AA),
     ncol = ncols(AA),
     dim = length(X),
@@ -526,27 +477,27 @@ SEXP test(SEXP AA, SEXP CC, SEXP X) {
     for (int j=0; j<=1; j++) {
       extern bool obsolete_package_in_use;
       SetLaMode(j == 0 || obsolete_package_in_use
-		? LA_INTERN : LA_R);
+		? LA_INTERN : LA_R, cores);
       switch(i) {
-      case 1: z[j] = XkCXtl(A, C, nrow, ncol, nrow / 3, nrow / 4); break;
-      case 2: XCXt(A, C, a[j], nrow, ncol); break;
-      case 3: AtA(A, nrow, ncol, a[j]); break;
-      case 4: xA(x, A, nrow, ncol, a[j]); break;
+      case 1: z[j] = XkCXtl(A, C, nrow, ncol, nrow / 3, nrow / 4, cores); break;
+      case 2: XCXt(A, C, a[j], nrow, ncol, cores); break;
+      case 3: AtA(A, nrow, ncol, a[j], cores); break;
+      case 4: xA(x, A, nrow, ncol, a[j], cores); break;
       case 5: xA_noomp(x, A, nrow, ncol, a[j]); break;
 	//    case : xA(x1, x2,  A, nrow, ncol, a[j]1,  a[j]2); break;
-      case 6: z[j] = xAx(x, C, nrow); break;
-      case 7: Ax(A, C, nrow, ncol, a[j]); break;// C genuegend lang. Reicht.
+      case 6: z[j] = xAx(x, C, nrow, cores); break;
+      case 7: Ax(A, C, nrow, ncol, a[j], cores); break;// C genuegend lang. Reicht.
       //    case 8: Ax(A, x, x2, nrow, ncol, a[j]1,  a[j]2); break;
-      case 8: z[j] =xUy(x, C, A, dim); break; // A genuegend lang. Reicht.
-      case 9: z[j] =xUxz(x, C, dim, a[j]); break;
-      case 10: z[j] =x_UxPz(x, C, A, dim); break; // A genuegend lang. Reicht.
-      case 11: z[j] =xUx(x, C, dim); break;
-      case 12: matmult(A, C, a[j], nrow, ncol, k); break;
-      case 13: matmulttransposed(A, C, a[j], ncol, nrow, k); break;
+      case 8: z[j] =xUy(x, C, A, dim, cores); break; // A genuegend lang. Reicht.
+      case 9: z[j] =xUxz(x, C, dim, a[j], cores); break;
+      case 10: z[j] =x_UxPz(x, C, A, dim,cores); break; // A genuegend lang. Reicht.
+      case 11: z[j] =xUx(x, C, dim, cores); break;
+      case 12: matmult(A, C, a[j], nrow, ncol, k, cores); break;
+      case 13: matmulttransposed(A, C, a[j], ncol, nrow, k, cores); break;
 	//case : matmulttransposedInt(int *A, int *B, int *c, ncol, ncol, k); break; 
-      case 14: matmult_2ndtransp(A, C, a[j], nrow, ncol, k); break;
-      case 15: matmult_2ndtransp(A, C, a[j], nrow, ncol); break;
-      case 16: matmult_tt(A, C, a[j], ncol, nrow, k); break;
+      case 14: matmult_2ndtransp(A, C, a[j], nrow, ncol, k, cores); break;
+      case 15: matmult_2ndtransp(A, C, a[j], nrow, ncol, cores); break;
+      case 16: matmult_tt(A, C, a[j], ncol, nrow, k,cores); break;
 	//     case 17: z[j]=  scalar(A, C, ncol); break;	
       default: BUG;
       }
@@ -582,11 +533,13 @@ SEXP test(SEXP AA, SEXP CC, SEXP X) {
 
 
 SEXP quadratic(SEXP A, SEXP x) {
+  KEY_type *KT = KEYT();
+  int cores = KT->global_utils.basic.cores;
   SEXP ans;
   int len = length(x);
-  if (len != nrows(A) || len != ncols(A)) ERR("'x' and 'A' do not match.");
+  if (len != nrows(A) || len != ncols(A)) ERR0("'x' and 'A' do not match.");
   PROTECT(ans = allocVector(REALSXP, 1));
-  REAL(ans)[0] = xAx(REAL(x), REAL(A), len);
+  REAL(ans)[0] = xAx(REAL(x), REAL(A), len, cores);
   UNPROTECT(1);
   return ans;
 }
@@ -597,14 +550,14 @@ SEXP dotXV(SEXP M, SEXP V) {
     c = ncols(M),
     l = length(V)
     ;
-  if (l != r) ERR("X and v do not match");
+  if (l != r) ERR0("X and v do not match");
   if (r == 0) return R_NilValue;
   SEXP Ans;
   PROTECT(Ans = allocMatrix(REALSXP, r, c));
 
   // bringt nix
   //#ifdef DO_PARALLEL
-  //#pragma omp parallel for num_threads(CORES) 
+  //#p ragma omp parallel for num_threads(CORES) 
   //#endif  
   for (Long i=0; i<c; i++) {
     //  printf("i=%d\n", i);
@@ -728,7 +681,7 @@ double scalarX(double *x, double *y, Long len, Long n) {
     //  printf("%d\n", n);
   case SCALAR_AVX :
     //  printf(" # %d ", avx);
-    if (avx) return avx_scalarprodD(x, y, len); // best one kernel
+    if (avxAvail) return avx_scalarprodD(x, y, len); // best one kernel
     break;
   case 2 : return scalarprod(x, y, len);
   case 3 : return scalarprod2by2(x, y, len); 
@@ -738,13 +691,13 @@ double scalarX(double *x, double *y, Long len, Long n) {
     //   return avx_scalarprodDfma(x, y, len);
     //#endif    
   case SCALAR_NEARFMA :
-    if (avx) return avx_scalarprodDnearfma(x, y, len);
+    if (avxAvail) return avx_scalarprodDnearfma(x, y, len);
     break;
   case 7 :
-    if (avx) return avx_scalarprodDP(x, y, len);  //best
+    if (avxAvail) return avx_scalarprodDP(x, y, len);  //best
     break;
   case SCALAR_KAHAN :
-    if (avx) return avx_scalarprodDK(x, y, len); // kahan   
+    if (avxAvail) return avx_scalarprodDK(x, y, len); // kahan   
     break;
 
     /*
@@ -772,7 +725,7 @@ double scalarX(double *x, double *y, Long len, Long n) {
 
 SEXP scalarR(SEXP x, SEXP y, SEXP Mode) { // unused
   Long len = length(x);
-  if (length(y) != len) ERR("x and y differ in length");
+  if (length(y) != len) ERR0("x and y differ in length");
   int mode;
   if (length(Mode) == 0) mode = -1;
   else if (INTSXP==TYPEOF(Mode)) mode = INTEGER(Mode)[0];
@@ -796,6 +749,8 @@ SEXP scalarR(SEXP x, SEXP y, SEXP Mode) { // unused
 
 
 SEXP crossprodX(SEXP X, SEXP Y, SEXP mode) {
+  KEY_type *KT = KEYT();
+  int cores = KT->global_utils.basic.cores;
   Long n, nrow,
     len,
     lenY,
@@ -814,7 +769,7 @@ SEXP crossprodX(SEXP X, SEXP Y, SEXP mode) {
     ncol = 1;
     lenY = length(Y);
   }
-  if (lenY != len) ERR("sizes of 'x' and 'y' do not match");
+  if (lenY != len) ERR0("sizes of 'x' and 'y' do not match");
   if (length(mode) == 0) n = SCALAR_DEFAULT;
   else {
     n = INTEGER(mode)[0];
@@ -826,8 +781,8 @@ SEXP crossprodX(SEXP X, SEXP Y, SEXP mode) {
     *x = REAL(X),
     *y = REAL(Y);
 
-  if (x == y) AtA(x, len, ncol, ans);
-  else matmulttransposed(x, y, ans, len, nrow, ncol);
+  if (x == y) AtA(x, len, ncol, ans, cores);
+  else matmulttransposed(x, y, ans, len, nrow, ncol, cores);
 
   UNPROTECT(1);
   return Ans;
@@ -849,7 +804,7 @@ void linearprod2by2( double * v1,  double v2, Long N, double *inout){
 void linearX(double *x, double y, Long len, double *inout, Long n) {
   switch(n) {
   case LINEAR_AVX :
-    if (avx) { avx_linearprodD(x, y, len, inout); return; }
+    if (avxAvail) { avx_linearprodD(x, y, len, inout); return; }
     break; 
   case LINEAR_BASE:
   default :

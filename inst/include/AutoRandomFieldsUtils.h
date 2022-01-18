@@ -15,5 +15,6 @@
 #define WARN_UNKNOWN_OPTION_NONE1 1
 #define WARN_UNKNOWN_OPTION_NONE 0
 
+#define CONTACT " Please contact the maintainer martin.schlather@math.uni-mannheim.de.\n"
 
 #endif

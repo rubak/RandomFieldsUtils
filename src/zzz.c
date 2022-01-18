@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #define RFU_NEED_OBSOLETE 1
+#define NO_SSE2 1
+
 #include "Basic_utils.h"
 #include "win_linux_aux.h"
 #include "RandomFieldsUtils.h"
@@ -61,12 +63,12 @@ static const R_CMethodDef cMethods[]  = {
 #define CALLDEF(name, n) {#name, (DL_FUNC) &name, n}
 static R_CallMethodDef callMethods[]  = {
   // in die respectiven C-Dateien muss RandomFieldsUtils.h eingebunden sein
-  CALLDEF(AVXmessages, 1),
+  CALLDEF(SIMDmessages, 1),
   CALLDEF(DebugCall, 0),
   CALLDEF(Chol, 1),
   CALLDEF(debuggingLevel, 0),
   CALLDEF(scalarR, 3),
-  CALLDEF(SolvePosDef, 3),
+  CALLDEF(SolvePosDefR, 3),
   CALLDEF(struve, 4),
   CALLDEF(besselk_simd, 2),
   CALLDEF(I0ML0, 1),
@@ -75,7 +77,6 @@ static R_CallMethodDef callMethods[]  = {
   CALLDEF(logWMr, 4),
   CALLDEF(sortX, 4),
   CALLDEF(orderX, 4), 
-  CALLDEF(getChar, 0),
   CALLDEF(DivByRow, 2),
   CALLDEF(colMaxs, 1),
   CALLDEF(quadratic, 2),
@@ -87,7 +88,11 @@ static R_CallMethodDef callMethods[]  = {
   CALLDEF(tcholRHS, 2),
   CALLDEF(crossprodX, 3),
   CALLDEF(getPackagesToBeInstalled, 1),
- 
+  CALLDEF(isGPUavailable,0),
+  CALLDEF(isNEONavailable,0),
+  CALLDEF(isX86_64,0),
+  CALLDEF(gpu_info,1),
+  CALLDEF(instruction_set, 3),
   //  CALLDEF(),
   {NULL, NULL, 0}
 };
@@ -106,25 +111,30 @@ static const R_ExternalMethodDef extMethods[] = {
 #define CALLABLE(FCTN)  R_RegisterCCallable("RandomFieldsUtils", #FCTN, (DL_FUNC)  FCTN)
 
 void R_init_RandomFieldsUtils(DllInfo  *dll) {
-  CALLABLE(utilsoption_DELETE);
-  CALLABLE(utilsoption_NULL);
+  CALLABLE(del_utilsoption);
+  CALLABLE(get_utilsoption);
+  CALLABLE(push_utilsoption);
+  CALLABLE(params_utilsoption);
 
   CALLABLE(solve_DELETE);
   CALLABLE(solve_NULL);
-  CALLABLE(solvePosDef);
-  CALLABLE(invertMatrix);
   
-  CALLABLE(solvePosDefSp);
-  CALLABLE(sqrtPosDefFree); 
-  CALLABLE(sqrtRHS);
+  CALLABLE(SolvePosDef);
+  CALLABLE(SolvePosDefSp);
+  CALLABLE(SqrtPosDefFree);
+  CALLABLE(xCinvXdet);
+  CALLABLE(xCinvYdet);
+  CALLABLE(DetPosDefsp);
+  CALLABLE(InvertMatrix);
+  CALLABLE(cholesky);
+  CALLABLE(DetPosDef);
+  CALLABLE(Is_positive_definite);
+
   
-  CALLABLE(detPosDef);
-  CALLABLE(detPosDefsp);
-  CALLABLE(XCinvXdet);
-  CALLABLE(XCinvYdet);
-  CALLABLE(is_positive_definite);
-  CALLABLE(chol2inv);
-  CALLABLE(chol);
+
+ 
+  CALLABLE(sqrtRHS); 
+   CALLABLE(chol2inv);
 
   CALLABLE(StruveH);
   CALLABLE(StruveL);
@@ -146,9 +156,13 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
   
   CALLABLE(attachRFUoptions);
   CALLABLE(detachRFUoptions);
-  CALLABLE(linkRFUoptions);
+  //  CALLABLE(linkRFUoptions);
+  CALLABLE(RFUoptions);
+  CALLABLE(attachSetNGet);
+  CALLABLE(getoptionsRFU);
+  CALLABLE(setoptionsRFU);
 
-
+  
   // OBSOLETE_RFU
   CALLABLE(getUtilsParam);
   CALLABLE(attachRFoptions);
@@ -157,6 +171,17 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
   CALLABLE(getErrorString); // obsolete
   CALLABLE(setErrorLoc); // obsolete
   CALLABLE(ToIntI);
+  CALLABLE(solvePosDef);
+  CALLABLE(solvePosDefSp);
+  CALLABLE(sqrtPosDefFree);
+  CALLABLE(XCinvXdet);
+  CALLABLE(XCinvYdet);
+  CALLABLE(detPosDefsp);
+  CALLABLE(detPosDef);
+  CALLABLE(invertMatrix);
+  CALLABLE(chol);
+  CALLABLE(is_positive_definite);
+
 
 
   CALLABLE(ordering);
@@ -177,13 +202,13 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
 
 
 #ifdef SCHLATHERS_MACHINE
-#ifdef __GNUC__
+#ifdef __GNUC__ 
 // https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
 #endif
 void R_unload_RandomFieldsUtils(DllInfo *info) { }
-#ifdef __GNUC__
+#ifdef __GNUC__ 
 //#pragma GCC diagnostic pop
 #endif

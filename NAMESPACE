@@ -1,11 +1,12 @@
 
-##########exportPattern("^[^\\.]")
+############exportPattern("^[^\\.]")
 
 export(cholx, cholPosDef, Print, solvex, solvePosDef, chol2mv, tcholRHS,
        crossprodx, scalarx,
        colMax, rowMeansx, rowProd, SelfDivByRow, quadratic, dotXV,
        sleep.milli, sleep.micro,
        hostname, pid, 
+#       gpu_info,
        FileExists, LockRemove, WaitOthers,
        sortx, orderx,
        gauss, matern, nonstwm, whittle,
@@ -14,9 +15,10 @@ export(cholx, cholPosDef, Print, solvex, solvePosDef, chol2mv, tcholRHS,
        RFoptions, confirm,
        checkExamples, Dependencies, debugging_level,
        dbinorm,
-       LA_AUTO, LA_INTERN, LA_R, LA_GPU, LA_QUERY,
+       uses.simd.instruction, misses.simd.instruction,
+        LA_AUTO, LA_INTERN, LA_R, LA_GPU, LA_QUERY,
        PIVOT_NONE, PIVOT_AUTO, PIVOT_DO, PIVOT_IDX
-       )
+        )
 
 useDynLib(RandomFieldsUtils, .registration = TRUE, .fixes = "C_")
 #useDynLib(spam)
@@ -34,3 +36,4 @@ S3method(print, summary.RFopt)
 S3method(print, RFoptElmnt)
 S3method(summary, RFoptElmnt)
 S3method(print, summary.RFoptElmnt)
+S3method(print, gpu_list)

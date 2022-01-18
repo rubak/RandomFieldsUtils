@@ -244,28 +244,35 @@ int Match(char *name, name_type List, int n);
 SEXP ExtendedInteger(double x);
 SEXP ExtendedBooleanUsr(usr_bool x);
  
-double XkCXtl(double *X, double *C, Long nrow, Long dim, Long k, Long l);
-void XCXt(double *X, double *C, double *V, Long nrow, Long dim);
-void AtA(double *a, Long nrow, Long ncol, double *A);
-void xA(double *x, double*A, Long nrow, Long ncol, double *y);
+double XkCXtl(double *X, double *C, Long nrow, Long dim, Long k, Long l,
+	      int cores);
+void XCXt(double *X, double *C, double *V, Long nrow, Long dim, int cores);
+void AtA(double *a, Long nrow, Long ncol, double *A, int cores);
+void xA(double *x, double*A, Long nrow, Long ncol, double *y, int cores);
 void xA_noomp(double *x, double*A, Long nrow, Long ncol, double *y);
 void xA(double *x1, double *x2,  double*A, Long nrow, Long ncol, double *y1,
 	double *y2);
-double xAx(double *x, double*A, Long nrow);
-void Ax(double *A, double*x, Long nrow, Long ncol, double *y);
+double xAx(double *x, double*A, Long nrow, int cores);
+void Ax(double *A, double*x, Long nrow, Long ncol, double *y, int cores);
 void Ax(double *A, double*x1, double*x2, Long nrow, Long ncol, double *y1,
 	double *y2);
-double xUy(double *x, double *U, double *y, Long dim);
-double xUxz(double *x, double *U, Long dim, double *z);
-double x_UxPz(double *x, double *U, double *z, Long dim);
-double xUx(double *x, double *U, Long dim);
-void matmult(double *A, double *B, double *C, Long l, Long m, Long n);
-void matmulttransposed(double *A, double *B, double *C, Long m, Long l, Long n);
+double xUy(double *x, double *U, double *y, Long dim, int cores);
+double xUxz(double *x, double *U, Long dim, double *z, int cores);
+double x_UxPz(double *x, double *U, double *z, Long dim, int cores);
+double xUx(double *x, double *U, Long dim, int cores);
+void matmult(double *A, double *B, double *C, Long l, Long m, Long n,
+	     int cores);
+void matmulttransposed(double *A, double *B, double *C, Long m, Long l, Long n,
+		       int cores);
 //void matmulttransposedInt(Long *A, Long *B, Long *c, Long m, Long l, Long n); 
-void matmult_2ndtransp(double *A, double *B, double *C, Long m, Long l, Long n);
-void matmult_2ndtransp(double *A, double *B, double *C, Long m, Long l);
-void matmult_tt(double *A, double *B, double *C, Long m, Long l, Long n);
-double *matrixmult(double *m1, double *m2, Long dim1, Long dim2, Long dim3);
+void matmult_2ndtransp(double *A, double *B, double *C, Long m, Long l, Long n,
+		       int cores);
+void matmult_2ndtransp(double *A, double *B, double *C, Long m, Long l,
+		       int cores);
+void matmult_tt(double *A, double *B, double *C, Long m, Long l, Long n,
+		int cores);
+double *matrixmult(double *m1, double *m2, Long dim1, Long dim2, Long dim3,
+		   int cores);
 
 
 void GetName(SEXP el, char *name, const char * List[], int n,

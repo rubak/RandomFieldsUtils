@@ -18,127 +18,26 @@
  and the simulation of random fields
 }
 \usage{
- RFoptions(..., no.readonly = TRUE, no.class=FALSE, install.control=NULL)
+ RFoptions(..., no.class=FALSE, install.control=NULL)
 }
 \arguments{
   \item{...}{arguments in \code{tag = value} form, or a list of tagged
     values. See \sQuote{Details} for options in package
     \pkg{RandomFieldsUtils}.
   }
-  \item{no.readonly}{If \command{\link{RFoptions}} is called without
-    argument then all arguments are returned in a list. If
-    \code{no.readonly=TRUE} then only rewritable arguments are returned.
-    Currently all arguments are rewritable. So, no effect for package
-    \pkg{RandomFieldsUtils}, but could have an effect in other packages.
-  }
   \item{no.class}{logical. If \code{TRUE} the list is returned without
     class specification.
   }
-  \item{install.control}{list, containing any argument of
-    \command{\link[utils]{install.packages}} except \code{type}.
-    The argument \code{configure.args}
-%    (i) is merged with the presetting
-%    of \command{RFoptions}; (ii)
-    may not contain \code{'CXX_FLAGS'}
-    which should be passed as an extra argument with the list.
-    
-    Note that if this argument is given (even with value \code{NULL}),
-    an immediate installation takes place. In case the user tries to
-    force to install 0 packages, an overview over the packages is given.
-    If the user is asked whether re-installation shall take place,
-    user can pass arguments to install.packages, e.g.,
-    \code{"quiet=FALSE"}.
-    
-    If \code{install.control} is given, no further
-    argument may be passed to \command{RFoptions}.
-     
-    Additional components of \code{install.control} and special
-    behaviours are:
-    \describe{
-      \item{\code{path}}{the path to the locally saved tar balls
-      }
-      \item{\code{verbose}, \code{quiet}}{
-	They affect also the behaviour of \code{RFoptions}.
-%	Within \code{RFoptions}, \code{verbose=TRUE} by default.
-      }
-     
-      \item{\code{force}}{
-	\describe{
-	  \item{\code{TRUE}}{
-	    reinstallation of all attached libraries based on and including
-	    \pkg{RandomFieldsUtils}. I.e.,
-	    \code{RFoptions(install.control=list(force=TRUE))} is the
-	    strongest form of forcing reinstallation.
-	  }
-	  \item{\code{FALSE}}{In case some packages have to be re-installed
-	    the user will be asked.
-	  }
-	  \item{not given}{
-	    reinstallation of the attached libraries based on and including
-	    \pkg{RandomFieldsUtils} that have not been tried yet in the
-	    current session.
-	  }
-	}
-      }
-      \item{\code{pkgs=NULL}}{
-	brief overview over the installed packages based on
-	\code{RandomFieldsUtils} 
-      }
-      \item{\code{SERVER}}{logical or character. \code{SERVER} is passed to \file{configure.ac}.
-	\describe{
-	  \item{\code{"noflag"}}{
-	    No extra compiler flag is set with respect to SIMD. This is
-	    the default.
-	  }
-	  \item{\code{TRUE}}{each file is compiled with its specific SIMD/AVX
-	    compiler flags; this guarantees the compatiblity on a
-	    plattform with different sets of kernels.
-	    No SIND/AVX flag should be given by the user.
-	    Cross-compilation supported; no check is performed whether the code would
-	    run on the compiling CPU.
-	  }
-	  \item{\code{"nosimd"}}{It is assumed that no SIMD is available
-	    and the flag "-no-sse2" is set (if possible).}
-	  \item{\code{"sse2"}}{Same behaviour as \code{TRUE}, but all
-	    CPUs have  at least \code{"sse2"} available.}
-	  \item{\code{"sse3"}, \code{"ssse3"}, \code{"sse41"},
-	    \code{"avx"}, \code{"avx2"}%, \code{"avx512f"}
-	  }{
-	    Alternatives to \code{"sse2"}.
-	    Giving the highest guaranteed SIMD recognition leads to
-	    the most efficient code.
-	  }
-	  \item{\code{FALSE}}{each file is compiled with all
-	    SIMD/AVX flags recognized by both the CPU and the
-	    compiler (no cross-compilation); users may add their own
-	    SIMD/AVX flags. 
-	    This might lead to faster code, but which is not downwards
-	    compatible.
-	  }
-	  \item{\code{NA}}{Same as \code{FALSE} except
-	    that the flag \code{-mno-sse2}
-	    is set when no SIMD is needed or used.
-	  }
-	}
-	This option can  be set	to \code{"avx"} interactively if
-	\code{install="ask"}. 
-      }
-      \item{\code{SIMD_FLAGS}}{character. A subset of \code{"sse2"},
-	\code{"sse3"}, \code{"ssse3"}, \code{"sse41"}, \code{"avx"},
-	\code{"avx2"}, \code{"arch=xxx"}, etc.
-	which will be tried instead of default flags.
-	\code{SIMD_FLAGS} is passed to \file{configure.ac}.
-      }
-      \item{\code{CC_FLAGS}}{character. Flags passed to \file{configure.ac}.
-      }
-    }
-  }
+  \item{install.control}{list. See Details, Part 2}.
+
 }
 \details{
   The subsections below comment on\cr
   \bold{1. \code{basic}: Basic options}\cr
-  \bold{2. \code{solve}: Options for solving linear systems}\cr
-  \bold{3. Reserved words}\cr
+  \bold{2. \code{install.control}}\cr
+  \bold{3. \code{installNrun}: Options for installation and running}\cr
+  \bold{4. \code{solve}: Options for solving linear systems}\cr
+  \bold{5. Reserved words}\cr
   \cr
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -190,8 +89,18 @@
       
       Note that \code{printlevel} works
       on the R level whereas \code{cPrintlevel} works on the C level.
+      \code{cPrintlevel} should be changed only globally.
       
       Default: 1 \cr % [also  do].\cr
+    }
+
+    
+   \item{efficient}{ logical.
+      If \code{TRUE} then always the most time efficient code is used.
+%      The value \code{FALSE} for debugging 
+
+      Default: \code{TRUE}.
+      It is strongly recommended to retain this value. 
     }
 
   
@@ -202,76 +111,7 @@
       Default: \code{TRUE}
     }
     
-    \item{\code{install}}{character. Only used by linux systems and
-      alike including macOS
-      The default by CRAN is that SIMD/AVX cannot be used at full extend.
-      \code{install} determines what the action if the compiled
-      version does not use the full CPU capacities. Since the use of GPU
-      is heavily hardware dependent, its auto-recompilation is only performed
-      in tow line of an AVX re-compilation.
-      The users usually use 
-      \describe{
-	\item{\code{"none"}}{no re-installation}
-	\item{\code{"ask"}}{asks whether the library should be reinstalled,
-	  using the full capacity of the CPU according to the package.}
-	\item{\code{"install"}}{performs the auto-recompilation without asking.
-	  Note that only the command
-	  \code{RFoptions(install.control=list(force=TRUE))}
-	  forces re-compilation of the currently loaded packages that are based on
-	  \pkg{RandomFieldsUtils}. 
-	}
-      }
-      Note that, in each session, a package can be reinstalled only.
-      This feature avoids trying to run jobs that cannot be done (e.g.\ due to
-      missing programs of the OS). See argument \code{install.control}
-      for overwriting this behaviour.
-      
-      Default: at starting point it is \code{"ask"} or \code{"none"},
-      but the value may change during the session.
-      
-%      The user can also indicate what whould be installed:
-%      \describe{
-%	\item{\code{"sse"}}{installs SSE}
-%	\item{\dots}
-%	\item{\code{"avx2"}}{installs AVX2}
-%      }
 
-    }
-
-    \item{\code{installPackages}}{logical. Read only.
-      Indicates whether packages are left to be re-installed.
-      \code{RFoptions(install="none")} sets it to \code{FALSE}.
-      \code{RFoptions(install="none", install="ask")} sets it to \code{TRUE}.
-    }
-    
-    \item{\code{kahanCorrection}}{obsolete.
-      logical. If \code{TRUE}, the Kahan summation algorithm is used for
-      calculating scalar products.
-      
-      Default: false
-    }
-   
-   \item{\code{la_mode}}{determines
-      \describe{
-	\item{LA_AUTO, \code{"auto"}}{
-	  If a graphic card is recognized, \code{LA_GPU} is used.
-	  In all other cases the default is primarily \code{LA_R}.
-	  Only on linux systems, the package peforms a simple speed test and
-	  takes \code{LA_INTERN} if it is faster than {LA_R}; the time,
-	  hence the choice, depends also on the number of cores used.}
-  	\item{LA_INTERN, \code{"intern"}}{mostly own algorithms, often
-	  based on SIMD/AVX. This option is of
-	  interest only if no advanced BLAS/LAPACK
-	  has been compiled into R}
-  	\item{LA_R, \code{"R"}}{BLAS/LAPACK implementation used by R}
- 	\item{LA_GPU, \code{"GPU"}}{
-	  This option is available when the package has been compiled with nvcc.
-	}
-	\item{LA_QUERY, \code{"query"}}{Request on currently used set-up}
-      }
-	
-      Default: \code{LA_AUTO}
-    }
 
     \item{\code{printlevel}}{If \code{printlevel}\eqn{\le0}{<=0}
       there is not any output on the screen. The
@@ -339,7 +179,217 @@
     }
 
 
-    \item{\code{warn_parallel}}{Logical.
+ 
+  }
+
+    
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  \bold{2. \code{install.control}: Details on argument \code{install.control}}
+  \code{install.control} may contain any argument of
+    \command{\link[utils]{install.packages}} except \code{type}.
+    \bold{This options is currently tailored for MS and Linux on Intel
+      machines, only.}
+    The argument \code{configure.args}
+%    (i) is merged with the presetting
+%    of \command{RFoptions}; (ii)
+    may not contain \code{'CXX_FLAGS'}
+    which should be passed as an extra argument with the list.
+    
+    Note that if this argument is given (even with value \code{NULL}),
+    an immediate installation takes place. In case the user tries to
+    force to install 0 packages, an overview over the packages is given.
+    If the user is asked whether re-installation shall take place,
+    user can pass arguments to install.packages, e.g.,
+    \code{"quiet=FALSE"}.
+    
+    If \code{install.control} is given, no further
+    argument may be passed to \command{RFoptions}.
+     
+    Additional components of \code{install.control} and special
+    behaviours are:
+    \describe{
+      \item{\code{path}}{the path to the locally saved tar balls
+      }
+      \item{\code{verbose}, \code{quiet}}{
+	They affect also the behaviour of \code{RFoptions}.
+%	Within \code{RFoptions}, \code{verbose=TRUE} by default.
+      }
+     
+      \item{\code{force}}{
+	\describe{
+	  \item{\code{TRUE}}{
+	    reinstallation of all attached libraries based on and including
+	    \pkg{RandomFieldsUtils}. I.e.,
+	    \code{RFoptions(install.control=list(force=TRUE))} is the
+	    strongest form of forcing reinstallation.
+	  }
+	  \item{\code{FALSE}}{In case some packages have to be re-installed
+	    the user will be asked.
+	  }
+	  \item{not given}{
+	    reinstallation of the attached libraries based on and including
+	    \pkg{RandomFieldsUtils} that have not been tried yet in the
+	    current session.
+	  }
+	}
+      }
+      \item{\code{pkgs=NULL}}{
+	brief overview over the installed packages based on
+	\code{RandomFieldsUtils} 
+      }
+      \item{\code{CROSS}}{logical or character. \code{CROSS} is passed to \file{configure.ac}.
+	\describe{
+	  \item{\code{"noflag"}}{
+	    No extra compiler flag is set with respect to SIMD. This is
+	    the default.
+	  }
+	  \item{\code{TRUE}}{each file is compiled with its specific SIMD/AVX
+	    compiler flags; this guarantees the compatiblity on a
+	    plattform with different sets of kernels.
+	    No SIND/AVX flag should be given by the user.
+	    Cross-compilation supported; no check is performed whether the code would
+	    run on the compiling CPU.
+	  }
+	  \item{\code{"nosimd"}}{It is assumed that no SIMD is available
+	    and the flag "-no-sse2" is set (if possible).}
+	  \item{\code{"sse2"}}{Same behaviour as \code{TRUE}, but all
+	    CPUs have  at least \code{"sse2"} available.}
+	  \item{\code{"sse3"}, \code{"ssse3"}, \code{"sse41"},
+	    \code{"avx"}, \code{"avx2"}%, \code{"avx512f"}
+	  }{
+	    Alternatives to \code{"sse2"}.
+	    Giving the highest guaranteed SIMD recognition leads to
+	    the most efficient code.
+	  }
+	  \item{\code{FALSE}}{each file is compiled with all
+	    SIMD/AVX flags recognized by both the CPU and the
+	    compiler (no cross-compilation); users may add their own
+	    SIMD/AVX flags. 
+	    This might lead to faster code, but which is not downwards
+	    compatible.
+	  }
+	  \item{\code{NA}}{Same as \code{FALSE} except
+	    that the flag \code{-mno-sse2}
+	    is set when no SIMD is needed or used.
+	  }
+	}
+	This option can  be set	to \code{"avx"} interactively if
+	\code{install="ask"}. 
+      }
+      
+       \item{\code{CC_FLAGS}}{character. Flags passed to \file{configure.ac}.
+      }
+
+      \item{\code{SIMD_FLAGS}}{character. A subset of \code{"sse2"},
+	\code{"sse3"}, \code{"ssse3"}, \code{"sse41"}, \code{"avx"},
+	\code{"avx2"}, \code{"arch=xxx"}, etc.
+	which will be tried instead of default flags.
+	\code{SIMD_FLAGS} is passed to \file{configure.ac}.
+      }
+
+      \item{\code{LOCAL_ONLY}}{logical. If \code{TRUE}, the web is not
+	searched for the latest version of the package.}
+      
+      \item{\code{MEM_IS_ALIGNED}}{logical. If \code{TRUE}, then the memory
+        is assumed to be aligned. If \code{FALSE} then the SIMD
+        load commands \code{_mm_*load_*}
+        are replaced by  \code{_mm_*loadu_*}.
+        If given, then \code{force} is set to \code{TRUE}.
+      }
+
+      \item{\code{USE_GPU}}{logical.
+	Force or hinder the compilation for the GPU
+      }
+      
+    }% describe in install.control
+
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  \bold{3. \code{installNrun}: Options for installing and for
+  determining basic behaviour}  
+\describe{ % to do
+    \item{\code{install}}{character. Only used by linux systems and
+      alike including macOS
+      The default by CRAN is that SIMD/AVX cannot be used at full extend.
+      \code{install} determines what the action if the compiled
+      version does not use the full CPU capacities. Since the use of GPU
+      is heavily hardware dependent, its auto-recompilation is only performed
+      in tow line of an AVX re-compilation.
+      The users usually use 
+      \describe{
+	\item{\code{"no"}}{no re-installation
+%      No further re-installation in this session possible
+% s : CROSS=\"avx\ his option guarantees downwards compatibility to avx. See ?RFoptions for details.      
+	}
+	\item{\code{"ask"}}{asks whether the library should be reinstalled,
+	  using the full capacity of the CPU according to the package.}
+	\item{\code{"install"}}{performs the auto-recompilation without asking.
+	  Note that only the command
+	  \code{RFoptions(install.control=list(force=TRUE))}
+	  forces re-compilation of the currently loaded packages that are based on
+	  \pkg{RandomFieldsUtils}. 
+	}
+      }      
+      Note that, in each session, a package can be reinstalled only.
+      This feature avoids trying to run jobs that cannot be done (e.g.\ due to
+      missing programs of the OS). See argument \code{install.control}
+      for overwriting this behaviour.
+      
+      Default: at starting point it is \code{"ask"} or \code{"no"},
+      but the value may change during the session.
+      
+%      The user can also indicate what whould be installed:
+%      \describe{
+%	\item{\code{"sse"}}{installs SSE}
+%	\item{\dots}
+%	\item{\code{"avx2"}}{installs AVX2}
+%      }
+
+    }
+
+    \item{\code{installPackages}}{logical. Read only.
+      Indicates whether packages are left to be re-installed.
+      \code{RFoptions(install="no")} sets it to \code{FALSE}.
+      \code{RFoptions(install="no", install="ask")} sets it to \code{TRUE}.
+    }
+
+    
+    
+    \item{\code{kahanCorrection}}{obsolete.
+      logical. If \code{TRUE}, the Kahan summation algorithm is used for
+      calculating scalar products.
+      
+      Default: false
+    }
+   
+   \item{\code{la_mode}}{determines
+      \describe{
+	\item{LA_AUTO, \code{"auto"}}{
+	  If a graphic card is recognized, \code{LA_GPU} is used.
+	  In all other cases the default is primarily \code{LA_R}.
+	  Only on linux systems, the package peforms a simple speed test and
+	  takes \code{LA_INTERN} if it is faster than {LA_R}; the time,
+	  hence the choice, depends also on the number of cores used.}
+  	\item{LA_INTERN, \code{"intern"}}{mostly own algorithms, often
+	  based on SIMD/AVX. This option is of
+	  interest only if no advanced BLAS/LAPACK
+	  has been compiled into R}
+  	\item{LA_R, \code{"R"}}{BLAS/LAPACK implementation used by R}
+ 	\item{LA_GPU, \code{"GPU"}}{
+	  This option is available when the package has been compiled with nvcc.
+	}
+	\item{LA_QUERY, \code{"query"}}{Request on currently used set-up}
+      }
+	
+      Default: \code{LA_AUTO}
+    }
+    \code{mem_is_aligned}{logical. Read only.
+      See \code{MEM_IS_ALIGNED} in \code{install.control}.
+    }
+
+    
+   \item{\code{warn_parallel}}{Logical.
       \pkg{RandomFieldsUtils} and
       packages using it, such as \pkg{RandomFields} and \pkg{miraculix},
       should now be prepared for parallelization using package
@@ -355,7 +405,7 @@
       Default: \code{TRUE}.
     }
 
-  \item{\code{warn_unknown_option}}{integer.       
+    \item{\code{warn_unknown_option}}{integer.       
       \describe{
 	\item{\code{0},\code{1},\code{-1}}{
 	  Unknown options are all ignored. If the value is positive,
@@ -384,12 +434,11 @@
       Default for \pkg{RandomFields}: \code{1}
       
     }
+
   }
 
-    
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  \bold{2. \code{solve}: Options for solving linear systems}
-  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  \bold{4. \code{solve}: Options for solving linear systems}
   
   \describe{ % to do
     \item{\code{det_as_log}}{
@@ -420,7 +469,7 @@
     \item{\code{pivot}}{Type of pivoting for the Cholesky
       decomposition. Possible values are 
       \describe{
-	\item{PIVOT_NONE, \code{"none"}}{No pivoting.}
+	\item{PIVOT_NONE, \code{"no"}}{No pivoting.}
 	\item{PIVOT_AUTO, \code{"auto"}}{If the  matrix has a size greater than
 	  3x3 and Choleskey fails without pivoting, privoting
 	  is done. For matrices of size less than 4x4, no pivoting and
@@ -536,13 +585,13 @@
       Default: \code{c(400, 4000)}
     }
     
-    \item{\code{spam_min_p}}{
-      number in \eqn{(0,1)} giving the proportion of
+    \item{\code{spam_min_p} (\code{spam_min_p})}{
+      a numbers in \eqn{(0,1)} giving the proportion of
       zero above which an sparse matrix algorithm is used.
       The second value is used
       in case the GPU is activated.
       
-      Default: \code{c(0.8, 0.8)}
+      Default: \code{0.8} (\code{0.9})     
     }
     \item{\code{spam_pivot}}{
       integer. Pivoting algorithm for sparse matrices:
@@ -555,14 +604,14 @@
       
       Default: PIVOTSPARSE_MMD
     }
-    \item{\code{spam_sample_n}}{
+    \item{\code{spam_sample_n} (\code{spam_sample_n_GPU})}{
       Whether a matrix is sparse or not is tested by a
       \sQuote{random} sample of size \code{spam_sample_n};
       The selection of the sample is iteratively
       obtained by multiplying the index by \code{spam_factor}
       modulo the size of the matrix.
       
-      Default: 500. 
+      Default: 500 (10000). 
     }
     \item{\code{spam_tol}}{
       largest absolute value being considered as zero.
@@ -588,7 +637,7 @@
     }
   }
 
-  \bold{3. Reserved Words}
+  \bold{5. Reserved Words}
   \describe{
     \item{\code{list_}}{
       \code{list_} usually equals the output of \code{RFoptions()}.

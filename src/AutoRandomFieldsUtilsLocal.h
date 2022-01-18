@@ -4,18 +4,18 @@
 
 
 // Reihenfolge nie aendern!!
-typedef enum la_modes {LA_AUTO, LA_INTERN, LA_R, LA_GPU,
+typedef enum la_modes {LA_INTERN, LA_R, LA_AUTO, LA_GPU,
 		       LA_QUERY} la_modes; 
 #define LA_LAST LA_QUERY
 // Reihenfolge nie aendern!!
-typedef enum pivot_modes {PIVOT_NONE, PIVOT_AUTO, PIVOT_DO, PIVOT_IDX,
+typedef enum pivot_modes {PIVOT_NONE,  PIVOT_DO, PIVOT_AUTO, PIVOT_IDX,
 			  PIVOT_UNDEFINED} pivot_modes;
 #define PIVOT_LAST PIVOT_UNDEFINED
 
 #define PIVOTSPARSE_MMD 1 // for spam
 #define PIVOTSPARSE_RCM 2 // for spam
 
-typedef enum install_modes {Inone, Iask, Iinstall, Isse, Isse2, // 4
+typedef enum install_modes {Inone, Iinstall, Iask, Isse, Isse2, // 4
 			    Isse3, Issse3, Iavx,  Iavx2, Iavx512f, // 8
 			    Igpu} install_modes;
 #define INSTALL_LAST Igpu
@@ -35,6 +35,7 @@ typedef enum InversionMethod {
   direct_formula,           // 10
   Diagonal // 10, always last one!
 } InversionMethod;
+
 #define nr_InversionMethods ((int) Diagonal + 1)
 #define nr_user_InversionMethods ((int) NoFurtherInversionMethod + 1)
 

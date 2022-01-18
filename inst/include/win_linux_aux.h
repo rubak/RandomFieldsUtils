@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef WIN_LINUX_AUX_H
 #define WIN_LINUX_AUX_H 1
 
+uint32_t cpuid_info(int Blatt, int Register);//MINGWCPUID, WINCPUID, LINUXCPUID
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -126,7 +126,7 @@ LockRemove <- function(file) {
 }
 
 
-Print <- function(..., digits=6, empty.lines=2) { #
+Print <- function(..., digits=6, empty.lines=2) { # OK
   ## ?"..1"
 #  print(..1)
 #  print(substitute(..1))
@@ -135,12 +135,12 @@ Print <- function(..., digits=6, empty.lines=2) { #
   max.elements <- 99
   l <- list(...)
   n <- as.character(match.call())[-1]
-  cat(paste(rep("\n", empty.lines), collapse="")) #
+  cat(paste(rep("\n", empty.lines), collapse="")) 
   for (i in 1:length(l)) {
-    cat(n[i]) #
+    cat(n[i]) 
     if (!is.list(l[[i]]) && is.vector(l[[i]])) {
       L <- length(l[[i]])
-      if (L==0) cat(" = <zero>")#
+      if (L==0) cat(" = <zero>")
       else {
         cat(" [", L, "] = ", sep="")
         cat(if (is.numeric(l[[i]]))
@@ -150,17 +150,17 @@ Print <- function(..., digits=6, empty.lines=2) { #
       }
     } else {
        if (is.list(l[[i]])) {
-        cat(" =  ") #
-        str(l[[i]], digits.d=digits) #
+        cat(" =  ") 
+        str(l[[i]], digits.d=digits) # OK
       } else {
         cat(" =")
         if (length(l[[i]]) <= 100 && FALSE) {
-          print(if (is.numeric(l[[i]])) round(l[[i]], digits=digits)#
+          print(if (is.numeric(l[[i]])) round(l[[i]], digits=digits)# OK
                 else l[[i]])
         } else {
           if (length(l[[i]]) > 1 && !is.vector(l[[i]]) && !is.matrix(l[[i]])
               && !is.array(l[[i]])) cat("\n")
-          str(l[[i]]) #
+          str(l[[i]]) # OK
         }
       }
     }
@@ -181,10 +181,10 @@ solvePosDef <- function(a, b=NULL, logdeterminant=FALSE) {
 solvex <- function(a, b=NULL, logdeterminant=FALSE) {
   if (logdeterminant) {
     logdet <- double(1)
-    res <- .Call(C_SolvePosDef, a, b, logdet)
+    res <- .Call(C_SolvePosDefR, a, b, logdet)
     return(list(inv=res, logdet=logdet))
   } else {
-    .Call(C_SolvePosDef, a, b, double(0))
+    .Call(C_SolvePosDefR, a, b, double(0))
   }
 }
 
@@ -258,3 +258,14 @@ quadratic <- function(x, v) .Call(C_quadratic, x, v)
 dotXV <- function(x, w) .Call(C_dotXV, x, w)
 
 dbinorm <- function(x, S) .Call(C_dbinorm, x, S)
+
+
+uses.simd.instruction <- function(which=NULL, pkgs=NULL) {
+  .Call(C_instruction_set, which, pkgs, TRUE);
+}
+
+misses.simd.instruction <- function(which=NULL, pkgs=NULL) {
+  .Call(C_instruction_set, which, pkgs, FALSE);
+}
+
+

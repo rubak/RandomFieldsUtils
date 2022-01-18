@@ -30,12 +30,12 @@ summary.RFopt <- function(object, ...) {
 
 
 print.summary.RFopt <- function(x, ...) {
-  str(x, give.attr=FALSE, ...) #
+  str(x, give.attr=FALSE, ...) # OK
   invisible(x)
 }
 
 print.RFopt <- function(x, ...) {
-  print.summary.RFopt(summary.RFopt(x, ...)) #
+  print.summary.RFopt(summary.RFopt(x, ...)) 
   invisible(x)
 }
 
@@ -46,12 +46,12 @@ summary.RFoptElmnt <- function(object, ...) {
 }
 
 print.summary.RFoptElmnt <- function(x, ...) {
-  str(x, give.attr=FALSE, ...) #
+  str(x, give.attr=FALSE, ...) # OK
   invisible(x)
 }
 
 print.RFoptElmnt <- function(x, ...) {
-  print.summary.RFoptElmnt(summary.RFoptElmnt(x, ...)) #
+  print.summary.RFoptElmnt(summary.RFoptElmnt(x, ...))
   invisible(x)
 }
 
@@ -78,16 +78,18 @@ ARE <- function(x) if (length(x) > 1) "are" else "is"
 HAVE <- function(x) if (length(x) > 1) "have" else "has"
 
 
-sources <- function(pkgs, raw=FALSE, repos=NULL) {
+sources <- function(pkgs, raw=FALSE, repos=NULL, local.only=FALSE) {
   gitrepos <- "schlather/PACKAGES"
   gitinfo <- "https://github.com/"
   gitdownload <- "https://raw.githubusercontent.com/"
 
 
   debug <- FALSE
-  ip <- installed.packages()[pkgs, "Version"] # OK
+  ip <- installed.packages()[, "Version"] # OK
+  ip <- ip[pkgs]
   names(ip) <- pkgs
-  s <- c("local", "cran", "github")
+  
+  s <- if (local.only) "local" else c("local", "cran", "github")
   found <- matrix(FALSE, nrow=length(pkgs), ncol=length(s))
   V <- where <- matrix("", nrow=length(pkgs), ncol=length(s))
   dimnames(V) <- dimnames(where) <- dimnames(found) <-list(pkgs, s)
@@ -206,11 +208,14 @@ sources <- function(pkgs, raw=FALSE, repos=NULL) {
 #    pkgs <- c("RandomFieldsUtils", "miraculix", "RandomFields");print("XX");  print(s <- sources(pkgs));  tmp <- apply(found, 1, any)
 # https://raw.githubusercontent.com/schlather/PACKAGES/main/miraculix_1.0.2.tar.gz
 
-reinstallPackages <- function(ic, basic, install.control) {
-  install <- basic$install
-##  Print(basic)
+reinstallPackages <- function(ic, installNrun, install.control) {
+  install <- installNrun$install
+  mem_is_aligned <- installNrun$mem_is_aligned
+  if (is.na(mem_is_aligned)) mem_is_aligned <- TRUE
+    
+##  Print(installNrun)
   verbose <- FALSE
-  force <- quiet <- SERVER <- pkgs.given <- path.given <- FALSE
+  force <- quiet <- CROSS <- pkgs.given <- path.given <- local.only <- FALSE
   repos <- path <- pkgs <- NULL
   if (ic) {
     N <- names(install.control)
@@ -219,23 +224,29 @@ reinstallPackages <- function(ic, basic, install.control) {
     pkgs.given <- "pkgs" %in% N
     path.given <- "path" %in% N
     path <- install.control$path
-    delete <- c("repos", "path", "force", "pkgs", "SERVER")
+    delete <- c("repos", "path", "force", "pkgs", "CROSS")
     for (arg in c(delete, "verbose", "quiet"))
       if (length(install.control[[arg]]) > 0) {
         assign(arg, install.control[[arg]])
         if (arg %in% delete) install.control[[arg]] <- NULL
       }
-
-    if (length(install.control$force) > 0 && !force) install <- "ask"
-    else if (length(install) > 0 && install %in% c("ask", "none"))
+     if (length(install.control$force) > 0 && !force) install <- "ask"
+    else if (length(install) > 0 && install %in% c("ask", "no installation"))
       install <- "install"
-  }
+    if ("MEM_IS_ALIGNED" %in% N) {
+      mem_is_aligned <- install.control$MEM_IS_ALIGNED
+      force <- TRUE
+    }
+    if ("LOCAL_ONLY" %in% N)
+      local.only <- install.control$LOCAL_ONLY
+ }
 
   if (!pkgs.given) pkgs <- .Call(C_getPackagesToBeInstalled, force) 
 
   verbose <- verbose && !quiet
   if (length(pkgs) == 0) {
-    .Call(C_AVXmessages, "all")
+    .Call(C_SIMDmessages, "all")
+    cat("See ?RFoptions for options.\n")
     if (!quiet)
       message(if (!pkgs.given) "No packages found to be installed.",
               if (!path.given && !pkgs.given)
@@ -249,15 +260,15 @@ reinstallPackages <- function(ic, basic, install.control) {
       cat("The package", S(pkgs), " ", paste0("'", pkgs, "'", collapse=", "),
           " ", HAVE(pkgs), " been compiled without appropriate SIMD/AVX2 flags. So, calculations can be slow. If the package",
           S(pkgs), " ", ARE(pkgs),
-          " recompiled with the necessary flags, the calculations might be faster.\nR should be restarted after re-compiling. The argument 'install.control' might be used to run the re-compilation without asking and to pass further arguments to 'install.packages', e.g., 'RFoptions(install.control=list(verbose=TRUE))'\nTo avoid this feedback, set 'RFoptions(install=\"none\")' or 'RFoptions(install=\"install\")' before calling any other function of '",
+          " recompiled with the necessary flags, the calculations might be faster.\nR should be restarted after re-compiling. The argument 'install.control' might be used to run the re-compilation without asking and to pass further arguments to 'install.packages', e.g., 'RFoptions(install.control=list(verbose=TRUE))'\nTo avoid this feedback, set 'RFoptions(install=\"no\")' or 'RFoptions(install=\"install\")' before calling any other function of '",
           pkgs[length(pkgs)],"'.\n\n", sep="")
 
-    omp <- .Call(C_AVXmessages, pkgs)
+    omp <- .Call(C_SIMDmessages, pkgs)
   }
 
   ## pkgs <- c("RandomFieldsUtils", "miraculix", "RandomFields");print("XX")
   if (!quiet) cat("Searching for tar balls... ")
-  s <- sources(pkgs,repos=repos)
+  s <- sources(pkgs,repos=repos, local.only=local.only)
   cat("\n")
   if (all(s$failed)) {
     if (!quiet) cat("Not a single source found for re-installation.\n")
@@ -265,7 +276,8 @@ reinstallPackages <- function(ic, basic, install.control) {
   }
 
   tell.which <- function(s, verbose) {
-    cat("The following package", S(!s$failed), " will be re-installed:\n", sep="",
+    cat("The following package", S(!s$failed), " will be re-installed:\n",
+    	sep="",
         paste0(if (!verbose) "\t",
                rownames(s$what), "_", s$what[, "version"],
                " from ", s$what[, "how"],
@@ -280,46 +292,50 @@ reinstallPackages <- function(ic, basic, install.control) {
       cat("\n")
     }
   }
-##  tell.which(s, verbose)
+  ##  tell.which(s, verbose)
+
   
-  if (install == "ask") {
+  neon <- .Call(C_isNEONavailable)
+  arm32 <- !is.na(neon)
+  x86_64 <- .Call(C_isX86_64)
+  CROSS_DEFAULT <- if (arm32) "arm32" else if (x86_64) "avx" else "FALSE"
+ if ((asked = install == "ask")) {
     if (!quiet) tell.which(s, verbose)
     repeat {
       txt <- paste0("Shall '", rownames(s$what)[1],
                     "' and all further packages based on 'RandomFieldsUtils' be recompiled (Y/n/h/s)erver/<args>) ? ")
      install.control <- readline(txt)
       if (install.control %in% c("h", "H")) {
-        cat("\nHelp info\n=========\n")
-        cat("Y : installation from \n")
-        cat("n : interruption.\n     No further re-installation in this session possible\n")
-        cat("s : SERVER=\"avx\"\n     This option guarantees downwards compatibility to avx. See ?RFoptions for details.\n")
-        cat("<args>: any arguments for 'install.packages',\n    e.g. 'lib = \"~\", quite=TRUE'\n")
+        cat("\nHelp info (see ?RFoptions Details..InstallNrun..install for details)\n
+               ====================================================\n")
+        cat("Y : installation \n")
+        cat("n : interruption.\n")
+        cat("s : CROSS=\"", CROSS_DEFAULT, "\".\n")
+        cat("<args>: arguments for 'install.packages',\n    e.g. 'lib = \"~\", quite=TRUE'\n")
         cat("\n")
       } else break
     }
      
-    install <- if (install.control %in% c("n", "N")) "none" else "install"
+    install <-
+      if (install.control %in% c("n", "N")) "no installation" else "install"
     path <- NULL
-    if (install.control %in% c("s", "S")) SERVER <- "avx"
+    if (install.control %in% c("s", "S")) CROSS <- CROSS_DEFAULT
     if (nchar(install.control) <= 3)  install.control <-""
     if (verbose) {
-      if (install == "none") {
-        cat("If you have stopped the re-compilation since does not work, consider one of the following possiblities:")
-        .Call(C_AVXmessages, NULL)
-        cat("\nIf all fails, call 'RFoptions(install=\"none\")' after any loading of the package.\nOtherwise you will be bothered with the above question again and again.\n")
-      } else {
+      if (install == "no installation") .Call(C_SIMDmessages, NULL)
+      else {
         S <- "\t*************************************************\n"
         cat("\n", S, "\t***         Do not forget to restart R.       ***\n",S)
         sleep.milli(1500)
       }
     }
   } else {
-    omp <- .Call(C_AVXmessages, "OMP")
+    omp <- .Call(C_SIMDmessages, "OMP")
     if (!quiet) tell.which(s, verbose)
   }
 
 
-  if (install != "none") {
+  if (install != "no installation") {
     if (is.character(install.control)) 
       install.control <- eval(parse(text=paste("list(", install.control, ")")))
     SIMD_FLAGS <- CXX_FLAGS <- args <- ""
@@ -331,20 +347,25 @@ reinstallPackages <- function(ic, basic, install.control) {
       CXX_FLAGS <- install.control$CXX_FLAGS
       install.control$CXX_FLAGS <- omp <- NULL
     }
-     if (length(install.control$CXX_FLAGS) > 0) {
+     if (length(install.control$SIMD_FLAGS) > 0) {
       SIMD_FLAGS <- install.control$SIMD_FLAGS
       install.control$SIMD_FLAGS <- NULL
     }
     if (length(install.control$USE_GPU) > 0) {
-      usegpu <- install.control$USE_GPU
+      usegpu <- if (install.control$USE_GPU) " USE_GPU=TRUE" else ""
       install.control$USE_GPU <- NULL
-    } else usegpu <- "\"try\""
+    } else
+      usegpu <- if (.Call(C_isGPUavailable)) " USE_GPU=try" else ""
+    #Print(.Call(C_isGPUavailable))
     
     idx <- pmatch(names(install.control),names(as.list(args(install.packages))))
     install.control <- install.control[which(!is.na(idx))]
         
     args <- paste0(args,
-                   " SERVER=", SERVER, 
+		   usegpu,
+                   " USERASKED=", asked,
+                   " CROSS=", CROSS,
+		   " MEM_IS_ALIGNED=", mem_is_aligned,
                    if (length(SIMD_FLAGS) > 0)
                      paste0(" SIMD_FLAGS='", SIMD_FLAGS, "'"),
                    if (length(CXX_FLAGS) + length(omp) > 0)
@@ -369,18 +390,19 @@ reinstallPackages <- function(ic, basic, install.control) {
 }
 
 
-RFoptions <- function(..., no.readonly=TRUE, no.class=FALSE, install.control=NULL) {
+RFoptions <- function(..., no.class=FALSE, install.control=NULL) {
   opt <- .External(C_RFoptions, ...)  
-  ##  if (is.list(opt)) Print(basic) else Print(opt)
+  ##  if (is.list(opt)) Print(installNrun) else Print(opt)
   ic <- hasArg("install.control")
 ##   print(opt)
   ## print(ic)
-   if (ic || (length(opt) > 0 && is.list(opt) && is.list(opt$basic) &&
-             opt$basic$installPackages && interactive())) {
-     reinstallPackages(ic=ic, basic=opt$basic, install.control=install.control)
+   if (ic || (length(opt) > 0 && is.list(opt) && is.list(opt$installNrun) &&
+             opt$installNrun$installPackages && interactive())) {
+     reinstallPackages(ic=ic, installNrun=opt$installNrun,
+     install.control=install.control)
     if (ic) return(invisible(NULL))
   }
-  if (length(opt) == 0 || no.class) return(invisible(opt))
+ if (length(opt) == 0 || no.class) return(invisible(opt))
   if (is.list(opt[[1]])) {
     opt <- lapply(opt,
 		  function(x) {
@@ -389,8 +411,5 @@ RFoptions <- function(..., no.readonly=TRUE, no.class=FALSE, install.control=NUL
 		})
     class(opt) <-  "RFopt"
   } else class(opt) <-  "RFoptElmnt"
-  if (!no.readonly) {
-    opt$readonly <- list()
-  }
   opt
 }

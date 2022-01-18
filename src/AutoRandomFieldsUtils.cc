@@ -26,21 +26,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 const char
 
-*R_TYPE_NAMES[LAST_R_TYPE_NAME + 1] = {
+*R_TYPE_NAMES[LAST_R_TYPE_NAME + 1] = { // never change ! see kleinkram.cc
   "NILSXP" /* 0 */,
   "SYMSXP", "LISTSXP", "CLOSXP", "ENVSXP", "PROMSXP",
   "LANGSXP", "SPECIALSXP", "BUILTINSXP", "CHARSXP", "LGLSXP" /* 10 */,
-  "??", "??", "INTSXP", "REALSXP", "CPLXSXP", "STRSXP", "DOTSXP", "ANYSXP",
-  "ECSXP", "EXPRSXP" /*20 */,
-  "BCODESXP", "EXTPTRSXP", "WEAKREFSXP", "RAWSXP", "S4SXP" /* 25 */, "", "", "",
-  "", "NEWSXP" /* 30 */,
+  "??", "??", "INTSXP", "REALSXP", "CPLXSXP",
+  "STRSXP", "DOTSXP", "ANYSXP", "ECSXP", "EXPRSXP" /*20 */,
+  "BCODESXP", "EXTPTRSXP", "WEAKREFSXP", "RAWSXP", "S4SXP" /* 25 */,
+  "", "", "", "", "NEWSXP" /* 30 */,
   "FREESXP", "??SXP"},
 
-*LA_NAMES[LA_LAST + 1] = {"auto", "intern", "R", "GPU", "query"},
+ *LA_NAMES[LA_LAST + 1] = { "intern", "R", "auto", "GPU", "query"},
 
-*PIVOT_NAMES[PIVOT_LAST + 1] = {"none", "auto", "do", "idx", "undefined"},
+*PIVOT_NAMES[PIVOT_LAST + 1] = {"no privoting",
+  "do", "auto", "idx", "undefined"},
 
-*INSTALL_NAMES[INSTALL_LAST + 1] = {"none", "ask", "install", 
-				    "sse", "sse2", "sse3", "ssse3", "avx", "avx2",
-				    "avx512f",
-				    "gpu"};
+*INSTALL_NAMES[INSTALL_LAST + 1] = {"no installation", "install", "ask", 
+				    "sse", "sse2", "sse3", "ssse3", "avx",
+				    "avx2", "avx512f", "gpu"};

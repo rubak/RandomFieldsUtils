@@ -10,7 +10,8 @@ void mgpuSolve(double *matrix, Uint individuals, double *vector);
 void gpu_relmat_custom(Uint*, double*, Uint, Uint);
 void gpu_relmat_cublas(Uint*, double*, Uint, Uint);
 
-#define PADDIM 4L
+// #define PADDIM 4L
+//#define BLOCKS 1024
 #define THREADS_PER_BLOCK 1024 //2048 / 32
-#define BLOCKS 1024
+
 #endif

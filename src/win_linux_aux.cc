@@ -22,8 +22,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#if defined WIN32 || defined _WIN32 || defined __WIN32__
-// #define WIN32_LEAN_AND_MEAN
+
+#include "intrinsics.h"
+
+#if defined MSDOS_WINDOWS
 #define VC_EXTRALEAN
 #include <windows.h>
 #endif
@@ -39,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
  
 void sleepMilli(int *milli) {
-#if defined WIN32 || defined _WIN32 || defined __WIN32__
+#if defined MSDOS_WINDOWS
   Sleep((long) *milli); // along
 #else 
   usleep((useconds_t) (1000 * (unsigned long) *milli));// along
@@ -47,7 +49,7 @@ void sleepMilli(int *milli) {
 }
 
 void sleepMicro(int *micro) {
-#if defined WIN32 || defined _WIN32 || defined __WIN32__
+#if defined MSDOS_WINDOWS
   Sleep((long) ((*micro + 500) / 1000));// along
 #else
   usleep((useconds_t) *micro);
@@ -55,7 +57,7 @@ void sleepMicro(int *micro) {
 }
 
 void pid(int *i)  {
-#if defined WIN32 || defined _WIN32 || defined __WIN32__
+#if defined MSDOS_WINDOWS
   *i = _getpid();
 #else
   *i = getpid(); 
@@ -72,7 +74,7 @@ bool
 
 
 void hostname(char **h, int *i){
-#if defined WIN32 || defined _WIN32 || defined __WIN32__
+#if defined MSDOS_WINDOWS
   *h[0]=0;
 #else
   gethostname(*h, *i);
@@ -80,3 +82,22 @@ void hostname(char **h, int *i){
 }  
 
 
+uint32_t cpuid_info(int Blatt, int Register) {
+#if defined MINGWCPUID
+   uint32_t s[4];						     
+   __cpuid(Blatt, s[0], s[1], s[2], s[3]);			    
+   return s[Register];
+#elif defined WINCPUID
+  uint32_t s[4];							
+  __cpuid((int *)s, (int) Blatt);
+  return s[Register];
+#elif defined LINUXCPUID
+  uint32_t s[4];							
+  asm volatile							
+    ("cpuid": "=a"(s[0]), "=b"(s[1]),"=c"(s[2]),			
+     "=d"(s[3]):"a"(Blatt),"c"(0));					
+  return s[Register]; 
+#else
+   return 0;
+#endif
+}

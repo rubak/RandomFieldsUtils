@@ -75,5 +75,5 @@ void bes_k_simd (double VARIABLE_IS_NOT_USED *xv,
 		 int VARIABLE_IS_NOT_USED  sx,
 		 double VARIABLE_IS_NOT_USED *yv)
 {
-  ERR("not yet programmed");
+  ERR0("not yet programmed");
 }
