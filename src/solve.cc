@@ -49,7 +49,7 @@ extern const char * solve[solveN];
 #ifdef USEGPU
 #include "solve_gpu.h"
 #else
-SIMD_MISS(mma_61, gpu);
+SIMD_MISS(solve_61, gpu);
 #endif
 
 AVAILABLE_SIMD
@@ -117,7 +117,7 @@ double Determinant(double *M, int size, bool log) {
 double DeterminantLU(double *M, int size, bool log, int *permut) {
   Long sizeP1 = size + 1;
     //    sizeSq = size * size;
-  //  for (int i=0;i<sizeSq; i++) {  if (i % size ==0)printf("\n"); printf("%f ", M[i]);  }printf("\n");
+  //  for (int i=0;i<sizeSq; i++) {  if (i % size == 0)printf("\n"); printf("%f ", M[i]);  }printf("\n");
   if (log) {
     double tmp = 0.0;
     int vorz= 0;
@@ -2043,7 +2043,7 @@ SEXP SolvePosDefR(SEXP M, SEXP rhs, SEXP logdet){
 int SolvePosDef(double *M, int size, bool posdef, 
 		double *rhs, Long rhs_cols, double *logdet, 
 		solve_storage *PT, int VARIABLE_IS_NOT_USED cores) {
-  if ((rhs == NULL) xor (rhs_cols==0)) BUG; 
+  if ((rhs == NULL) xor (rhs_cols == 0)) BUG; 
   return doPosDefIntern(M, size, posdef, rhs, rhs_cols,
 		  NULL, // result, so result returned in M or rhs
 		  logdet, 
@@ -2056,7 +2056,7 @@ int SolvePosDef(double *M, int size, bool posdef,
 int SolvePosDefSp(double *M, int size, bool posdef, 
 		  double *rhs, Long rhs_cols,  double *logdet, 
 		  solve_storage *PT,  solve_options * sp, int VARIABLE_IS_NOT_USED cores) {  
-  if ((rhs == NULL) xor (rhs_cols==0)) BUG; 
+  if ((rhs == NULL) xor (rhs_cols == 0)) BUG; 
   return doPosDefIntern(M, size, posdef, rhs, rhs_cols, NULL, logdet, SOLVE,
 		  PT, sp, cores);
 }

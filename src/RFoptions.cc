@@ -116,7 +116,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList,
     ListNr = NOMATCHING;
   char name[LEN_OPTIONNAME];
 
-  SPRINTF(name, "%.50s%.50s%.50s", prefix, STRLEN(prefix)==0 ? "" : ".",
+  SPRINTF(name, "%.50s%.50s%.50s", prefix, STRLEN(prefix) == 0 ? "" : ".",
 	  mainname);
 
   if (STRCMP(prefix, "")) {
@@ -130,7 +130,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList,
 	int ii = Match(prefix, Allprefix[ListNr], AllprefixN[ListNr]);
 	if (ii == NOMATCHING) continue;
 	i = MULTIPLEMATCHING;
-	if (ii >= 0 && STRCMP(prefix, Allprefix[k][ii])==0) {
+	if (ii >= 0 && STRCMP(prefix, Allprefix[k][ii]) == 0) {
 	  ListNr = k;
 	  i = ii;
 	  break;
@@ -192,7 +192,7 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList,
 	  //  printf("listnr=%d %.50s jj=%d %.50s\n", ListNr, Allall[ListNr][i][j], 
 	  //	 jj, jj < 0 ? "no" : Allall[k][ii][jj]);
 	  j = MULTIPLEMATCHING;
-	  if (jj >= 0 && STRCMP(mainname, Allall[k][ii][jj])==0) {
+	  if (jj >= 0 && STRCMP(mainname, Allall[k][ii][jj]) == 0) {
 	    ListNr = k;
 	    i = ii;
 	    j = jj;
@@ -218,11 +218,10 @@ void setparameter(SEXP el, char *prefix, char *mainname, bool isList,
   }
 
   setoptions_fctn *set = setoption_fct_list[ListNr];
-  if (set[ListNr] == NULL) setparam[ListNr](i, j, el, name, isList, local);  else 
-    if (local && set[calling]!= NULL)
-      set[calling](i, j, el, name, isList, local);
-    else
-      set[ListNr](i, j, el, name, isList, local);
+  if (set[ListNr] == NULL) setparam[ListNr](i, j, el, name, isList, local);
+  else if (local && set[calling]!= NULL)
+    set[calling](i, j, el, name, isList, local);
+  else set[ListNr](i, j, el, name, isList, local);
   
   
 }
@@ -264,11 +263,10 @@ SEXP getRFUoptions(int ListNr, int i, bool local, int calling) {
     //    printf("getopt %d k=%d elmnts=%d %d %.50s, local=%d\n", i, k, elmts, ListNr, Allall[ListNr][i][k], local);
     SET_STRING_ELT(subnames, k, mkChar(Allall[ListNr][i][k])); 
   }
-  //  printf("ListNr %d %d\n", ListNr, setoption_fct_list[ListNr] == NULL);
   getoptions_fctn *get = getoption_fct_list[ListNr];
-    if (get[ListNr] == NULL) getparam[ListNr](sublist, i, local);  else
-    if (local && get[calling] != NULL) get[calling](sublist, i, local);
-    else get[ListNr](sublist, i, local);
+  if (get[ListNr] == NULL) getparam[ListNr](sublist, i, local);
+  else if (local && get[calling] != NULL) get[calling](sublist, i, local);
+  else get[ListNr](sublist, i, local);
   setAttrib(sublist, R_NamesSymbol, subnames);
   UNPROTECT(2);
   return sublist;
@@ -346,7 +344,7 @@ void setRFUoptions(SEXP el, char *name, bool isList, getlist_type *getlist,
   //  printf("splitandset\n");
   len = STRLEN(name);
   for (i=0; i < len && name[i]!='.'; i++);
-  if (i==0) { ERR1("argument '%.50s' not valid\n", name); }
+  if (i == 0) { ERR1("argument '%.50s' not valid\n", name); }
   if (i==len) {
     STRCPY(PreFix, "");
     strcopyN(mainname, name, LEN_OPTIONNAME / 2);
@@ -398,8 +396,8 @@ SEXP RFUoptions(SEXP options, char *pkgname) {
   name = (char*) "";
   if (options != R_NilValue) {
     if (!isNull(TAG(options))) name = (char*) CHAR(PRINTNAME(TAG(options)));
-    if (STRCMP(name, "local_")==0
-	|| (STRCMP(name, "LOCAL")==0 &&  obsolete_package_in_use)
+    if (STRCMP(name, "local_") == 0
+	|| (STRCMP(name, "LOCAL") == 0 &&  obsolete_package_in_use)
 	) {
       el = CAR(options);
       local = (bool) INT;
@@ -407,19 +405,19 @@ SEXP RFUoptions(SEXP options, char *pkgname) {
      }
   }
   //   printf("hierA\n");
-  if (options == R_NilValue || STRCMP(name, "") ==0)
+  if (options == R_NilValue || STRCMP(name, "") == 0)
     return getRFUoptions(local, calling);
  
   if (!isNull(TAG(options))) name = (char*) CHAR(PRINTNAME(TAG(options)));
-  if (STRCMP(name, "warnUnknown_")==0) {
+  if (STRCMP(name, "warnUnknown_") == 0) {
     el = CAR(options);
     warn_unknown_option = INT;
     options = CDR(options); /* skip 'name' */
    }
   // printf("hierB\n");
   if (!isNull(TAG(options))) name = (char*) CHAR(PRINTNAME(TAG(options)));
-  if ((isList = STRCMP(name, "list_")==0 
-       || (STRCMP(name, "LIST")==0 &&  obsolete_package_in_use)
+  if ((isList = STRCMP(name, "list_") == 0 
+       || (STRCMP(name, "LIST") == 0 &&  obsolete_package_in_use)
        )) {
     //     printf("hierC\n");
     if (local) ERR0("'list_' can be used only globally.");
@@ -462,11 +460,11 @@ SEXP RFUoptions(SEXP options, char *pkgname) {
     // printf("hierD\n");
     getlist_type *getlist = NULL;
     bool save;
-    if ((save = STRCMP(name, "saveoptions_")==0
-	 || (STRCMP(name, "SAVEOPTIONS")==0 &&  obsolete_package_in_use)
+    if ((save = STRCMP(name, "saveoptions_") == 0
+	 || (STRCMP(name, "SAVEOPTIONS") == 0 &&  obsolete_package_in_use)
 	 ) ||
-	STRCMP(name, "getoptions_")==0
-	|| (STRCMP(name, "GETOPTIONS")==0 &&  obsolete_package_in_use)
+	STRCMP(name, "getoptions_") == 0
+	|| (STRCMP(name, "GETOPTIONS") == 0 &&  obsolete_package_in_use)
 	) {
       SEXP getoptions = CAR(options);
       options = CDR(options);
@@ -498,9 +496,13 @@ SEXP RFUoptions(SEXP options, char *pkgname) {
    FREE(getlist);
    }
 
-  for (i=0; i<NList; i++)
-    if (setoption_fct_list[i] == NULL) { if (finalparam[i] != NULL) finalparam[i](local); }  else      
-      if (finaloption_fct_list[i] != NULL) {  finaloption_fct_list[i](local);  }
+  for (i=0; i<NList; i++) {
+    if (setoption_fct_list[i][i] == NULL) {
+      if (finalparam[i] != NULL) finalparam[i](local);
+    } else if (finaloption_fct_list[i] != NULL) {
+      finaloption_fct_list[i](local);
+    }
+  }
 
   if (n_protect > 0) UNPROTECT(n_protect);
 
@@ -519,7 +521,7 @@ void attachSetNGet(char * callingName, char *pkgname, setoptions_fctn set,
   for (int ListNr=0; ListNr<calling; ListNr++) {
     if (!STRCMP(pkgname, pkgnames[ListNr])) {
       if (setoption_fct_list[ListNr][calling] == NULL &&
-	  getoption_fct_list[ListNr][calling]==NULL) {
+	  getoption_fct_list[ListNr][calling] == NULL) {
 	setoption_fct_list[ListNr][calling] = set;
 	getoption_fct_list[ListNr][calling] = get;
 	return;
@@ -616,6 +618,7 @@ SEXP instruction_set(SEXP which,  SEXP pkgs, SEXP Uses) {
   int *ans = (int*) LOGICAL(Ans);
   for (int p=0; p<cols; p++) {   
     if (colIdx[p] >= 0) {
+      if (colIdx[p] >= NList) BUG;
       Uint simd_info = simd_infos[colIdx[p]];
       for (int i=0; i<rows; i++, ans++) {
 	*ans = rowIdx[i] < 0 ? NA_INTEGER

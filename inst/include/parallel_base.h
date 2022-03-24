@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef parallel_omp_base_H
 #define parallel_omp_base_H 1
 
+// NEVER_** is used by parallel_**, so no conflict with NO_, which is used
+// in the programmes. Except that there is no differences between
+// NEVER_ and NO_
+
 // #define NEVER_OMP 1
 // #define NEVER_AVX 1
 // #define NEVER_SSE 1

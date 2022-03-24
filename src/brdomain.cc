@@ -59,7 +59,7 @@ SEXP brdomain(SEXP Srf, SEXP Ssigma2, SEXP Sinstances, SEXP Smaxn) {
       pois += e;
       int
 	x0 = (int) (UNIFORM_RANDOM * nloc);
-      if (t==1) { PRINTF(" pois=%10g e=%10g %d : ", pois, e, x0);}
+      if (t == 1) { PRINTF(" pois=%10g e=%10g %d : ", pois, e, x0);}
       double
 	*field = rf + nloc * (int) (UNIFORM_RANDOM * N),
 	*s2 = sigma2 + x0 * nloc,
@@ -71,7 +71,7 @@ SEXP brdomain(SEXP Srf, SEXP Ssigma2, SEXP Sinstances, SEXP Smaxn) {
 	if (t==1 && j == 97-68 - 1 && (m <= 10)) {
 	  PRINTF("j=%d %10g %10g u=%10g\n", j, w, ans[j], - LOG(pois));
 	}
-	if (t==1 && j == 97-68 - 1 &&  x0==j) {
+	if (t == 1 && j == 97-68 - 1 &&  x0 == j) {
 	  PRINTF("\nGREAT j=%d %10g %10g u=%10g\n", j, w, ans[j], - LOG(pois));
 	}
 	if (w > ans[j]) ans[j] = w;

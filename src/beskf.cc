@@ -31,8 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //#include <t ime.h>
 
-#include <stdio.h>
-#include <float.h> /*DBL_MIN*/
+//#include <stdio.h>
+//#include <float.h> /*DBL_MIN*/
 #include "Basic_utils_local.h"
 #include "errors_messages.h"
 

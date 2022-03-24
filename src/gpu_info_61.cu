@@ -28,9 +28,6 @@
 */
 
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 #include <cuda_runtime_api.h>
 #include <cuda_runtime.h>
 #include <cuda.h>

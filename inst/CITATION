@@ -12,7 +12,8 @@ bibentry(bibtype="Manual",
                     person("Reinhard", "Furrer", role="ctb"),
                     person("Martin", "Kroll", role="ctb"),
                     person(given=c("Brian", "D"), "Ripley", role="ctb"),
-                     person("John", "Ratcliff", middle="W.", role="cph")),
+                    person(given=c("John", "W."), "Ratcliff", role="cph")
+                    ),
          year = year,
          note = note,
          url = "https://cran.r-project.org/package=RandomFieldsUtils"

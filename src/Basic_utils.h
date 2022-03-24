@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // miraculix 0: vor Basic inttypes.h; Ausnahme initNerror.cc kleinkram.cc thuy.cc xport_import.cc zzz.cc
 // adoption 0: vor Basic kein inttypes.h
 
-#define RFU_VERSION 10
+#define RFU_VERSION 12
 
 
 #if defined RFU_LOCAL || defined RF_VERSION || defined MIRACULIX_VERSION || defined ADOPTION_VERSION || defined HAPLOBLOCKER_VERSION

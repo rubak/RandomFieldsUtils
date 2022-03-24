@@ -178,7 +178,7 @@
       \code{printlevel = 1} else to \code{printlevel = 2}.
     }
 
-
+    \item{\code{bigendian}}{logical. Read only.}
  
   }
 

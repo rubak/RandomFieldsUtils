@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DETERM_LAMODE true
 #endif
 
-#define basicN 9
+#define basicN 11
 // IMPORTANT: all names of basic must be have least 3 letters !!!
 typedef // benoetigt
 struct basic_options {
@@ -42,7 +42,8 @@ struct basic_options {
     efficient,//allow for different level later on
     dummy0[4];
   bool skipchecks, helpinfo, asList /* hidden:verbose */,
-    dummy4, dummy5, dummy6, dummy7;
+    bigendian, warn_parallel, 
+    dummy6, dummy7;
   int dummy8[8];
 } basic_options;
 #define basic_START \
@@ -50,12 +51,12 @@ struct basic_options {
       NA_INTEGER, INITCORES,				\
       true, /* different levels later on */		\
     {0, 0, 0, 0},					\
-      false, true, true,				\
-      false, false, false, false,			\
+      false, true, true, false,				\
+      false, false, false,			\
        {0,0,0,0, 0,0,0,0}					\
   }
 
-#define installNrunN 10
+#define installNrunN 9
 #define MAX_GPU_DEVICES 16
 typedef // benoetigt
 #define INSTALL_RUN_WARN_OPTION 1
@@ -67,8 +68,8 @@ struct installNrun_options {
   install_modes install, dummy1;
   la_modes la_usr, la_mode, dummy2;
   usr_bool mem_is_aligned;
-  bool warn_parallel, installPackages, determineLAmode,
-    kahanCorrection,
+  bool installPackages, determineLAmode,
+    kahanCorrection, dummy3,
     dummy4, dummy5, dummy6, dummy7;
   int dummy8[8];
 } installNrun_options;

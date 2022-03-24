@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #endif
 
-#include "Basic_utils.h"
+#include "Basic_utils_local.h"
 #include "errors_messages.h"
 #include "RandomFieldsUtils.h"
 #include "solve_gpu.h"
@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 
-ASSERT_SIMD(mma_61, gpu)
+ASSERT_SIMD(solve_61, gpu);
 
 __global__ void logdet_kernel(double *d_matrix, Uint *d_size, double *d_logdet){
     __shared__ double logdet_loc;
@@ -63,7 +63,7 @@ __global__ void logdet_kernel(double *d_matrix, Uint *d_size, double *d_logdet){
     atomicAdd(&logdet_loc, idx >= *d_size ? 0 : (LOG(submatrix[thread])));
 
     __syncthreads();
-    if(threadIdx.x ==0){atomicAdd(d_logdet, logdet_loc);
+    if (threadIdx.x == 0) {atomicAdd(d_logdet, logdet_loc);
     };
 };
 
@@ -258,7 +258,7 @@ int cholGPU(bool copy, double *matrix, Uint input_size, double *B,
 //     for(int i = 0; i < nbGpus; i++){
 //         cudaSetDevice(deviceList[i]);
 //         for(int j = 0; j< nbGpus; j++){
-//             if(i==j)continue;
+//             if(i == j)continue;
 //             cudaStat = cudaDeviceEnablePeerAccess(deviceList[j],0);
 //             if(cudaStat != cudaSuccess)PRINTF("Device %d can't access device %d.",deviceList[i],deviceList[j]);
 //             PRINTF("Access enabled for devices (%d,%d)",deviceList[i],deviceList[j]);

@@ -39,11 +39,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // IMPORTANT: all names of general must have at least 3 letters !!!
 const char *basic[basicN] =
   { "printlevel","cPrintlevel", "seed", "cores",
-    "skipchecks", "asList", "verbose", "helpinfo", "efficient"
+    "skipchecks", "asList", "verbose", "helpinfo", "efficient",
+    "bigendian","warn_parallel"
   };
 
 const char *installNrun[installNrunN] =
-  { "kahanCorrection", "warn_unknown_option", "la_mode", "warn_parallel",
+  { "kahanCorrection", "warn_unknown_option", "la_mode", 
     "install","installPackages", "determineLAmode", "mem_is_aligned",
     "gpuDevices", "maxStreams"
   };
@@ -126,6 +127,8 @@ void setoptionsRFU(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
       break;
     case 7: gp->helpinfo = LOGI; break;
     case 8 : gp->efficient = LOGI; break;
+    case 9: break; // bigendian; read only
+    case 10 : gp->warn_parallel = LOGI;  break;
     default: BUG;
     }}
     break;
@@ -162,8 +165,7 @@ void setoptionsRFU(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
       }
     }
       break;     
-    case 3 : gp->warn_parallel = LOGI;  break;
-    case 4 : {
+    case 3 : {
       install_modes old =  gp->install;
       gp->install = (install_modes )
 	GetName(el, name, INSTALL_NAMES, INSTALL_LAST + 1, Iask);
@@ -174,17 +176,17 @@ void setoptionsRFU(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
       }
     }
       break;
-    case 5 :
+    case 4 :
       // gp->installPackages != LOGI;  
       break;
-    case 6 : gp->determineLAmode = LOGI;  break;
-    case 7 :
+    case 5 : gp->determineLAmode = LOGI;  break;
+    case 6 :
       // gp->mem_is_aligned = LOGI;
       break;
-    case 8 :  Integer(el, name, gp->gpu_devices, MAX_GPU_DEVICES) ;
+    case 7 :  Integer(el, name, gp->gpu_devices, MAX_GPU_DEVICES) ;
       gp-> Ngpu_devices = MIN(length(el), MAX_GPU_DEVICES);
       break;
-     case 9 :
+     case 8 :
        gp->maxStreams = POS0INT;
       break;
    default: BUG;
@@ -288,7 +290,9 @@ void getoptionsRFU(SEXP sublist, int i, utilsoption_type *options) {
     ADD(ScalarLogical(p->Rprintlevel >= PLverbose));
     ADD(ScalarLogical(p->helpinfo));    
     ADD(ScalarLogical(p->efficient));
-   }
+    ADD(ScalarLogical(p->bigendian));
+    ADD(ScalarLogical(p->warn_parallel));
+  }
     break;
  
   case 1 : {
@@ -296,7 +300,6 @@ void getoptionsRFU(SEXP sublist, int i, utilsoption_type *options) {
     ADD(ScalarLogical(p->kahanCorrection));   
     ADD(ScalarInteger(p->warn_unknown_option));    
     ADD(ScalarString(mkChar(LA_NAMES[p->la_usr])));
-    ADD(ScalarLogical(p->warn_parallel));
     ADD(ScalarString(mkChar(INSTALL_NAMES[p->install])));
     ADD(ScalarLogical(p->installPackages));
     ADD(ScalarLogical(p->determineLAmode));
@@ -460,8 +463,8 @@ int own_chol_up_to(int size, int maxtime, int VARIABLE_IS_NOT_USED cores) {
     if (delta[0] > maxtime || delta[1] > maxtime ||
 	delta[0] >= FASTER * delta[1]){
       solve_DELETE0(&pt);
-      if (maxtime > 0 &&
-	  (delta[0] > 10 * maxtime || delta[1] > 10 * maxtime) ||
+      if ((maxtime > 0 &&
+	   (delta[0] > 10 * maxtime || delta[1] > 10 * maxtime)) ||
 	  delta[0] > 2 * delta[1] || delta[1] > 2 * delta[0]) {
 	// seems to be time consuming. So stop.
 	return (double) delta[0] < FASTER * (double) delta[1]

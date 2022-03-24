@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void bes_k_simd (double *xv, double alpha, int sx, double *yv);
 void set_num_threads();
-void freeGlobals() ;
 
 /*
 #ifdef __cplusplus

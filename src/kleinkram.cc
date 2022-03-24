@@ -162,12 +162,12 @@ void Ax(double *A, double*x, Long nrow, Long ncol, double *y, int VARIABLE_IS_NO
 #ifdef DO_PARALLEL
 #pragma omp parallel for num_threads(cores) schedule(static) if (MULTIMINSIZE(ncol) && MULTIMINSIZE(nrow))
     for (Long j=0; j<nrow; j++) {
-      double dummy = 0.0;
+      double tmp = 0.0;
       Long k = j;
       for (Long i=0; i<ncol; i++, k+=nrow) { 
-	dummy += A[k] * x[i];
+	tmp += A[k] * x[i];
       }
-      y[j] = dummy;
+      y[j] = tmp;
     }
 #else
     for (Long i=0; i<nrow; i++) y[i]=0.0;
@@ -227,24 +227,24 @@ void XCXt(double *X, double *C, double *V, Long nrow, Long dim /* dim of C */, i
   Long size = nrow * dim;
   double  
     *endpX = X + nrow,
-    *dummy = (double*) MALLOC(sizeof(double) * size); // dummy = XC
-  if (dummy == NULL) RFERROR("XCXt: memory allocation error in XCXt");
+    *tmp = (double*) MALLOC(sizeof(double) * size); // tmp = XC
+  if (tmp == NULL) RFERROR("XCXt: memory allocation error in XCXt");
  
 #ifdef DO_PARALLEL
 #pragma omp parallel for num_threads(cores)  schedule(static)
 #endif
   for (double *pX = X; pX < endpX; pX++) {
-    double *pdummy = dummy + (pX - X);
+    double *ptmp = tmp + (pX - X);
     for (Long ci=0, cd=0; cd<size; cd+=nrow) {
       double scalar = 0.0;
       for (Long i=0; i<size; i+=nrow) {
         scalar += pX[i] * C[ci++];
       }
-      pdummy[cd] = scalar;
+      ptmp[cd] = scalar;
     }
   }
 
-  // V = dummy X^t
+  // V = tmp X^t
 #ifdef DO_PARALLEL
 #pragma omp parallel for num_threads(cores)  schedule(dynamic, 20)
 #endif
@@ -252,13 +252,13 @@ void XCXt(double *X, double *C, double *V, Long nrow, Long dim /* dim of C */, i
     for (Long cv=rv; cv<nrow; cv++) {
       double scalar=0.0;
       for (Long i=0; i<size; i+=nrow) {
-	scalar += dummy[rv + i] * X[cv + i];
+	scalar += tmp[rv + i] * X[cv + i];
      }
       V[rv + cv * nrow] = V[cv + rv * nrow] = scalar;
     }
   }
 
-  UNCONDFREE(dummy);
+  UNCONDFREE(tmp);
 }
 
 
@@ -272,10 +272,10 @@ double xUy(double *x, double *U, double *y, Long dim, int VARIABLE_IS_NOT_USED c
   for (Long d=0; d<dim; d++) {
     Long i, 
       j = dim * d;
-    double dummy = 0.0;
-    for (i=0; i<=d; i++) dummy += x[i] * U[j++];
-    for (j += dimM1; i<dim; i++, j+=dim) dummy += x[i] * U[j];
-    xVy += dummy * y[d];
+    double tmp = 0.0;
+    for (i=0; i<=d; i++) tmp += x[i] * U[j++];
+    for (j += dimM1; i<dim; i++, j+=dim) tmp += x[i] * U[j];
+    xVy += tmp * y[d];
   }
   return xVy;
 }
@@ -289,12 +289,12 @@ double xUy(double *x, double *U, double *y, Long dim, int VARIABLE_IS_NOT_USED c
 #pragma omp parallel for num_threads(cores) schedule(static) if (MULTIMINSIZE(dim))
 #endif  
   for (Long d=0; d<dim; d++) {
-    double dummy;
+    double tmp;
     Long i,
       j = dim * d;
-    for (dummy = 0.0, i=0; i<=d; i++) dummy += x[i] * U[j++];
-    for (j += dimM1; i<dim; i++, j+=dim) dummy += x[i] * U[j];
-    if (z!=NULL) z[d] = dummy;
+    for (tmp = 0.0, i=0; i<=d; i++) tmp += x[i] * U[j++];
+    for (j += dimM1; i<dim; i++, j+=dim) tmp += x[i] * U[j];
+    if (z!=NULL) z[d] = tmp;
   }
   double xVx;
   SCALAR_PROD(z, x, dim, xVx);
@@ -311,11 +311,11 @@ double xUxz(double *x, double *U, Long dim, double *z, int VARIABLE_IS_NOT_USED 
   for (Long d=0; d<dim; d++) {
     Long i, 
       j = dim * d;
-    double dummy = 0.0;
-    for (dummy = 0.0, i=0; i<=d; i++) dummy += x[i] * U[j++];
-    for (j += dimM1; i<dim; i++, j+=dim) dummy += x[i] * U[j];
-    if (z != NULL) z[d] = dummy;
-    xVx += dummy * x[d];
+    double tmp = 0.0;
+    for (tmp = 0.0, i=0; i<=d; i++) tmp += x[i] * U[j++];
+    for (j += dimM1; i<dim; i++, j+=dim) tmp += x[i] * U[j];
+    if (z != NULL) z[d] = tmp;
+    xVx += tmp * x[d];
   }
   return xVx;
 }
@@ -334,10 +334,10 @@ double x_UxPz(double *x, double *U, double *z, Long dim, int VARIABLE_IS_NOT_USE
   for (Long d=0; d<dim; d++) {
     Long i,
       j = dim * d;
-    double dummy = z[d];
-    for (i=0; i<=d; i++) dummy += x[i] * U[j++];
-    for (j += dimM1; i<dim; i++, j+=dim) dummy += x[i] * U[j];
-    xVx += dummy * x[d];
+    double tmp = z[d];
+    for (i=0; i<=d; i++) tmp += x[i] * U[j++];
+    for (j += dimM1; i<dim; i++, j+=dim) tmp += x[i] * U[j];
+    xVx += tmp * x[d];
   }
   return xVx;
 }
@@ -354,10 +354,10 @@ void matmult(double *a, double *b, double *c, Long l, Long m, Long n,
      double *A = a + i,
        *C = c + i;
      for (Long j=0; j<n; j++) {
-       double dummy = 0.0,
+       double tmp = 0.0,
 	 *B = b + j * m;
-       for (Long k=0; k<m; k++) dummy += A[k*l] * B[k];
-       C[j * l] = dummy;
+       for (Long k=0; k<m; k++) tmp += A[k*l] * B[k];
+       C[j * l] = tmp;
      }
    }
 }
@@ -379,10 +379,10 @@ void Xmatmult(double *A, double *B, double *C, Long l, Long m, Long n,
 #endif
   for (Long i=0; i<l; i++) {
     for (Long jl=i, jm=0, j=0; j<n; j++, jl+=l, jm+=m) {
-      double dummy = 0.0;
+      double tmp = 0.0;
       Long endfor = jm + m;
-      for (Long kl=i, k=jm; k<endfor; k++, kl+=l) dummy += A[kl] * B[k]; 
-      C[jl] = dummy;
+      for (Long kl=i, k=jm; k<endfor; k++, kl+=l) tmp += A[kl] * B[k]; 
+      C[jl] = tmp;
     }
   }
 }
@@ -431,10 +431,10 @@ void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m, Long n,
     double *C = c + i,
       *A = a + i;
     for (Long j=0; j<n; j++) {
-       double dummy = 0.0,
+       double tmp = 0.0,
 	 *Bj = B + j;
-       for (Long k=0; k<m; k++) dummy += A[k * l] * Bj[k * n];
-       C[j*l] = dummy;
+       for (Long k=0; k<m; k++) tmp += A[k * l] * Bj[k * n];
+       C[j*l] = tmp;
     }
   }
 }
@@ -452,10 +452,10 @@ void matmult_2ndtransp(double *a, double *B, double *c, Long l, Long m,
     double *C = c + i,
       *A = a + i;
     for (Long j=0; j<l; j++) {
-       double dummy = 0.0,
+       double tmp = 0.0,
 	 *Bj = B + j;
-       for (Long k=0; k<lm; k+=l) dummy += A[k] * Bj[k];
-       C[j*l] = dummy;
+       for (Long k=0; k<lm; k+=l) tmp += A[k] * Bj[k];
+       C[j*l] = tmp;
     }
   }
 }
@@ -472,10 +472,10 @@ void Xmatmulttransposed(double *A, double *B, double *C, Long m, Long l, Long n,
   for (Long i=0; i<l; i++) {
     Long im = i * m;
     for (Long jl=i, jm=0, j=0; j<n; j++, jl+=l, jm+=m) {
-      double dummy = 0.0;
+      double tmp = 0.0;
       Long endfor = im + m;
-      for (Long jmk=jm, k=im; k<endfor; k++) dummy += A[k] * B[jmk++]; 
-      C[jl] = dummy;
+      for (Long jmk=jm, k=im; k<endfor; k++) tmp += A[k] * B[jmk++]; 
+      C[jl] = tmp;
     }
   }
 }
@@ -493,10 +493,10 @@ void matmult_tt(double *a, double *B, double *c, Long m, Long l, Long n,
     double *A = a + i,
       *C = c + i * l;
     for (Long j=0; j<n; j++) {
-      double dummy = 0.0,
+      double tmp = 0.0,
 	*Bjm = B + j * m;
-      for (Long k=0; k<m; k++) dummy += A[k * l] * Bjm[k];
-      C[j] = dummy;
+      for (Long k=0; k<m; k++) tmp += A[k * l] * Bjm[k];
+      C[j] = tmp;
     }
   }
 }
@@ -536,69 +536,53 @@ SEXP TooSmall(){
 
 
 SEXP Int(int *V, Long n, Long max) {
-  SEXP dummy;
+  SEXP Ans;
   if (V==NULL) return allocVector(INTSXP, 0);
   if (n>max) return TooLarge(n);
-   if (n<0) return TooSmall();
-   PROTECT(dummy=allocVector(INTSXP, n));
-  for (Long i=0; i<n; i++) INTEGER(dummy)[i] = V[i];
+  if (n<0) return TooSmall();   
+  PROTECT(Ans=allocVector(INTSXP, n));
+  MEMCOPY(INTEGER(Ans), V, n * sizeof(int));
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 
 SEXP Int(int* V, Long n) { return Int(V, n, n); }
 
 
 SEXP Logic(bool* V, Long n, Long max) {
-  SEXP dummy;
+  SEXP Ans;
   if (V==NULL) return allocVector(VECSXP, 0);
   if (n>max) return TooLarge(n);
   if (n<0) return TooSmall();
-  PROTECT(dummy=allocVector(LGLSXP, n));
-  for (Long i=0; i<n; i++) LOGICAL(dummy)[i] = V[i];
+  PROTECT(Ans=allocVector(LGLSXP, n));
+  int *ans = LOGICAL(Ans);
+  for (Long i=0; i<n; i++) ans[i] = V[i];
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 SEXP Logic(bool* V, Long n) { return Logic(V, n, n); }
 
 SEXP Num(double* V, Long n, Long max) {
-  SEXP dummy;
+  SEXP Ans;
   if (V==NULL) return allocVector(REALSXP, 0);
   if (n>max) return TooLarge(n);
-   if (n<0) return TooSmall();
-  PROTECT(dummy=allocVector(REALSXP, n));
-  for (Long i=0; i<n; i++) REAL(dummy)[i] = V[i];
+  if (n<0) return TooSmall();
+  PROTECT(Ans=allocVector(REALSXP, n));
+  MEMCOPY(REAL(Ans), V, n * sizeof(double));
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 SEXP Num(double* V, Long n) {  return Num(V, n, n); }
 
-SEXP Result(double* V, Long n, Long max) {
-  SEXP dummy;
-  if (V==NULL) return allocVector(REALSXP, 0);
-  if (n>max) return TooLarge(n);
-   if (n<0) return TooSmall();
- PROTECT(dummy=allocVector(REALSXP, n));
-  for (Long i=0; i<n; i++) REAL(dummy)[i] = (double) V[i];
-  UNPROTECT(1);
-  return dummy;
-}
-
-SEXP Result(double* V, Long n) {
-  return Result(V, n, n);
-}
-
 SEXP Char(const char **V, Long n, Long max) {
-  SEXP dummy;
+  SEXP Ans;
   if (V==NULL) return allocVector(STRSXP, 0);
   if (n>max) return TooLarge(n);
-   if (n<0) return TooSmall();
-   PROTECT(dummy=allocVector(STRSXP, n));
-   for (Long i=0; i<n; i++){
-     SET_STRING_ELT(dummy, i, mkChar(V[i]));  
-   }
+  if (n<0) return TooSmall();
+  PROTECT(Ans=allocVector(STRSXP, n));
+  for (Long i=0; i<n; i++) SET_STRING_ELT(Ans, i, mkChar(V[i]));  
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 
 SEXP Char(const char **V, Long n) { return Char(V, n, n); }
@@ -607,11 +591,11 @@ SEXP Mat(double* V, Long row, Long col, Long max) {
   if (V==NULL) return allocMatrix(REALSXP, 0, 0);
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
-  SEXP dummy;
-  PROTECT(dummy=allocMatrix(REALSXP, row, col));
-  for (Long i=0; i<n; i++) REAL(dummy)[i] = V[i];
+  SEXP Ans;
+  PROTECT(Ans=allocMatrix(REALSXP, row, col));
+  MEMCOPY(REAL(Ans), V, n * sizeof(double));
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 
 SEXP Mat(double* V, Long row, Long col) {
@@ -623,15 +607,14 @@ SEXP Mat_t(double* V, Long row, Long col, Long max) {
   if (V==NULL) return allocMatrix(REALSXP, 0, 0);
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
-  SEXP dummy;
-  PROTECT(dummy=allocMatrix(REALSXP, row, col));
-  for (Long k=0, j=0; j<col; j++) {
-     for (Long i=0; i<row; i++) {
-      REAL(dummy)[k++] = V[j + col * i];
-    }
-  }
+  SEXP Ans;
+  PROTECT(Ans=allocMatrix(REALSXP, row, col));
+  double *ans = REAL(Ans);
+  for (Long k=0, j=0; j<col; j++)
+     for (Long i=0; i<row; i++)
+       ans[k++] = V[j + col * i];
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 
 SEXP Mat_t(double* V, Long row, Long col) {
@@ -643,12 +626,11 @@ SEXP MatString(char **V, Long row, Long col, Long max) {
   if (V==NULL) return allocMatrix(STRSXP, 0, 0);
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
-  SEXP dummy;
-  PROTECT(dummy=allocMatrix(STRSXP, row, col));
-  for (Long k=0; k<n; k++)
-    SET_STRING_ELT(dummy, k, mkChar(V[k]));
+  SEXP Ans;
+  PROTECT(Ans=allocMatrix(STRSXP, row, col));  
+  for (Long k=0; k<n; k++) SET_STRING_ELT(Ans, k, mkChar(V[k]));
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 
 SEXP MatString(char** V, Long row, Long col) {
@@ -659,11 +641,11 @@ SEXP MatInt(int* V, Long row, Long col, Long max) {
   if (V==NULL) return allocMatrix(INTSXP, 0, 0);
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
-  SEXP dummy;
-  PROTECT(dummy=allocMatrix(INTSXP, row, col));
-  for (Long i=0; i<n; i++) INTEGER(dummy)[i] = V[i];
+  SEXP Ans;
+  PROTECT(Ans=allocMatrix(INTSXP, row, col));
+  MEMCOPY(INTEGER(Ans), V, n * sizeof(int));
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 
 SEXP MatInt(int* V, Long row, Long col) {
@@ -679,15 +661,14 @@ SEXP Array3D(double** V, Long depth, Long row, Long col, Long max) {
     int nn[3] = { (int) row, (int) col, (int) depth };
     return TooLarge(nn, 3);
   }
-  SEXP dummy;
-  PROTECT(dummy=alloc3DArray(REALSXP, depth, row, col));
-  for (Long j=0; j<depth; j++) {
-    for (Long i=0; i<m; i++) {
-      REAL(dummy)[j*m+i] = V[j][i];
-    }
-  }
+  SEXP Ans;
+  PROTECT(Ans=alloc3DArray(REALSXP, depth, row, col));
+  double *ans = REAL(Ans);
+  for (Long j=0; j<depth; j++) 
+    for (Long i=0; i<m; i++) 
+      ans[j*m+i] = V[j][i];
   UNPROTECT(1);
-  return dummy;
+  return Ans;
 }
 
 SEXP Array3D(double** V, Long depth, Long row, Long col) {
@@ -698,18 +679,21 @@ SEXP Array3D(double** V, Long depth, Long row, Long col) {
 
 
 usr_bool UsrBoolRelaxed(SEXP p, char *name, Long idx) {
-  double dummy = Real(p, name, idx);
-  if (!R_finite(dummy)) return Nan;
-  return dummy==0.0 ? False : True ;
+  double tmp = Real(p, name, idx);
+  if (!R_finite(tmp)) return Nan;
+  return tmp==0.0 ? False : True ;
 }
 
 
 usr_bool UsrBool(SEXP p, char *name, Long idx) {
-  double dummy = Real(p, name, idx);
-  if (dummy == 0.0) return False;
-  else if (dummy == 1.0) return True;
-  else if (ISNAN(dummy)) return Nan;
-  RFERROR2("invalid value (%d) for boolean variable '%.50s'.", (int) dummy, name);
+  double tmp = Real(p, name, idx);
+  usr_bool ans;
+  if (tmp == 0.0) ans= False;
+  else if (tmp == 1.0) ans= True;
+  else if (ISNAN(tmp)) ans= Nan;
+  else  RFERROR2("invalid value (%d) for boolean variable '%.50s'.",
+		 (int) tmp, name);
+  return ans;
 }
 
 
@@ -729,9 +713,7 @@ SEXP String(char V[][MAXCHAR], Long n, Long max) {
   if (n>max) return TooLarge(n);
   if (n<0) return TooSmall();
   PROTECT(str = allocVector(STRSXP, n)); 
-  for (Long i=0; i<n; i++) {
-    SET_STRING_ELT(str, i, mkChar(V[i]));
-  }
+  for (Long i=0; i<n; i++) SET_STRING_ELT(str, i, mkChar(V[i]));
   UNPROTECT(1);
   return str;
 }
@@ -749,12 +731,7 @@ SEXP String(int *V, const char * List[], Long n, Long endvalue) {
     if (V[k] == endvalue) break;
   }
   PROTECT(str = allocVector(STRSXP, k)); 
-  for (Long i=0; i<k; i++) {
-    //printf("i=%d %d %d\n", i,k, V[i]);
-    //    printf("i=%d %d %s\n", i,k, List[V[i]]);
-    SET_STRING_ELT(str, i, mkChar(List[V[i]]));
-  }
-  //  printf("ense\n");
+  for (Long i=0; i<k; i++) SET_STRING_ELT(str, i, mkChar(List[V[i]]));
   UNPROTECT(1);
   return str;
 }
@@ -851,15 +828,13 @@ void Integer(SEXP el, char *name, int *vec, Long maxn) {
 
 
 void Integer2(SEXP el, char *name, int *vec) {
-  Long n;
-  if (el == R_NilValue || (n = length(el))==0) {
-      RFERROR1("'%.50s' cannot be transformed to integer.\n",name);
-  }
+  Long n = length(el);
+  if (n == 0)  RFERROR1("'%.50s' cannot be transformed to integer.\n",name);
  
   vec[0] = Integer(el, name, 0);
   if (vec[0] != NA_INTEGER && vec[0] < 1)
     RFERROR1("first component of '%.50s' must be at least 1", name);
-  if (n==1) vec[1] = vec[0];
+  if (n == 1) vec[1] = vec[0];
   else {
     vec[1] = Integer(el, name, n-1);    
     if ( vec[1] != NA_INTEGER && vec[1] < vec[0])
@@ -901,7 +876,7 @@ char Char(SEXP el, char *name) {
   type = TYPEOF(el);
   if (type == CHARSXP) return CHAR(el)[0];
   if (type == STRSXP) {
-    if (length(el)==1) {
+    if (length(el) == 1) {
       if (STRLEN(CHAR(STRING_ELT(el,0))) == 1)
 	return (CHAR(STRING_ELT(el,0)))[0];
       else if (STRLEN(CHAR(STRING_ELT(el,0))) == 0)
@@ -970,7 +945,7 @@ double NonPosReal(SEXP el, char *name) {
 
 int PositiveInteger(SEXP el, char *name) {
   int num = INT;
-  if (num<=0) {
+  if (num <= 0) {
     WARN2("'%.50s', which has been %.50s, is set 1.\n",
 	  name, num ? "negative" : "0");
     num=1;
@@ -1077,7 +1052,7 @@ int Match(char *name, const char * List[], int n) {
 
 void GetName(SEXP el, char *name, const char * List[], int n,
 	     int defaultvalue, int endvalue, int *ans, int maxlen_ans) {
-  char dummy[1000];
+  char msg0[1000];
   int
     k = 0, // globale variable !
     len_el = length(el);
@@ -1087,7 +1062,7 @@ void GetName(SEXP el, char *name, const char * List[], int n,
 	     name, maxlen_ans);
   
   if (TYPEOF(el) == STRSXP) {    
-    for ( ; k<len_el; k++) {
+    for (; k<len_el; k++) {
       ans[k] = Match((char*) CHAR(STRING_ELT(el, k)), List, n);
       if (ans[k] < 0) {
 	if (STRCMP((char*) CHAR(STRING_ELT(el, k)), " ") == 0 ||
@@ -1099,7 +1074,7 @@ void GetName(SEXP el, char *name, const char * List[], int n,
     }
   } else {
     Integer(el, name, ans, maxlen_ans);
-    for (k=0; k<len_el; k++)
+    for (; k<len_el; k++)
       if (ans[k] < 0 || ans[k] >= n) goto ErrorHandling0;
   }
  
@@ -1108,10 +1083,10 @@ void GetName(SEXP el, char *name, const char * List[], int n,
 
 ErrorHandling0:
   if (TYPEOF(el) == STRSXP)
-    SPRINTF(dummy, "'%.50s': unknown value '%.50s'. Possible values are:", 
+    SPRINTF(msg0, "'%.50s': unknown value '%.50s'. Possible values are:", 
 	    name, CHAR(STRING_ELT(el, k)));
   else 
-     SPRINTF(dummy,
+     SPRINTF(msg0,
 	     "'%.50s':  value '%d' not in {0,...%d}. Other possible values are:", 
 	     name, ans[k], n-1);
   
@@ -1120,12 +1095,12 @@ ErrorHandling0:
   for (i=0; i<n-1; i++) {
     char msg[1000];
     // printf("'%s', ", List[i]);
-    SPRINTF(msg, "%.900s '%.50s',", dummy, List[i]);    
-    STRCPY(dummy, msg);
+    SPRINTF(msg, "%.900s '%.50s',", msg0, List[i]);    
+    STRCPY(msg0, msg);
   }
   //printf("'%s'\n ", List[i]);
   	  
-  RFERROR2("%.900s and '%.50s'.", dummy, List[i]);  
+  RFERROR2("%.900s and '%.50s'.", msg0, List[i]);  
  
  ErrorHandling:
   if (defaultvalue >= 0) {

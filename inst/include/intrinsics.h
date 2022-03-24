@@ -153,7 +153,7 @@ union uni512 {
 
 #define BlockType0 __m512i 
 #define BlockType __m512i ALIGNED
-#define BlockUnitType0 uni512
+#define UnionType0 uni512
 #define Double __m512d
 
 #define LOADuDOUBLE _mm512_loadu_pd
@@ -235,7 +235,7 @@ union uni512 {
 
 #define BlockType0 __m256i 
 #define BlockType __m256i ALIGNED
-#define BlockUnitType0 uni256
+#define UnionType0 uni256
 #define Double __m256d
 
 #define LOADuDOUBLE _mm256_loadu_pd
@@ -314,7 +314,7 @@ union uni512 {
 #define SSEMODE 10U
 #define BlockType0 __m128i
 #define BlockType __m128i ALIGNED
-#define BlockUnitType0 uni128
+#define UnionType0 uni128
 #define Double __m128d
 
 #define LOADU  _mm_loadu_si128
@@ -390,7 +390,7 @@ bool any128(__m128i A);
 #define SSEMODE 0U
 #define BlockType0 uint64_t
 #define BlockType BlockType0
-#define BlockUnitType0 uni64
+#define UnionType0 uni64
 
 #define AND(B,C)  (B) & (C)
 #define  OR(B,C)  (B) | (C)
@@ -399,8 +399,11 @@ bool any128(__m128i A);
 #define SHR32 SHR64 // unsafe
 #define SHR16 SHR64 // unsafe
 #define SHL64(B,C)  (B) << (C)
+#define SHL32 SHL64 // unsafe
+#define SHL16 SHL64 // unsafe
 #define SET32 (Ulong) 0x0000000100000001L * (Ulong)
 #define ADD64(B,C)  (B) + (C)
+#define ADD32 ADD64 // unsafe
 #define ZERO()  0L
 #define LOADU(A) *(A)
 #define LOAD LOADU
@@ -419,7 +422,7 @@ bool any128(__m128i A);
 #define SSEMODE 0U
 #define BlockType0 uint32_t
 #define BlockType BlockType0
-#define BlockUnitType0 uni32
+#define UnionType0 uni32
 #if defined PlainInteger32
   #define AND(B,C)  (B) & (C)
   #define  OR(B,C)  (B) | (C)
@@ -568,17 +571,17 @@ bool any128(__m128i A);
 /*
   PRINTF("blatt %d: %u %u %u %u\n", Blatt, s[0], s[1], s[2], s[3]);	\
       uint32_t a = s[Register];\
-      for (int i=31; i>=0; i--){if (i== Bit) PRINTF(" :");PRINTF("%s", (a >> i) & 1 ? "1" : "0");if (i%4==0) PRINTF(" ");} PRINTF(" register=%d bit=%d %d: %d %d\n", Register, Bit, bit_SSE, s[Register] & (1 << (Bit)), (s[Register] >> Bit) & 1); \
+      for (int i=31; i>=0; i--){if (i == Bit) PRINTF(" :");PRINTF("%s", (a >> i) & 1 ? "1" : "0");if (i%4 == 0) PRINTF(" ");} PRINTF(" register=%d bit=%d %d: %d %d\n", Register, Bit, bit_SSE, s[Register] & (1 << (Bit)), (s[Register] >> Bit) & 1); \
 */
 
 
-#define  AVAILABLE_SIMD_TRUE static inline bool				\
+#define  AVAILABLE_SIMD_OK static inline bool				\
     Available(unsigned VARIABLE_IS_NOT_USED B, int VARIABLE_IS_NOT_USED R, \
 	      int VARIABLE_IS_NOT_USED Bit) {	return true; }
 
 #if defined EXX_REDEFINED // unknown system -- don't perform checks
   #define INSTALL_DEFAULT Inone
-  #define AVAILABLE_SIMD AVAILABLE_SIMD_TRUE 
+  #define AVAILABLE_SIMD AVAILABLE_SIMD_OK 
 #elif defined ARM32
   #define INSTALL_DEFAULT Iask
   #if defined CROSS_CAPACITY 
@@ -586,7 +589,7 @@ bool any128(__m128i A);
   #elif defined REQUIRED_SIMD && REQUIRED_SIMD <= 2
     #error "ARM allows CROSS=noflag and CROSS=FALSE, only."
   #endif
-  #define AVAILABLE_SIMD  AVAILABLE_SIMD_TRUE 
+  #define AVAILABLE_SIMD  AVAILABLE_SIMD_OK 
 #elif defined __APPLE__ // i.e. apple but isn't arm
   #define INSTALL_DEFAULT Inone
   #if defined CROSS_CAPACITY 
@@ -597,7 +600,7 @@ bool any128(__m128i A);
   #if defined REQUIRED_SIMD
     #undef REQUIRED_SIMD
   #endif
-  #define AVAILABLE_SIMD AVAILABLE_SIMD_TRUE 
+  #define AVAILABLE_SIMD AVAILABLE_SIMD_OK 
 #elif defined WINCPUID
   #define INSTALL_DEFAULT Iask
   #define AVAILABLE_SIMD static inline bool			\
@@ -687,7 +690,7 @@ bool any128(__m128i A);
     #if defined AVAILABLE_SIMD
       #undef  AVAILABLE_SIMD
     #endif
-    #define AVAILABLE_SIMD AVAILABLE_SIMD_TRUE
+    #define AVAILABLE_SIMD AVAILABLE_SIMD_OK
     #define ASSERT_TEXT\
     "This situation is unexpected for a PC. Please contact the maintainer."
   #elif REQUIRED_SIMD == 4
@@ -704,7 +707,7 @@ bool any128(__m128i A);
   #if defined AVAILABLE_SIMD
     #undef AVAILABLE_SIMD
   #endif
-  #define AVAILABLE_SIMD AVAILABLE_SIMD_TRUE
+  #define AVAILABLE_SIMD AVAILABLE_SIMD_OK
 #endif
 
     

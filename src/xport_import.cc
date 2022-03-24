@@ -134,14 +134,14 @@ void deloptions(bool VARIABLE_IS_NOT_USED local) {
 THIS_FILE_ANYSIMD;
 EXTERN_SIMD_CHECK(avx2_fctns);
 EXTERN_SIMD_CHECK(avx_fctns);
-EXTERN_SIMD_CHECK(mma_61);
+EXTERN_SIMD_CHECK(solve_61);
 void loadoptions() {
   if (!sseAvail)
     RFERROR("programm does not run on machines that old (not having sse)\n");
   CHECK_THIS_FILE_ANYSIMD;
   CHECK_FILE(avx_fctns);
   CHECK_FILE(avx2_fctns);
-  CHECK_FILE(mma_61);
+  CHECK_FILE(solve_61);
 
   MEMSET(PIDKEY, 0, PIDMODULUS * sizeof(KEY_type *));
   pid(&parentpid);
@@ -157,6 +157,14 @@ void loadoptions() {
 		   GPU_NEEDS, // from configure.ac
 		   SIMD_INFO,
 		   RFU_VERSION, RFU_VERSION, MEMisALIGNED);
+  KEY_type *KT = KEYT();
+  union {
+    unsigned short a;
+    unsigned char b[2];
+  } ab;
+  ab.a = 0xFF00;
+  KT->global_utils.basic.bigendian = ab.b[0] != 0;
+
   //finalizeoptions();
   SetLaMode();
 }
