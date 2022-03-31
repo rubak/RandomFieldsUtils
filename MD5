@@ -1,4 +1,4 @@
-abd99c926ffb7c0689b1d100a6f0a006 *DESCRIPTION
+d6e710c1a6fa56fa03e6538af9b43298 *DESCRIPTION
 f2087647a42dec259a0a09d861fb8021 *NAMESPACE
 dee5a5aa6478973e24fbfec3a64fbae6 *R/RFoptions.R
 2589122b024aec1c487bd2b8994d0ea6 *R/aaa_auto.R
@@ -28,7 +28,7 @@ cdb1f5988b7b8ceefcc90d38a5beff15 *inst/include/errors_messages.h
 5dddf12c5fbc921396629afd0ba4d27b *inst/include/parallel_base.h
 5605064df51fb3e41801047e27f4c38a *inst/include/parallel_simd.h
 69eeccffb239d6040e7de658ef5109ff *inst/include/solve_gpu.h
-36c599a2c65789f16afbef44581f5feb *inst/include/sse2neon.H
+5ecc2c114db6df184ddd98786a58be66 *inst/include/sse2neon.H
 06a725126e9ab85f3985a65b42d8a442 *inst/include/win_linux_aux.h
 1820d683e317f6aaf10a889026a00305 *inst/include/xport_import.h
 be45933402bfe8054599d74b43292b1c *inst/include/zzz_RandomFieldsUtils.h
@@ -69,7 +69,7 @@ d7fe2390781151860f592e97e8b98656 *src/avx2_fctns.cc
 9403b6ee8cc2a8043458e693a56a53fc *src/bckslvmodified.f
 742c238402c47696cd114884209beaec *src/beskf.cc
 efb1d5113504617e6f4cbad4840e66b2 *src/brdomain.cc
-370f8ec5b7dca2091b47cfdf8ad13c06 *src/cholmodified.f
+a1419ec40f106a5f2f250490df94d58c *src/cholmodified.f
 ae8407e4ef96c83c2185a7cfd9177ecc *src/def.h
 cdb1f5988b7b8ceefcc90d38a5beff15 *src/errors_messages.h
 0a4d203ebe796e14f9739faa0699e395 *src/extern.cc
@@ -80,7 +80,7 @@ d4c71dac26ad8599cd34a1390693972d *src/gpu_info.cc
 f22665f4a7e36be6cb77153e39a2a2de *src/kleinkram.cc
 07d984831409907609ec3020bb864e42 *src/kleinkram.h
 249080b5560ec4b9c756b67afb9725f8 *src/maths.cc
-fb95e205bf978c805ccc2fbd75359f98 *src/obsolete.cc
+89876301987287494375d3be189707b3 *src/obsolete.cc
 bc8750eccc4998ccd7295b2080d49a6d *src/options.cc
 12c358a32b99bc54d6e28f7003c7bd16 *src/options.h
 5dddf12c5fbc921396629afd0ba4d27b *src/parallel_base.h
@@ -89,8 +89,8 @@ ae720eae2f57724f0b771454cb260a8a *src/solve.cc
 230e08a45ae40c411620c1cd78188f6b *src/solve_61.cu
 69eeccffb239d6040e7de658ef5109ff *src/solve_gpu.h
 09685999406136af637abca98d61d274 *src/sort.cc
-9fe4550676b2491ebdf6d5f23df51e55 *src/spamown.f
-36c599a2c65789f16afbef44581f5feb *src/sse2neon.H
+5b9f10f26148d88f9bd7c31fff83b376 *src/spamown.f
+5ecc2c114db6df184ddd98786a58be66 *src/sse2neon.H
 43eebb8901606ccee6273a86ef195e5a *src/utils.cc
 64f80517264fe4022be652ce77618fea *src/win_linux_aux.cc
 06a725126e9ab85f3985a65b42d8a442 *src/win_linux_aux.h

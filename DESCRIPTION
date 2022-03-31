@@ -1,5 +1,5 @@
 Package: RandomFieldsUtils
-Version: 1.2.2
+Version: 1.2.3
 Title: Utilities for the Simulation and Analysis of Random Fields and
         Genetic Data
 Author: Martin Schlather [aut, cre], Alexander FreudenBerg [aut], Reinhard Furrer [ctb], Martin Kroll [ctb], Brian D. Ripley [ctb], John W. Ratcliff  et al. (cph)
@@ -11,7 +11,7 @@ Description: Various utilities are provided that might be used in spatial statis
 Copyright: MIT licence on sse2neon.H
 License: GPL (>= 3)
 URL:
-Packaged: 2022-03-24 19:10:55 UTC; schlather
+Packaged: 2022-03-30 19:33:43 UTC; schlather
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2022-03-24 19:40:02 UTC
+Date/Publication: 2022-03-31 12:00:07 UTC

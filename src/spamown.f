@@ -1818,6 +1818,8 @@ c----------------------------------------------------------------------c
       integer i, k, j
       double precision  t
 
+      k = 0
+
 c-----------------------------------------------------------------------
 c   solves    L x = y ; L = lower triang. /  CSR format
 c                        sequential forward elimination 

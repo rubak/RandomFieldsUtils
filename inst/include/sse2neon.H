@@ -22,6 +22,7 @@
 // !!!!!!!!!!!!!  AND SHOULD NOT BE DISTRIBUTED OUTSIDE !!!!!!!!!!!!!!!
 // !!!!!!!!!!!!!  THIS R PACKAGE                        !!!!!!!!!!!!!!!
 // !!!!!!!!!!!!!  13 Jan 2022, Martin Schlather         !!!!!!!!!!!!!!!
+// !!!!!!!!!!!!!  27 Mar 2022, Martin Schlather         !!!!!!!!!!!!!!!
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 // This header file provides a simple API translation layer
@@ -2864,7 +2865,8 @@ FORCE_INLINE __m128i _mm_undefined_si128(void)
   //#pragma GCC diagnostic push
   //#pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
-    __m128i a;
+  // __m128i a;
+  __m128i a = ZERO(); BUG;
     return a;
 #if defined(__GNUC__) || defined(__clang__)
     //#pragma GCC diagnostic pop
@@ -2879,8 +2881,9 @@ FORCE_INLINE __m128 _mm_undefined_ps(void)
   //#pragma GCC diagnostic push
   //#pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
-    __m128 a;
-    return a;
+  //   __m128 a;
+  __m128 a = (_m128) ZERO(); BUG;
+   return a;
 #if defined(__GNUC__) || defined(__clang__)
     //#pragma GCC diagnostic pop
 #endif
@@ -6204,7 +6207,8 @@ FORCE_INLINE __m128d _mm_undefined_pd(void)
   //#pragma GCC diagnostic push
   //#pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
-    __m128d a;
+  // __m128d a;
+   __m128d a= (_m128d) ZERO(); BUG;
     return a;
 #if defined(__GNUC__) || defined(__clang__)
     //#pragma GCC diagnostic pop

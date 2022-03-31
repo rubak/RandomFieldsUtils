@@ -45,7 +45,7 @@ extern "C" {
   }
   
 #define MAXNLIST 7
-#define PKGNAMELENGTH 20
+#define PKGNAMELENGTH (MAXCHAR - 1)
   extern int NList;
   extern int noption_class_list,
     AllprefixN[MAXNLIST],
@@ -53,7 +53,7 @@ extern "C" {
   extern  const char  *option_class_list[MAXNLIST],
     **Allprefix[MAXNLIST],
     ***Allall[MAXNLIST];
-  extern  char pkgnames[MAXNLIST][PKGNAMELENGTH+1];
+  extern name_type pkgnames;
   extern setoptions_fctn setoption_fct_list[MAXNLIST][MAXNLIST];
   extern getoptions_fctn getoption_fct_list[MAXNLIST][MAXNLIST];
   extern finalsetoptions_fctn finaloption_fct_list[MAXNLIST];
