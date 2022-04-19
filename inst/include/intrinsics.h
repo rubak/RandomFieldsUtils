@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #if defined ARM32 && defined SSE2
-#include "sse2neon.H"
+#include "sse2neon.h"
 #elif defined AVX || defined SSE2 //|| defined AVX2 || defined 
 #include <immintrin.h>
 #endif
@@ -585,17 +585,17 @@ bool any128(__m128i A);
 #elif defined ARM32
   #define INSTALL_DEFAULT Iask
   #if defined CROSS_CAPACITY 
-    #error "ARM allows only CROSS=noflag and CROSS=FALSE"
+    #error "ARM allows only CROSS=noflags and CROSS=FALSE"
   #elif defined REQUIRED_SIMD && REQUIRED_SIMD <= 2
-    #error "ARM allows CROSS=noflag and CROSS=FALSE, only."
+    #error "ARM allows CROSS=noflags and CROSS=FALSE, only."
   #endif
   #define AVAILABLE_SIMD  AVAILABLE_SIMD_OK 
 #elif defined __APPLE__ // i.e. apple but isn't arm
   #define INSTALL_DEFAULT Inone
   #if defined CROSS_CAPACITY 
-    #error "old MAC-OS allows only CROSS=noflag and CROSS=FALSE"
+    #error "old MAC-OS allows only CROSS=noflags and CROSS=FALSE"
   #elif defined REQUIRED_SIMD && REQUIRED_SIMD != 3
-    #error "old MAC-OS allows CROSS=noflag and CROSS=FALSE, only."
+    #error "old MAC-OS allows CROSS=noflags and CROSS=FALSE, only."
   #endif
   #if defined REQUIRED_SIMD
     #undef REQUIRED_SIMD

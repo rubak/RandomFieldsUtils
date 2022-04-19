@@ -185,9 +185,13 @@ void R_init_RandomFieldsUtils(DllInfo  *dll) {
 
 
   CALLABLE(ordering);
+  CALLABLE(orderingL);
   CALLABLE(orderingInt);
+  CALLABLE(orderingLong);
   CALLABLE(sorting);
+  CALLABLE(sortingL);
   CALLABLE(sortingInt);
+  CALLABLE(sortingLong);
   CALLABLE(scalarX);
   //  CALLABLE(scalarInt);
 

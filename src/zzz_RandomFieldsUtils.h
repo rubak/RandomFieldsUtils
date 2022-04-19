@@ -117,9 +117,13 @@ typedef void (*deleteoptions_fctn) (bool);
 
 
   DECLARE3(void, sorting, double* data, int len, usr_bool NAlast)
+  DECLARE3(void, sortingL, double* data, Long len, usr_bool NAlast)
   DECLARE3(void, sortingInt, int* data, int len, usr_bool NAlast)
+  DECLARE3(void, sortingLong, Long* data, Long len, usr_bool NAlast)
   DECLARE4(void, ordering, double* data, int len, int dim, int * pos)
+  DECLARE4(void, orderingL, double* data, Long len, int dim, Long * pos)
   DECLARE4(void, orderingInt, int* data, int len, int dim, int * pos)
+  DECLARE4(void, orderingLong, Long* data, Long len, int dim, Long * pos)
 
     DECLARE4(double, scalarX, double * x, double * y, Long len, Long n)
   //  DECLARE4(int, scalarInt, int * x, int * y, int len, int n)
@@ -150,7 +154,7 @@ typedef void (*deleteoptions_fctn) (bool);
 	   int cores)
   DECLARE3(int, InvertMatrix, double * M, int size, int cores)
   DECLARE3(double, DetPosDef, double * M,  int size, int cores) // destroys M!
-  DECLARE3(bool, Is_positive_definite, double * C, Long dim, int cores)
+  DECLARE3(bool, Is_positive_definite, double * C, int  dim, int cores)
 
   
 #if defined OBSOLETE_RFU

@@ -26,54 +26,54 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef bool (*vergleich)(int, int, void *O);
 
-bool smaller1(int i, int j, void *ORDERD) {
-  return ((double *) ORDERD)[i] < ((double *) ORDERD)[j];
+bool smaller1(int i, int j, void *orderd) {
+  return ((double *) orderd)[i] < ((double *) orderd)[j];
 }
 
-bool greater1(int i, int j, void *ORDERD) {
-  return ((double *) ORDERD)[i] > ((double *) ORDERD)[j];
+bool greater1(int i, int j, void *orderd) {
+  return ((double *) orderd)[i] > ((double *) orderd)[j];
 }
 
-bool smallerInt1(int i, int j, void *ORDERDINT) {
-  return ((int *) ORDERDINT)[i] < ((int *)ORDERDINT)[j];
+bool smallerInt1(int i, int j, void *orderedint) {
+  return ((int *) orderedint)[i] < ((int *)orderedint)[j];
 }
 
-bool greaterInt1(int i, int j, void *ORDERDINT) {
-  return ((int *)ORDERDINT)[i] > ((int *)ORDERDINT)[j];
+bool greaterInt1(int i, int j, void *orderedint) {
+  return ((int *)orderedint)[i] > ((int *)orderedint)[j];
 }
 
 typedef bool (*vergleichX)(int, int, int, void *O);
-vergleichX SMALLERX=NULL, GREATERX=NULL;
+// vergleichX SMALLERX=NULL, GREATERX=NULL;
 
-bool smaller(int i, int j, int ORDERDIM, void *O)
+bool smaller(int i, int j, int orderdIM, void *O)
 {
-  double *x, *y, *ORDERD = (double*) O;
+  double *x, *y, *orderd = (double*) O;
   int d;
-  x = ORDERD + i * ORDERDIM;
-  y = ORDERD + j * ORDERDIM;
-  for(d=0; d<ORDERDIM; d++)
+  x = orderd + i * orderdIM;
+  y = orderd + j * orderdIM;
+  for(d=0; d<orderdIM; d++)
      if (x[d] != y[d]) return x[d] < y[d];
   return false;
 }
 
-bool greater(int i, int j, int ORDERDIM, void *O)
+bool greater(int i, int j, int orderdIM, void *O)
 {
-  double *x, *y, *ORDERD = (double*) O;
+  double *x, *y, *orderd = (double*) O;
   int d;
-  x = ORDERD + i * ORDERDIM;
-  y = ORDERD + j * ORDERDIM;
-  for(d=0; d<ORDERDIM; d++)
+  x = orderd + i * orderdIM;
+  y = orderd + j * orderdIM;
+  for(d=0; d<orderdIM; d++)
     if (x[d] != y[d]) return x[d] > y[d];
   return false;
 }
 
-bool smallerInt(int i, int j, int ORDERDIM, void *O)
+bool smallerInt(int i, int j, int orderdIM, void *O)
 {
-  int *x, *y, *ORDERDINT = (int*) O;
+  int *x, *y, *orderedint = (int*) O;
   int d;
-  x = ORDERDINT + i * ORDERDIM;
-  y = ORDERDINT + j * ORDERDIM;
-  for(d=0; d<ORDERDIM; d++) {
+  x = orderedint + i * orderdIM;
+  y = orderedint + j * orderdIM;
+  for(d=0; d<orderdIM; d++) {
     if (x[d] != y[d]) {
      return x[d] < y[d];
     }
@@ -81,25 +81,25 @@ bool smallerInt(int i, int j, int ORDERDIM, void *O)
   return false;
 }
 
-bool greaterInt(int i, int j, int ORDERDIM, void *O)
+bool greaterInt(int i, int j, int orderdIM, void *O)
 {
-  int *x, *y, *ORDERDINT = (int*) O;
+  int *x, *y, *orderedint = (int*) O;
   int d;
-  x = ORDERDINT + i * ORDERDIM;
-  y = ORDERDINT + j * ORDERDIM;
-  for(d=0; d<ORDERDIM; d++)
+  x = orderedint + i * orderdIM;
+  y = orderedint + j * orderdIM;
+  for(d=0; d<orderdIM; d++)
     if (x[d] != y[d]) return x[d] > y[d];
   return false;
 }
 
 
 void order(int *pos, int start, int end, vergleich SMALLER, vergleich GREATER,
-	  void * ORDERD, int order_from, int order_to) {
+	  void * orderd, int order_from, int order_to) {
   int randpos, pivot, left, right, pivotpos, swap;
   
   if( start < end ) {   
     //Get RNGstate();randpos = start + (int) (UNIFORM_RANDOM * (end-start+1)); PutRNGstate(); // use Get/Put RNGstate with great care !!
-    randpos = (int) (0.5 * (start + end));
+    randpos = (start + end) / 2;
     pivot = pos[randpos];
     pos[randpos] = pos[start];
     pos[start] = pivot;
@@ -109,8 +109,8 @@ void order(int *pos, int start, int end, vergleich SMALLER, vergleich GREATER,
     right=end+1;   
     while (left < right) {      
       //printf("order > %ld start=%d %d left=%d %d %d pivot=%d\n", pos, start, end, left, right, pos[left], pivot);
-      while (++left < right && SMALLER(pos[left], pivot, ORDERD)) pivotpos++;
-      while (--right > left && GREATER(pos[right], pivot, ORDERD));      
+      while (++left < right && SMALLER(pos[left], pivot, orderd)) pivotpos++;
+      while (--right > left && GREATER(pos[right], pivot, orderd));      
       if (left < right) {
 	swap=pos[left]; pos[left]=pos[right]; pos[right]=swap;
 	pivotpos++;
@@ -120,21 +120,21 @@ void order(int *pos, int start, int end, vergleich SMALLER, vergleich GREATER,
     pos[pivotpos] = pivot;
     if (start <= order_to && pivotpos > order_from)
       order(pos, start, pivotpos-1, SMALLER, GREATER,
-	    ORDERD,  order_from,  order_to);
+	    orderd,  order_from,  order_to);
     if (pivotpos < order_to && end >= order_from)
       order(pos, pivotpos + 1, end, SMALLER, GREATER,
-	    ORDERD, order_from, order_to);
+	    orderd, order_from, order_to);
   }
 }
 
 
 void Xorder(int *pos, int start, int end, vergleichX SMALLER,vergleichX GREATER,
-	    int D, void * ORDERD, int order_from, int order_to ) {
+	    int D, void * orderd, int order_from, int order_to ) {
   int randpos, pivot, left, right, pivotpos, swap;
   
   if( start < end ) {   
     //Get RNGstate();randpos = start + (int) (UNIFORM_RANDOM * (end-start+1)); PutRNGstate(); // use Get/Put RNGstate with great care !!
-    randpos = (int) (0.5 * (start + end));
+    randpos = (start + end) / 2;
     pivot = pos[randpos];
     pos[randpos] = pos[start];
     pos[start] = pivot;
@@ -144,8 +144,8 @@ void Xorder(int *pos, int start, int end, vergleichX SMALLER,vergleichX GREATER,
     right=end+1;   
     while (left < right) {      
       //printf("order > %ld start=%d %d left=%d %d %d pivot=%d\n", pos, start, end, left, right, pos[left], pivot);
-      while (++left < right && SMALLER(pos[left], pivot, D, ORDERD)) pivotpos++;
-      while (--right > left && GREATER(pos[right], pivot, D, ORDERD));
+      while (++left < right && SMALLER(pos[left], pivot, D, orderd)) pivotpos++;
+      while (--right > left && GREATER(pos[right], pivot, D, orderd));
       if (left < right) {
 	swap=pos[left]; pos[left]=pos[right]; pos[right]=swap;
 	pivotpos++;
@@ -155,10 +155,10 @@ void Xorder(int *pos, int start, int end, vergleichX SMALLER,vergleichX GREATER,
     pos[pivotpos] = pivot;
     if (start <= order_to && pivotpos > order_from)
       Xorder(pos, start, pivotpos-1, SMALLER, GREATER,
-	     D, ORDERD, order_from, order_to);
+	     D, orderd, order_from, order_to);
     if (pivotpos < order_to && end >= order_from)
       Xorder(pos, pivotpos + 1, end, SMALLER, GREATER,
-	     D, ORDERD, order_from, order_to);
+	     D, orderd, order_from, order_to);
   }
 }
 
@@ -198,9 +198,9 @@ void orderingFromTo(double *d, int len, int dim, int *pos, int from, int to,
   }
 }
 
-void Ordering(double *d, int *len, int *dim, int *pos) {
-  orderingFromTo(d, *len, *dim, pos, 1, *len, Nan);
-}
+//void Ordering(double *d, int *len, int *dim, int *pos) {
+//  orderingFromTo(d, *len, *dim, pos, 1, *len, Nan);
+//}
 
  void ordering(double *d, int len, int dim, int *pos) {
   orderingFromTo(d, len, dim, pos, 1, len, Nan);
@@ -254,7 +254,7 @@ void orderingInt(int *d, int len, int dim, int *pos)  {
 
 
 
-void quicksort(int start, int end, double *ORDERD, int order_from, int order_to)
+void quicksort(int start, int end, double *orderd, int order_from, int order_to)
 {
   //  printf("start %d %d\n", start, end);
 
@@ -262,32 +262,32 @@ void quicksort(int start, int end, double *ORDERD, int order_from, int order_to)
   
   if( start < end ) {   
     //Get RNGstate();randpos = start + (int) (UNIFORM_RANDOM * (end-start+1)); PutRNGstate(); // use Get/Put RNGstate with great care !!
-    int randpos = (int) (0.5 * (start + end));
-    double pivot = ORDERD[randpos];
-    ORDERD[randpos] = ORDERD[start];
-    ORDERD[start] = pivot;
+    int randpos = (start + end) / 2;
+    double pivot = orderd[randpos];
+    orderd[randpos] = orderd[start];
+    orderd[start] = pivot;
       
     pivotpos=start; 
     left = start;
     right = end+1;   
     
     while (left < right) {      
-      //printf("order > start=%d %d left=%d %d %10g pivot=%10g\n", start, end, left, right, ORDERD[left], pivot);
-      while (++left < right && ORDERD[left] < pivot) pivotpos++;
-      while (--right > left && ORDERD[right] > pivot);      
+      //printf("order > start=%d %d left=%d %d %10g pivot=%10g\n", start, end, left, right, orderd[left], pivot);
+      while (++left < right && orderd[left] < pivot) pivotpos++;
+      while (--right > left && orderd[right] > pivot);      
       if (left < right) {
-	double swap = ORDERD[left];
-	ORDERD[left]=ORDERD[right]; 
-	ORDERD[right]=swap;
+	double swap = orderd[left];
+	orderd[left]=orderd[right]; 
+	orderd[right]=swap;
 	pivotpos++;
       }
     }
-    ORDERD[start] = ORDERD[pivotpos];
-    ORDERD[pivotpos] = pivot;
+    orderd[start] = orderd[pivotpos];
+    orderd[pivotpos] = pivot;
     if (start <= order_to && pivotpos > order_from)
-      quicksort(start, pivotpos-1, ORDERD, order_from, order_to);
+      quicksort(start, pivotpos-1, orderd, order_from, order_to);
     if (pivotpos < order_to && end >= order_from)
-      quicksort(pivotpos + 1, end, ORDERD, order_from, order_to);
+      quicksort(pivotpos + 1, end, orderd, order_from, order_to);
   }
 }
 
@@ -334,38 +334,38 @@ void sorting(double *d, int len, usr_bool NAlast) {
   sortingFromTo(d, len, 1, len, NAlast);
 }
 
-void sortInt(int start, int end, int *ORDERDINT, int order_from, int order_to) {
+void sortInt(int start, int end, int *orderedint, int order_from, int order_to) {
   //  printf("start %d %d\n", start, end);
 
   int left, right, pivotpos;
   
   if( start < end ) {   
     //Get RNGstate();randpos = start + (int) (UNIFORM_RANDOM * (end-start+1)); PutRNGstate(); // use Get/Put RNGstate with great care !!
-    int randpos = (int) (0.5 * (start + end));
-    int pivot = ORDERDINT[randpos];
-    ORDERDINT[randpos] = ORDERDINT[start];
-    ORDERDINT[start] = pivot;
+    int randpos = (start + end) / 2;
+    int pivot = orderedint[randpos];
+    orderedint[randpos] = orderedint[start];
+    orderedint[start] = pivot;
       
     pivotpos=start; 
     left = start;
     right = end+1;   
     
     while (left < right) {      
-      while (++left < right && ORDERDINT[left] < pivot) pivotpos++;
-      while (--right > left && ORDERDINT[right] > pivot);      
+      while (++left < right && orderedint[left] < pivot) pivotpos++;
+      while (--right > left && orderedint[right] > pivot);      
       if (left < right) {
-	int swap = ORDERDINT[left];
-	ORDERDINT[left]=ORDERDINT[right]; 
-	ORDERDINT[right]=swap;
+	int swap = orderedint[left];
+	orderedint[left]=orderedint[right]; 
+	orderedint[right]=swap;
 	pivotpos++;
       }
     }
-    ORDERDINT[start] = ORDERDINT[pivotpos];
-    ORDERDINT[pivotpos] = pivot;
+    orderedint[start] = orderedint[pivotpos];
+    orderedint[pivotpos] = pivot;
     if (start <= order_to && pivotpos > order_from)
-      sortInt(start, pivotpos-1, ORDERDINT, order_from, order_to);
+      sortInt(start, pivotpos-1, orderedint, order_from, order_to);
     if (pivotpos < order_to && end >= order_from)
-      sortInt(pivotpos + 1, end, ORDERDINT, order_from, order_to);
+      sortInt(pivotpos + 1, end, orderedint, order_from, order_to);
   }
 }
 
@@ -421,6 +421,7 @@ void sortingInt(int *d, int len, usr_bool NAlast) {
 
 
 SEXP sortX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
+  if (length(Data) > MAXINT) BUG;
   int 
     err = NOERROR,
     len = length(Data),
@@ -478,6 +479,7 @@ SEXP sortX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
  
 
 SEXP orderX(SEXP Data, SEXP From, SEXP To, SEXP NAlast) {
+  if (length(Data) > MAXINT) BUG;
   int 
     err = NOERROR,
     len = length(Data),

@@ -78,8 +78,15 @@ void AtA(double *a, Long nrow, Long ncol, double *C, int VARIABLE_IS_NOT_USED co
     int ncol0 = ncol,
       nrow0 = nrow;
     MEMSET(C, 0, ncol * ncol *sizeof(double));
-    F77dsyrk("U","T", &ncol0, &nrow0, &alpha, a, &nrow0, &beta, C,
-		    &ncol0);
+    F77dsyrk("U","T", &ncol0, &nrow0,
+	      &alpha, a,
+	      &nrow0,
+	      &beta, C,
+	      &ncol0
+#ifdef USE_FC_LEN_T	  
+		  FCONE FCONE
+#endif		  
+	     );
     for (Long i=1; i<ncol; i++) {
       for (Long j=0; j<i; j++) {
 	C[i + ncol * j] = C[i * ncol + j];
@@ -146,7 +153,11 @@ double xAx(double *x, double*A, Long nrow, int VARIABLE_IS_NOT_USED cores) {
     double *y = (double*)  MALLOC(nrow * sizeof(double));
     // z = x^\top A
     int nrow0 = nrow;
-    F77dgemv("T", &nrow0, &nrow0, &alpha, A, &nrow0, x, &incx, &beta, y, &incx);
+    F77dgemv("T", &nrow0, &nrow0, &alpha, A, &nrow0, x, &incx, &beta, y, &incx
+#ifdef USE_FC_LEN_T	  
+		  FCONE
+#endif		  
+	     );
     // z^top x
     alpha = F77ddot(&nrow0, x, &incx, y, &incx);    
     FREE(y);
@@ -540,7 +551,7 @@ SEXP Int(int *V, Long n, Long max) {
   if (V==NULL) return allocVector(INTSXP, 0);
   if (n>max) return TooLarge(n);
   if (n<0) return TooSmall();   
-  PROTECT(Ans=allocVector(INTSXP, n));
+  PROTECT(Ans=allocVector(INTSXP, (int) n));
   MEMCOPY(INTEGER(Ans), V, n * sizeof(int));
   UNPROTECT(1);
   return Ans;
@@ -554,7 +565,7 @@ SEXP Logic(bool* V, Long n, Long max) {
   if (V==NULL) return allocVector(VECSXP, 0);
   if (n>max) return TooLarge(n);
   if (n<0) return TooSmall();
-  PROTECT(Ans=allocVector(LGLSXP, n));
+  PROTECT(Ans=allocVector(LGLSXP, (int) n));
   int *ans = LOGICAL(Ans);
   for (Long i=0; i<n; i++) ans[i] = V[i];
   UNPROTECT(1);
@@ -567,7 +578,7 @@ SEXP Num(double* V, Long n, Long max) {
   if (V==NULL) return allocVector(REALSXP, 0);
   if (n>max) return TooLarge(n);
   if (n<0) return TooSmall();
-  PROTECT(Ans=allocVector(REALSXP, n));
+  PROTECT(Ans=allocVector(REALSXP, (int) n));
   MEMCOPY(REAL(Ans), V, n * sizeof(double));
   UNPROTECT(1);
   return Ans;
@@ -579,7 +590,7 @@ SEXP Char(const char **V, Long n, Long max) {
   if (V==NULL) return allocVector(STRSXP, 0);
   if (n>max) return TooLarge(n);
   if (n<0) return TooSmall();
-  PROTECT(Ans=allocVector(STRSXP, n));
+  PROTECT(Ans=allocVector(STRSXP, (int) n));
   for (Long i=0; i<n; i++) SET_STRING_ELT(Ans, i, mkChar(V[i]));  
   UNPROTECT(1);
   return Ans;
@@ -592,7 +603,7 @@ SEXP Mat(double* V, Long row, Long col, Long max) {
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
   SEXP Ans;
-  PROTECT(Ans=allocMatrix(REALSXP, row, col));
+  PROTECT(Ans=allocMatrix(REALSXP, (int) row, (int) col));
   MEMCOPY(REAL(Ans), V, n * sizeof(double));
   UNPROTECT(1);
   return Ans;
@@ -608,7 +619,7 @@ SEXP Mat_t(double* V, Long row, Long col, Long max) {
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
   SEXP Ans;
-  PROTECT(Ans=allocMatrix(REALSXP, row, col));
+  PROTECT(Ans=allocMatrix(REALSXP, (int) row, (int) col));
   double *ans = REAL(Ans);
   for (Long k=0, j=0; j<col; j++)
      for (Long i=0; i<row; i++)
@@ -627,7 +638,7 @@ SEXP MatString(char **V, Long row, Long col, Long max) {
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
   SEXP Ans;
-  PROTECT(Ans=allocMatrix(STRSXP, row, col));  
+  PROTECT(Ans=allocMatrix(STRSXP, (int) row, (int) col));  
   for (Long k=0; k<n; k++) SET_STRING_ELT(Ans, k, mkChar(V[k]));
   UNPROTECT(1);
   return Ans;
@@ -642,7 +653,7 @@ SEXP MatInt(int* V, Long row, Long col, Long max) {
   Long n = row * col;
   if (n>max) return TooLarge(row, col);
   SEXP Ans;
-  PROTECT(Ans=allocMatrix(INTSXP, row, col));
+  PROTECT(Ans=allocMatrix(INTSXP, (int) row, (int) col));
   MEMCOPY(INTEGER(Ans), V, n * sizeof(int));
   UNPROTECT(1);
   return Ans;
@@ -662,7 +673,7 @@ SEXP Array3D(double** V, Long depth, Long row, Long col, Long max) {
     return TooLarge(nn, 3);
   }
   SEXP Ans;
-  PROTECT(Ans=alloc3DArray(REALSXP, depth, row, col));
+  PROTECT(Ans=alloc3DArray(REALSXP, (int) depth, (int) row, (int) col));
   double *ans = REAL(Ans);
   for (Long j=0; j<depth; j++) 
     for (Long i=0; i<m; i++) 
@@ -712,7 +723,7 @@ SEXP String(char V[][MAXCHAR], Long n, Long max) {
   if (V==NULL) return allocVector(STRSXP, 0);
   if (n>max) return TooLarge(n);
   if (n<0) return TooSmall();
-  PROTECT(str = allocVector(STRSXP, n)); 
+  PROTECT(str = allocVector(STRSXP, (int) n)); 
   for (Long i=0; i<n; i++) SET_STRING_ELT(str, i, mkChar(V[i]));
   UNPROTECT(1);
   return str;
@@ -730,7 +741,7 @@ SEXP String(int *V, const char * List[], Long n, Long endvalue) {
     assert(V[k] <= endvalue);
     if (V[k] == endvalue) break;
   }
-  PROTECT(str = allocVector(STRSXP, k)); 
+  PROTECT(str = allocVector(STRSXP, (int) k)); 
   for (Long i=0; i<k; i++) SET_STRING_ELT(str, i, mkChar(List[V[i]]));
   UNPROTECT(1);
   return str;
@@ -979,14 +990,10 @@ int Match(char *name, name_type List, int n) {
   // == MULTIPLEMATCHING,-2, if multiple matching fctns are found,  
   // if more than one match exactly, the last one is taken (enables overwriting 
   // standard functions)
-  unsigned int ln;
-  int Nr;
-  Nr=0;
-  ln=STRLEN(name);
+  Ulong ln = STRLEN(name);
+  int Nr=0;
 
-  while ( Nr < n  && STRNCMP(name, List[Nr], ln)) {
-    Nr++;
-  }
+  while ( Nr < n  && STRNCMP(name, List[Nr], ln)) Nr++;
   if (Nr < n) { 
     if (ln==STRLEN(List[Nr])) // exactmatching -- take first -- changed 1/7/07
       return Nr;
@@ -1014,15 +1021,10 @@ int Match(char *name, const char * List[], int n) {
   // printf("Matching\n");
    // == -1 if no matching name is found
   // == -2 if multiple matching names are found, without one matching exactly
-  unsigned int ln;
-  int Nr;
-  Nr=0;
-  ln=STRLEN(name);
+  Ulong ln=STRLEN(name);
+  int Nr=0;
 
-  while ( Nr < n  && STRNCMP(name, List[Nr], ln)) {
-    //   printf("%.50s\n", List[Nr]);
-    Nr++;
-  }
+  while ( Nr < n  && STRNCMP(name, List[Nr], ln)) Nr++;
   if (Nr < n) { 
     if (ln==STRLEN(List[Nr])) {// exactmatching -- take first -- changed 1/7/07
       return Nr;

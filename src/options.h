@@ -100,7 +100,7 @@ struct solve_options {
     max_svd,
     pivot, // obsolete
      actual_size,
-    *pivot_idx, pivot_idx_n,//permutation; phys+logi laenge
+    *pivot_idx, n_pivot_idx,//permutation; phys+logi laenge
     tinysize, dummy6[10];
   //  bool tmp_delete;
   pivot_modes actual_pivot,pivot_mode, dummy7;

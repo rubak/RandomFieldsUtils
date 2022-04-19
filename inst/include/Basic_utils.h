@@ -413,7 +413,9 @@ typedef int64_t Long;
   #endif
 
 #else // NOT OBSOLETE
-  #define USE_FC_LEN_T
+  #if ! defined USE_FC_LEN_T
+    #define USE_FC_LEN_T
+  #endif
   #define ATAN2 std::atan2
   #define COSH std::cosh
   #define SINH std::sinh
@@ -421,6 +423,19 @@ typedef int64_t Long;
 #endif
 
 
+#if ! defined NA_LONG
+#define NA_LONG (-1L - (Long) 9223372036854775807)
+#endif
+
+
+
+
+#define FREE0(PT, WHICH) {			\
+  FREE(PT->WHICH); PT->n_##WHICH= 0;}		\
+  if (PT->WHICH != NULL) {			\
+    UNCONDFREE(PT->WHICH);			\
+    PT->n_##WHICH = 0;				\
+  } else assert(PT->n_##WHICH==0);						
 
 
 #endif

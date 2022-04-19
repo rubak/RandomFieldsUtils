@@ -70,36 +70,31 @@ const char * InversionNames[nr_InversionMethods] = {
 #define KAHAN OPTIONS.installNrun.kahanCorrection
 
 #define CMALLOC(WHICH, N, TYPE)	{					\
-    int _N_ = N;							\
-    if (pt->WHICH##_n < _N_) {						\
-      if (pt->WHICH##_n < 0) BUG;					\
+    Long _N_ = N;							\
+    if (pt->n_##WHICH < _N_) {						\
+      if (pt->n_##WHICH < 0) BUG;					\
       FREE(pt->WHICH);							\
-      pt->WHICH##_n = _N_;						\
+      pt->n_##WHICH = _N_;						\
       if ((pt->WHICH = (TYPE *) CALLOC(_N_, sizeof(TYPE))) == NULL)	\
 	return ERRORMEMORYALLOCATION;					\
     } else {								\
       assert( (_N_ > 0 && pt->WHICH != NULL) || _N_ == 0);		\
-      for (int iii=0; iii<_N_; pt->WHICH[iii++] = 0);			\
+      for (Long iii=0; iii<_N_; pt->WHICH[iii++] = 0);			\
     }									\
   }									\
     TYPE VARIABLE_IS_NOT_USED *WHICH = pt->WHICH
 
 
+/*
 //  sqrtPosDef nutzt pt->U fuer das Ergebnis		
-#define FREEING(WHICH)					\
+#define FREEING_RESULT(WHICH)					\
   assert(int VARIABLE_IS_UNUSED *_i = WHICH);		\
   if (pt->WHICH != NULL && pt->WHICH != result) {	\
     UNCONDFREE(pt->WHICH);				\
-    pt->WHICH##_n = 0;					\
-  }						
- 					       
-#define FREEING_INT(WHICH)			\
-  assert(int VARIABLE_IS_UNUSED *_i = WHICH);	\
-  if (pt->WHICH != NULL) {			\
-    UNCONDFREE(pt->WHICH);			\
-    pt->WHICH##_n = 0;				\
-  }						
-
+    pt->n_##WHICH = 0;					\
+  }		
+*/				
+ 	
 
 double Determinant(double *M, int size, bool log) {
   Long sizeP1 = size + 1,
@@ -152,30 +147,29 @@ double cumProd(double *D, int size, bool log) {
   return dummy;
 }
 
-
-
+#define FREEING(WHICH) assert(int VARIABLE_IS_UNUSED *_i=WHICH); FREE0(x,WHICH)
 void solve_DELETE0(solve_storage *x) {
-  FREE(x->iwork);
+  FREEING(iwork);
 
-  FREE(x->pivotsparse);
-  FREE(x->pivot_idx);
-  FREE(x->xlnz);
-  FREE(x->snode);
-  FREE(x->xsuper);
-  FREE(x->invp);
-  FREE(x->cols);
-  FREE(x->rows);
-  FREE(x->lindx);
-  FREE(x->xja);
+  FREEING(pivotsparse);
+  FREEING(pivot_idx);
+  FREEING(xlnz);
+  FREEING(snode);
+  FREEING(xsuper);
+  FREEING(invp);
+  FREEING(cols);
+  FREEING(rows);
+  FREEING(lindx);
+  FREEING(xja);
    
-  FREE(x->main);
-  FREE(x->rhs);
-  FREE(x->w2);
-  FREE(x->U);
-  FREE(x->D);
+  FREEING(main);
+  FREEING(rhs);
+  FREEING(w2);
+  FREEING(U);
+  FREEING(D);
     
-  FREE(x->w3);
-  FREE(x->result);
+  FREEING(w3);
+  FREEING(result);
   FREE(x->to_be_deleted);
 }
 
@@ -332,15 +326,15 @@ int chol3(double *M, int size, double *res, solve_storage *pt){
 }
 
 
-
 void Sort(double *RESULT, Long size, Long rhs_cols, int *pi, int *rank,
 	  double *dummy) {
-  orderingInt(pi, size, 1, rank);
+  if (size > MAXINT) BUG;
+  orderingInt(pi, (int) size, 1, rank);
   Long i=0,
     totalRHS = (Long) size * rhs_cols;
   while(i < size && i == rank[i]) i++;
   while (i < size) {
-    int stored_i = i,
+    Long stored_i = i,
       read = i;
     double *p_write = NULL,
       *p_read = RESULT + read;
@@ -469,6 +463,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 
   //  printf("entering\n");
   // http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F01/f01intro.xml#
+  if (rhs_cols > MAXINT) BUG;
   assert(sp != NULL);
   assert(NA_LOGICAL == INT_MIN && NA_LOGICAL == NA_INTEGER); // nur zur sicherheit, wegen usr_bool
   //          eigentlich sollte usr_bool unabhaengig davon funktionieren
@@ -494,7 +489,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
     if (calculate == DETERMINANT)
       return logdet3(det3(M0, size), posdef, logdet, sp->det_as_log);
     else if (calculate  == MATRIXSQRT) return chol3(M0, size, RESULT, Pt);
-    else return solve3(M0, size, posdef, rhs0, rhs_cols, RESULT, logdet,
+    else return solve3(M0, size, posdef, rhs0,
+		       (int) rhs_cols, RESULT, logdet,
 		       sp->det_as_log, Pt);
   }
 
@@ -513,8 +509,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
     nnzA = 0;
   Long
     sizeSq = (Long) size * size,
-    sizeRHS = (Long) size * rhs_cols,
-    sizeP1 = (Long) size + 1;
+    sizeRHS = (Long) size * rhs_cols;
+  int sizeP1 = size + 1;
   //  printf("A1dd\n");
   usr_bool
     sparse = sp->sparse;
@@ -522,13 +518,13 @@ int doPosDefIntern(double *M0, int size, bool posdef,
   //  printf("%e\n", sp->spam_tol); 
   double spam_tol = sp->spam_tol;
   //   printf("A2\n");
- bool diag  = false,
+  bool diag  = false,
     useGPU = la_mode == LA_GPU &&
     (calculate == SOLVE || calculate == DETERMINANT);
  //   printf("A3\n");
 
 
-  //  printf("A %d %d size=%d %d %d \n",	 sparse,Nan ,size, useGPU, sp->spam_min_n[useGPU]);
+  //  printf("A %d %d size=%d %d %d \n",	 sparse,Nan ,size, useGPU, sp->n_spam_min[useGPU]);
   if (sparse == Nan && (sparse = (usr_bool) (size > sp->spam_min_n[useGPU]))) {
     //     printf("AB2\n");
     double mean_diag = 0.0;
@@ -597,8 +593,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
     diag = true;
     for (Long i=0; i<size && diag; i++) {
       //      printf("AdC2 %d %d %d\n", i, size, diag);
-    Long end = i * sizeP1;
-      Long j;
+      Long j,
+	end = i * sizeP1;
       for (j=i * size; j<end; j++) {
 	//	printf("(%d %d %10g %d)\n", i, j, M0[j], size);
 	if (!(FABS(M0[j]) <= spam_tol)) {
@@ -845,7 +841,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
     case Rcholesky : {
       //      printf("chol (R)\n");
       if (calculate == SOLVE) {
-	int n_rhs = rhs_cols;
+	if (rhs_cols > MAXINT) BUG;
+        int n_rhs = (int) rhs_cols;
 	double *m = NULL;
 	CMALLOC(xja, size, int);
 	if (rhs_cols == 0) {
@@ -858,7 +855,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	  
 	  MEMSET(RESULT, 0, sizeof(double) * sizeSq);
 	  for (Long i=0; i<sizeSq; i+=sizeP1) RESULT[i] = 1.0;
-	  n_rhs = size;
+	  if (size > MAXINT) BUG;
+ 	  n_rhs = size;
 	  
 	  /*
 	    
@@ -891,7 +889,11 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	if (err != NOERROR) GERR0("LU algorithm failed.");
       } else if (calculate == MATRIXSQRT) {
 	if (MPT != RESULT) MEMCOPY(RESULT, MPT, sizeSq * sizeof(double));
-        F77dpotrf("U", &size, RESULT, &size, &err);
+        F77dpotrf("U", &size, RESULT, &size, &err
+#ifdef USE_FC_LEN_T	  
+		  FCONE
+#endif		  
+		  );
 	if (logdet != NULL) {
 	  Determinant(RESULT, size, sp->det_as_log);
 	  if (sp->det_as_log) *logdet *=2; else *logdet *= *logdet;
@@ -971,7 +973,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
       
 	if (err == NOERROR) {
 	  if (calculate == MATRIXSQRT) {
-	    Long deltaend = size - 1;
+	    int deltaend = size - 1;
 	    double *end = MPT + sizeSq;
 	    for (double *p=MPT + 1; p<end; p+=sizeP1, deltaend--)
 	      FILL_IN(p, deltaend, 0.0);	    
@@ -1035,15 +1037,15 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	int *pi;
 	if (proposed_pivot == PIVOT_DO || proposed_pivot == PIVOT_AUTO) {
  	  FREE(pt->pivot_idx); // ALWAYS FREE IT!!! cp Chol(SEXP M)
-	  pt->pivot_idx = (int*) MALLOC(size * sizeof(int));
-	  pt->pivot_idx_n = size;
+	  pt->pivot_idx = (int*) MALLOC((Long) size * sizeof(int));
+	  pt->n_pivot_idx = size;
 	  pt->actual_pivot = PIVOT_DO;
-	  for (Long i=0; i<size; i++) pt->pivot_idx[i] = i;
+	  for (int i=0; i<size; i++) pt->pivot_idx[i] = i;
 	  pt->actual_size = actual_size = size;
 	  pi = pt->pivot_idx;
 	} else { // PIVOT_IDX 
-	  if (sp->pivot_idx_n < size || sp->actual_size > size) {
-	    //	    printf("XA, %d %d %d\n", sp->pivot_idx_n , size, sp->actual_size);
+	  if (sp->n_pivot_idx < size || sp->actual_size > size) {
+	    //	    printf("XA, %d %d %d\n", sp->n_pivot_idx , size, sp->actual_size);
 	    CERR0("pivot_idx does not have the correct length.\nSet 'RFoption(pivot_idx=, pivot_actual_size=)' to the attributes of a\npivoted Cholesky decomposition.");
 	  }
 	  actual_size = pt->actual_size = sp->actual_size;
@@ -1053,7 +1055,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	  pt->pivot_idx = (int*) MALLOC(bytes);
 	  MEMCOPY(pt->pivot_idx, sp->pivot_idx, bytes);
 	  pt->actual_pivot = PIVOT_IDX;
-	  pt->pivot_idx_n = sp->pivot_idx_n;
+	  pt->n_pivot_idx = sp->n_pivot_idx;
 	  pi = sp->pivot_idx;
 	}
 
@@ -1104,7 +1106,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	    
 	    double dev = rel_thres * max_reldeviation;
 	    if (deviation <= max_deviation || (q > 0 && deviation <= dev) ) {
-	      actual_size = pt->actual_size = q;
+	      if (q > MAXINT) BUG;
+	      actual_size = pt->actual_size = (int) q;
 	      if (sp->pivot_check != False) {
 		double largest = 0;
 		for (Long i=q; i<size; i++) {
@@ -1508,10 +1511,10 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	
     case SVD : {// SVD : M = U D VT
       if (size > sp->max_svd) CERR0("matrix too large for SVD decomposition.");
-      int k = 0,  
+      int 
 	lw2 = -1,
 	size8 = size * 8;
-      double  optim_lwork,
+       double  optim_lwork,
 	eigen2zero = sp->eigen2zero,
 	*pt_w2 = &optim_lwork;
 
@@ -1543,7 +1546,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
       if (calculate == MATRIXSQRT) {
 	double svdtol = sp->svd_tol;
 	/* calculate SQRT of covariance matrix */
-	for (Long j=0; j<size; j++) {
+ 	for (Long j=0, k=0; j<size; j++) {
 	  double dummy;
 	  if (D[j] < -eigen2zero) CERR0("negative eigenvalues found.");
 	  dummy = 0.0;
@@ -1555,7 +1558,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
  	if (svdtol > 0.0) {
 	  for (Long i=0; i<size; i++) {
 	    double *Ui = RESULT + i;
-	    for (k=i; k<size; k++) {
+	    for (Long k=i; k<size; k++) {
 	      double *Uk = RESULT + k,
 		sum = 0.0;
 	      for (Long j=0; j<sizeSq; j+=size) {
@@ -1597,11 +1600,11 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	}
 	
 	if (rhs_cols > 0) {
-	  Long tot = size * rhs_cols;
+	  Long tot = (Long) size * rhs_cols;
 	  CMALLOC(w2, tot, double);	
 	  matmulttransposed(U, RHS, w2, size, size, rhs_cols,cores);
 	  if (pseudoInverse) {
-	    for (k=0; k<tot; ) {
+	    for (Long k=0; k<tot; ) {
 	      for (Long i=0; i<size; i++) {
 		double cmp = w2[k];
 		w2[k] *= lnz[i];
@@ -1612,7 +1615,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	      }
 	    }
 	  } else {
-	  for (k=0; k<tot; )
+	  for (Long k=0; k<tot; )
 	    for (Long i=0; i<size; i++) w2[k++] *= lnz[i];
 	  }
 	  matmulttransposed(w3, w2, RESULT, size, size, rhs_cols,cores);
@@ -1658,8 +1661,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 
       if (rhs_cols > 0) {
 	if (rhs_cols > MAXINT) BUG;
-	int rhs_cols0 = rhs_cols;
-	Long totalRHS = size * rhs_cols;
+	int rhs_cols0 =  (int) rhs_cols;
+	Long totalRHS = (Long) size * rhs_cols;
 	if (result != NULL) MEMCOPY(RESULT, RHS, sizeof(double) * totalRHS);
 	F77dgetrs("N", &size, // LU rhs
 			 &rhs_cols0, MPT, &size, xja, 
@@ -1689,6 +1692,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
     }
 	
     case Sparse : {// sparse matrix
+      if (sizeSq > MAXINT) BUG;
+      
       Long halfsq = (Long) size * (size + 1) / 2;
       int nnzlindx = -1, 
 	doperm = sp->pivotsparse,
@@ -1703,13 +1708,13 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 
       if (!posdef) CERR0("'spam' needs a positive definite matrix.");
       CMALLOC(pivotsparse, size, int);
-      if (!doperm) for (Long i=0; i<size; i++) pivotsparse[i] = i + 1;
+      if (!doperm) for (int i=0; i<size; i++) pivotsparse[i] = i + 1;
 
       if (spam_zaehler == 0) { 
 	for (Long i=0; i<sizeSq; i++) nnzA += !(FABS(M0[i]) <= spam_tol);
 	spam_zaehler = nnzA + 1; // falls nur aus Nullen bestehend
       }
-      
+
       CMALLOC(xlnz, sizeP1, int);
       CMALLOC(snode, size, int);
       CMALLOC(xsuper, sizeP1, int);
@@ -1750,7 +1755,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	  }
 	  nnzcolindices = tmp;
 	}
-	if (nnzcolindices < pt->lindx_n) nnzcolindices = pt->lindx_n;
+	if (nnzcolindices < pt->n_lindx) nnzcolindices = pt->n_lindx;
 	
 	if (nnzR == 0) {
 	  double u = FLOOR(.4 * POW(nnzA, 1.2));
@@ -1763,8 +1768,8 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	  }
 	  nnzR = tmp;
 	}
-	if (nnzR < pt->lnz_n) nnzR = pt->lnz_n;
-	else if (nnzR > halfsq) nnzR = halfsq;	
+	if (nnzR < pt->n_lnz) nnzR = pt->n_lnz;
+	else if (nnzR > halfsq) nnzR = (int) halfsq;	
 	
 	CMALLOC(lindx, nnzcolindices, int);	
 	CMALLOC(lnz, nnzR, double);
@@ -1774,15 +1779,15 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 			       &nnzlindx, &nnzcolindices, 
 			       lindx, // 
 			       iwork,// 
-			       &(pt->nsuper), // length of lindx
+			&(pt->nsuper), // length of lindx
 			       &nnzR,  // physical length of lindx
 			       lnz,   // output:result
 			       xlnz,  // cols of lnz "ja"
 			       snode,  // supernode membership ??
 			       xsuper, // supernode partioning
-			       &cache, // cache size of the CPU
-			       &err
-			       );       
+			&cache, // cache size of the CPU
+			&err
+			);       
 	
 	if (err != NOERROR) {
 	  CERR1("'cholstepwise' failed with err=%d.", err);
@@ -1802,7 +1807,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	nnzR = xlnz[size] - 1;
 	CMALLOC(xja, nnzR, int);
 	F77calcja(&size, &(pt->nsuper), pt->xsuper, 
-			 pt->lindx, pt->iwork, pt->xlnz, xja);
+		  pt->lindx, pt->iwork, pt->xlnz, xja);
 	for (Long i=0; i<size; invp[i++]--); 
 	F77spamcsrdns(&size, pt->lnz, xja, pt->xlnz, RESULT);
 	for (Long i=0; i<size; i++) {
@@ -1841,14 +1846,12 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 	*/
 	int RHS_COLS;
 	if (rhs_cols <= 0) { // UNBEDINGT VOR double *RHS;
-	  if (size > MAXINT) BUG;
 	  RHS_COLS = size;	
 	  FILL_IN(RESULT, sizeSq, 0.0);
 	  for (Long i=0; i<sizeSq; i += sizeP1) RESULT[i] = 1.0; 
-	  
 	} else {
 	  if (rhs_cols > MAXINT) BUG;
-	  RHS_COLS = rhs_cols;	
+	  RHS_COLS = (int) rhs_cols;	
 	  if (result != NULL) 
 	    MEMCOPY(RESULT, RHS, (Long) size * rhs_cols * sizeof(double));
 	}
@@ -1918,9 +1921,9 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, int calculate,
 	      solve_storage *Pt, solve_options *Sp, int VARIABLE_IS_NOT_USED cores){
   // rhs_cols == 0 iff RHS = NULL
-  Long rhs_rows, rhs_cols,
-    size = ncols(M), 
-    rows = nrows(M);
+  int rhs_rows, rhs_cols,
+    size = ncols(M);
+  if (nrows(M) != size) ERR0("not a square matrix");
   int
     err = NOERROR;
    bool deleteMM = false,
@@ -1932,7 +1935,6 @@ SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, int calculate,
     solve_NULL(&Pt0);
     pt = &Pt0;
   }
-  
 
   if (rhs == R_NilValue) {
     rhs_rows = rhs_cols = 0;
@@ -1944,13 +1946,11 @@ SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, int calculate,
   } else {
     rhs_cols = 1;
   }
-  if (rows != size) ERR0("not a square matrix");
   if (rhs_rows > 0 && rhs_rows != size)
     ERR0("vector size does not match the matrix size");
   
-  Long 
-    new_cols = rhs_cols == 0 ? size : rhs_cols,
-    total = size * new_cols;
+  int new_cols = rhs_cols == 0 ? size : rhs_cols;
+  Long total = (Long) size * new_cols;
 
   //  res =  PROTECT(isReal(M) ? duplicate(M): coerceVector(M, REALSXP)); UNPROTECT(1); return res;
 
@@ -1982,7 +1982,7 @@ SEXP doPosDef(SEXP M, SEXP rhs, SEXP logdet, int calculate,
     if ((deleteRHS = TYPEOF(rhs) != REALSXP)) {
       if (TYPEOF(rhs) != INTSXP && TYPEOF(rhs) != LGLSXP) 
 	GERR0("numerical matrix expected");
-      Long totalRHS = rhs_cols * rhs_rows; 
+      Long totalRHS = (Long) rhs_cols * rhs_rows; 
       RHS = (double*) MALLOC(totalRHS * sizeof(double));
       if (TYPEOF(rhs) == INTSXP) {
 	for (Long i=0; i<totalRHS; i++) 
@@ -2137,8 +2137,8 @@ SEXP Chol(SEXP M) {
   if (Pt.actual_pivot == PIVOT_DO || Pt.actual_pivot ==  PIVOT_IDX) {    
     // NEVER: FREE(OPTIONS.solve.pivot_idx); See Pivot_Cholesky:
     SEXP Idx, Info1, Info3;
-    PROTECT(Idx = allocVector(INTSXP, Pt.pivot_idx_n));
-    MEMCOPY(INTEGER(Idx), Pt.pivot_idx, sizeof(int) * Pt.pivot_idx_n);
+    PROTECT(Idx = allocVector(INTSXP, Pt.n_pivot_idx));
+    MEMCOPY(INTEGER(Idx), Pt.pivot_idx, sizeof(int) * Pt.n_pivot_idx);
     setAttrib(Ans, install("pivot_idx"), Idx);
     
     PROTECT(Info1 = allocVector(INTSXP, 1));
@@ -2150,7 +2150,7 @@ SEXP Chol(SEXP M) {
     setAttrib(Ans, install("actual_pivot"), Info3);
    
     UNPROTECT(3);
-    assert(Pt.pivot_idx_n == ncols(M));
+    assert(Pt.n_pivot_idx == ncols(M));
   }
   
   solve_DELETE0(&Pt);
@@ -2174,7 +2174,7 @@ int cholesky(double *M, int size, int VARIABLE_IS_NOT_USED cores) {
 }
 
 
-bool Is_positive_definite(double *C, Long dim, int VARIABLE_IS_NOT_USED cores) { // bool not allowed in C
+bool Is_positive_definite(double *C, int dim, int VARIABLE_IS_NOT_USED cores) { // bool not allowed in C
   int err;
   Long bytes = sizeof(double) * dim * dim;
   double *test;
@@ -2230,22 +2230,14 @@ int SqrtPosDefFree(double *M,  // in out
   } else {
     FREE(pt->result);
     pt->result = M;
-    pt->result_n = sizeSq;
+    pt->n_result = sizeSq;
   }
-
-
-  // printf("%ld %d %ld %d %ld %ld\n", M, size, res, MATRIXSQRT, pt, sp);
   
   // it is ok to have
   // ==15170== Syscall param sched_setaffinity(mask) points to unaddressable byte(s)
   // caused by gcc stuff
   err = doPosDefIntern(M, size, true, NULL, 0, res, NULL, MATRIXSQRT, pt, sp,
 		 cores);// no PROTECT( needed
-
-
-  
-  //  if (err != NOERROR) { printf("%s\n", pt->err_msg);  }
-
   
   if (extra_alloc) {  
 
@@ -2310,7 +2302,7 @@ SEXP tcholRHS(SEXP C, SEXP RHS) {
   SEXP Ans, Idx;
   PROTECT(Idx = getAttrib(C, install("pivot_idx")));
   bool pivot = length(Idx) > 0;
-  Long 
+  int
     n = isMatrix(RHS) ? ncols(RHS) : 1,
     rows = isMatrix(RHS) ? nrows(RHS) : length(RHS),
     size = ncols(C),
@@ -2337,7 +2329,7 @@ SEXP chol2mv(SEXP C, SEXP N) {
   SEXP Ans, Idx;
   PROTECT(Idx= getAttrib(C, install("pivot_idx")));
   bool pivot = length(Idx) > 0;
-  Long
+  int
     n = INTEGER(N)[0],
     size = ncols(C),
     act_size = size;
@@ -2347,7 +2339,7 @@ SEXP chol2mv(SEXP C, SEXP N) {
     act_size = INTEGER(dummy)[0];
     n_protect++;
   }
-  Long n_act_size = n * act_size;
+  Long n_act_size = (Long) n * act_size;
   int *pi = pivot ? INTEGER(Idx) : NULL;
   if (n == 1) PROTECT(Ans = allocVector(REALSXP, size));
   else PROTECT(Ans = allocMatrix(REALSXP, size, n));
@@ -2375,7 +2367,11 @@ int sqrtRHS(solve_storage *pt, double* RHS, double *result){
     //printf("RchoL\n");
     int incx = 1;
     MEMCOPY(result, RHS, (Long) size * sizeof(double));
-    F77dtrmv("U", "T", "N", &size, pt->result, &size, result, &incx);
+    F77dtrmv("U", "T", "N", &size, pt->result, &size, result, &incx
+#ifdef USE_FC_LEN_T	  
+		  FCONE FCONE FCONE
+#endif		  
+	     );
   }
     break;
   case GPUcholesky :
@@ -2387,7 +2383,7 @@ int sqrtRHS(solve_storage *pt, double* RHS, double *result){
       bool pivot = (pt->actual_pivot == PIVOT_DO ||
 		  pt->actual_pivot == PIVOT_IDX) &&
       pt->method != direct_formula;
-    if (pivot && pt->pivot_idx_n != size) BUG;
+    if (pivot && pt->n_pivot_idx != size) BUG;
     
     sqrtRHS_Chol(pt->result, size, RHS, size, 1, result, pivot,
 		 pivot ? pt->actual_size : NA_INTEGER,

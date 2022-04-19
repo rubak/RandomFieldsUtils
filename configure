@@ -1819,7 +1819,7 @@ MY_AVX="avx_fctns.o"
 MY_AVX2="avx2_fctns.o"
 MY_AVX512F=""
 MY_CU_FILES="solve_61.o gpu_info_61.o"
-MY_C_FILES="AutoRandomFieldsUtils.o beskf.o brdomain.o extern.o kleinkram.o maths.o options.o RFoptions.o solve.o sort.o utils.o win_linux_aux.o xport_import.o zzz.o gpu_info.o bckslvmodified.o cholmodified.o spamown.o obsolete.o"
+MY_C_FILES="AutoRandomFieldsUtils.o beskf.o brdomain.o extern.o kleinkram.o maths.o options.o RFoptions.o solve.o sort.o sortLong.o utils.o win_linux_aux.o xport_import.o zzz.o gpu_info.o bckslvmodified.o cholmodified.o spamown.o obsolete.o"
 
 
 ##################################################

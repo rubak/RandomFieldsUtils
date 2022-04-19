@@ -15,6 +15,8 @@
 #define MALLOC MALLOCX
 #define FREE(X) if ((X) == NULL) {} else {FREEX(X); (X)=NULL;}
 #endif
+#define BUG_SSE2NEON error("Severe error occured in sse2neon. Please contact schlather@math.uni-mannheim.de")
+#define ZERO_SSE2NEON _mm_setzero_si128
 
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2866,7 +2868,7 @@ FORCE_INLINE __m128i _mm_undefined_si128(void)
   //#pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
   // __m128i a;
-  __m128i a = ZERO(); BUG;
+  __m128i a = ZERO_SSE2NEON(); BUG_SSE2NEON;
     return a;
 #if defined(__GNUC__) || defined(__clang__)
     //#pragma GCC diagnostic pop
@@ -2882,7 +2884,7 @@ FORCE_INLINE __m128 _mm_undefined_ps(void)
   //#pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
   //   __m128 a;
-  __m128 a = (_m128) ZERO(); BUG;
+  __m128 a = (__m128) ZERO_SSE2NEON(); BUG_SSE2NEON;
    return a;
 #if defined(__GNUC__) || defined(__clang__)
     //#pragma GCC diagnostic pop
@@ -4841,7 +4843,8 @@ FORCE_INLINE int _mm_movemask_pd(__m128d a)
 {
     uint64x2_t input = vreinterpretq_u64_m128d(a);
     uint64x2_t high_bits = vshrq_n_u64(input, 63);
-    return vgetq_lane_u64(high_bits, 0) | (vgetq_lane_u64(high_bits, 1) << 1);
+    return (int) (vgetq_lane_u64(high_bits, 0)) |
+      ((int) (vgetq_lane_u64(high_bits, 1) << 1));
 }
 
 // Copy the lower 64-bit integer in a to dst.
@@ -5526,8 +5529,8 @@ FORCE_INLINE __m128i _mm_slli_epi16(__m128i a, int imm)
 {
     if (_sse2neon_unlikely(imm & ~15))
         return _mm_setzero_si128();
-    return vreinterpretq_m128i_s16(
-        vshlq_s16(vreinterpretq_s16_m128i(a), vdupq_n_s16(imm)));
+    return vreinterpretq_m128i_s16(vshlq_s16(vreinterpretq_s16_m128i(a),
+					     vdupq_n_s16((int16_t) imm)));
 }
 
 // Shift packed 32-bit integers in a left by imm8 while shifting in zeros, and
@@ -5636,7 +5639,8 @@ FORCE_INLINE __m128i _mm_sra_epi16(__m128i a, __m128i count)
     int64_t c = (int64_t) vget_low_s64((int64x2_t) count);
     if (_sse2neon_unlikely(c & ~15))
         return _mm_cmplt_epi16(a, _mm_setzero_si128());
-    return vreinterpretq_m128i_s16(vshlq_s16((int16x8_t) a, vdupq_n_s16(-c)));
+    return vreinterpretq_m128i_s16(vshlq_s16((int16x8_t) a,
+					     vdupq_n_s16((int16_t) (-c))));
 }
 
 // Shift packed 32-bit integers in a right by count while shifting in sign bits,
@@ -5657,7 +5661,8 @@ FORCE_INLINE __m128i _mm_sra_epi32(__m128i a, __m128i count)
     int64_t c = (int64_t) vget_low_s64((int64x2_t) count);
     if (_sse2neon_unlikely(c & ~31))
         return _mm_cmplt_epi32(a, _mm_setzero_si128());
-    return vreinterpretq_m128i_s32(vshlq_s32((int32x4_t) a, vdupq_n_s32(-c)));
+    return vreinterpretq_m128i_s32(vshlq_s32((int32x4_t) a,
+					      vdupq_n_s32((int16_t)(-c))));
 }
 
 // Shift packed 16-bit integers in a right by imm8 while shifting in sign
@@ -5676,7 +5681,8 @@ FORCE_INLINE __m128i _mm_sra_epi32(__m128i a, __m128i count)
 FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 {
     const int count = (imm & ~15) ? 15 : imm;
-    return (__m128i) vshlq_s16((int16x8_t) a, vdupq_n_s16(-count));
+    return (__m128i) vshlq_s16((int16x8_t) a,
+			        vdupq_n_s16((int16_t)(-count)));
 }
 
 // Shift packed 32-bit integers in a right by imm8 while shifting in sign bits,
@@ -6208,7 +6214,7 @@ FORCE_INLINE __m128d _mm_undefined_pd(void)
   //#pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
   // __m128d a;
-   __m128d a= (_m128d) ZERO(); BUG;
+   __m128d a= (__m128d) ZERO_SSE2NEON(); BUG_SSE2NEON;
     return a;
 #if defined(__GNUC__) || defined(__clang__)
     //#pragma GCC diagnostic pop

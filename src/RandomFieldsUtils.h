@@ -58,7 +58,7 @@ extern "C" {
   SEXP quadratic(SEXP x, SEXP A);
   SEXP dbinorm(SEXP X, SEXP Sigma);
   SEXP dotXV(SEXP M, SEXP V);
-  void Ordering(double *d, int *len, int *dim, int *pos);
+  //  void Ordering(double *d, int *len, int *dim, int *pos);
   SEXP crossprodX(SEXP X, SEXP Y, SEXP mode);
 
   SEXP DebugCall();

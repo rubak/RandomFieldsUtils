@@ -22,19 +22,18 @@ struct solve_storage {
   errorstring_type err_msg;
   InversionMethod method, newMethods[SOLVE_METHODS];
   usr_bool sparse;
-  int  size, actual_size, actual_pivot;
-  int 
-    nsuper,
-    main_n, rhs_n, w2_n, U_n, D_n, w3_n, lnz_n, result_n, 
-  //   SICH_n, MM_n, VT_n, U_n, D_n, 
-  //    work_n, w2_n, lnz_n, w3_n, result_n,  nsuper, nnzlindx,
+  int size, actual_size, actual_pivot;
+  int  nsuper;
+  Long n_main, n_rhs, n_w2, n_U, n_D, n_w3, n_lnz, n_result;
+  //   SICH, n_MM, n_VT, n_ work, n_ nnzlindx,
     
-    *pivot_idx, pivot_idx_n, 
-    *iwork, iwork_n, //eigen, svd, LU, spam
-    *pivotsparse, pivotsparse_n, *xlnz,xlnz_n, //spam
-    *snode,snode_n, *xsuper, xsuper_n,*invp,invp_n,   // spam
-    *cols,cols_n, *rows,rows_n, *lindx, lindx_n, // spam
-    *xja,  xja_n; // chol, eigen, spam
+  int 
+    *pivot_idx, n_pivot_idx, 
+    *iwork, n_iwork, //eigen, svd, LU, spam
+    *pivotsparse, n_pivotsparse, *xlnz, n_xlnz, //spam
+    *snode, n_snode, *xsuper, n_xsuper, *invp, n_invp,   // spam
+    *cols, n_cols, *rows, n_rows, *lindx, n_lindx, // spam
+    *xja,  n_xja; // chol, eigen, spam
   double 
   *main, *rhs,// diagonal, general -- FORBIDDEN for further use
     *w2, // eigen, svd, LU, QR, pivot

@@ -238,15 +238,15 @@ void setoptionsRFU(int i, int j, SEXP el, char name[LEN_OPTIONNAME],
     case 13: if (!isList) {
       int len = length(el);
       if (len == 0) {
-	if (so->pivot_idx_n > 0) { FREE(so->pivot_idx); }
+	if (so->n_pivot_idx > 0) { FREE(so->pivot_idx); }
       } else {
-	if (so->pivot_idx_n != len) {
+	if (so->n_pivot_idx != len) {
 	  FREE(so->pivot_idx);
 	  so->pivot_idx = (int*) MALLOC(len * sizeof(int));
 	}
 	for (int L=0; L<len; L++) so->pivot_idx[L] = Integer(el, name, L);
       }
-      so->pivot_idx_n = len;     
+      so->n_pivot_idx = len;     
     }
       break; 
     case 14: so->pivot_relerror = POS0NUM; break;    
@@ -331,7 +331,7 @@ void getoptionsRFU(SEXP sublist, int i, utilsoption_type *options) {
     ADD(ScalarInteger(p->max_svd)); 
     ADD(ScalarString(mkChar(PIVOT_NAMES[p->pivot_mode])));
     //if (true)
-    SET_VECTOR_ELT(sublist, k++, Int(p->pivot_idx, p->pivot_idx_n));
+    SET_VECTOR_ELT(sublist, k++, Int(p->pivot_idx, p->n_pivot_idx));
     //  else ADD(ScalarInteger(NA_INTEGER));
     //    ADD(ScalarLogical(p->tmp_delete));
      ADD(ScalarReal(p->pivot_relerror));    
@@ -358,7 +358,7 @@ void params_utilsoption(int local, int *params) {
     KEY_type *KT = KEYT();
     from = &(KT->global_utils);
   } 
-  params[PIVOT_IDX_N] = from->solve.pivot_idx_n;
+  params[PIVOT_IDX_N] = from->solve.n_pivot_idx;
 }
 
 void get_utilsoption(utilsoption_type *S, int local) {
@@ -368,15 +368,15 @@ void get_utilsoption(utilsoption_type *S, int local) {
     KEY_type *KT = KEYT();
     from = &(KT->global_utils);
   }
-  assert(from->solve.pivot_idx_n!=0 xor from->solve.pivot_idx == NULL);
-  assert(S->solve.pivot_idx_n!=0 xor S->solve.pivot_idx == NULL);
-  if (S->solve.pivot_idx_n != from->solve.pivot_idx_n) BUG;
+  assert(from->solve.n_pivot_idx!=0 xor from->solve.pivot_idx == NULL);
+  assert(S->solve.n_pivot_idx!=0 xor S->solve.pivot_idx == NULL);
+  if (S->solve.n_pivot_idx != from->solve.n_pivot_idx) BUG;
   int *save_idx = S->solve.pivot_idx;
   MEMCOPY(S, from, sizeof(utilsoption_type)); // OK
   S->solve.pivot_idx = save_idx;
-  if (S->solve.pivot_idx_n > 0) {
+  if (S->solve.n_pivot_idx > 0) {
     MEMCOPY(S->solve.pivot_idx, from->solve.pivot_idx, 
-	    sizeof(int) * S->solve.pivot_idx_n);
+	    sizeof(int) * S->solve.n_pivot_idx);
   }
 }
 
@@ -386,25 +386,25 @@ void push_utilsoption(utilsoption_type *S, int local) {
     KEY_type *KT = KEYT();
     to = &(KT->global_utils);
   } 
-  assert(to->solve.pivot_idx_n!=0 xor to->solve.pivot_idx == NULL);
-  assert(S->solve.pivot_idx_n!=0 xor S->solve.pivot_idx == NULL);
+  assert(to->solve.n_pivot_idx!=0 xor to->solve.pivot_idx == NULL);
+  assert(S->solve.n_pivot_idx!=0 xor S->solve.pivot_idx == NULL);
   int *save_idx = to->solve.pivot_idx;
-  if (to->solve.pivot_idx_n != S->solve.pivot_idx_n) {
+  if (to->solve.n_pivot_idx != S->solve.n_pivot_idx) {
     FREE(to->solve.pivot_idx);
-    to->solve.pivot_idx = (int*) MALLOC(S->solve.pivot_idx_n * sizeof(int));
+    to->solve.pivot_idx = (int*) MALLOC(S->solve.n_pivot_idx * sizeof(int));
     save_idx = to->solve.pivot_idx;
   }
   MEMCOPY(to, S, sizeof(utilsoption_type)); // OK
   to->solve.pivot_idx = save_idx;
-  if (S->solve.pivot_idx_n > 0) {
+  if (S->solve.n_pivot_idx > 0) {
     MEMCOPY(to->solve.pivot_idx, S->solve.pivot_idx,
-	    sizeof(int) * S->solve.pivot_idx_n);
+	    sizeof(int) * S->solve.n_pivot_idx);
   }
 }
 
 void del_utilsoption(utilsoption_type *S) {
   FREE(S->solve.pivot_idx);
-  S->solve.pivot_idx_n = 0;
+  S->solve.n_pivot_idx = 0;
 }
 
 
