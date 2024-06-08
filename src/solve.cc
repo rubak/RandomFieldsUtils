@@ -1128,7 +1128,7 @@ int doPosDefIntern(double *M0, int size, bool posdef,
 			  ? "If you are sure that the matrix is semi-definite, set 'RFoptions(pivot_check=NA)' or 'RFoptions(pivot_check=True)'"
 			  : "The result can be imprecise");
 		  if (sp->pivot_check == True) C_GERR0(msg, ERR_CHOL)
-		    else WARN0(msg);
+		    else WARN0("%s", msg);
 		}
 	      }
 	      break;

@@ -49,16 +49,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-#define ERR0(X) {ERRLINE; RFERROR(X);}
+#define ERR0(X) {ERRLINE; RFERROR("%s", X);}
 #define ERR00(X) ERRLINE; errorstring_type E_AUX;
-#define ERR1(X,Y) {ERR00(X);SPRINTF(E_AUX,X,Y); RFERROR(E_AUX);}
-#define ERR2(X,Y,Z) {ERR00(X);SPRINTF(E_AUX,X,Y,Z); RFERROR(E_AUX);}
-#define ERR3(X,Y,Z,A) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A); RFERROR(E_AUX);}
-#define ERR4(X,Y,Z,A,B) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B); RFERROR(E_AUX);}
-#define ERR5(X,Y,Z,A,B,C) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C); RFERROR(E_AUX);}
-#define ERR6(X,Y,Z,A,B,C,D) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D); RFERROR(E_AUX);}
-#define ERR7(X,Y,Z,A,B,C,D,E) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D,E); RFERROR(E_AUX);}
-#define ERR8(X,Y,Z,A,B,C,D,E,F) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D,E,F); RFERROR(E_AUX);}
+#define ERR1(X,Y) {ERR00(X);SPRINTF(E_AUX,X,Y); RFERROR("%s", E_AUX);}
+#define ERR2(X,Y,Z) {ERR00(X);SPRINTF(E_AUX,X,Y,Z); RFERROR("%s", E_AUX);}
+#define ERR3(X,Y,Z,A) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A); RFERROR("%s", E_AUX);}
+#define ERR4(X,Y,Z,A,B) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B); RFERROR("%s", E_AUX);}
+#define ERR5(X,Y,Z,A,B,C) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C); RFERROR("%s", E_AUX);}
+#define ERR6(X,Y,Z,A,B,C,D) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D); RFERROR("%s", E_AUX);}
+#define ERR7(X,Y,Z,A,B,C,D,E) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D,E); RFERROR("%s", E_AUX);}
+#define ERR8(X,Y,Z,A,B,C,D,E,F) {ERR00(X);SPRINTF(E_AUX,X,Y,Z,A,B,C,D,E,F); RFERROR("%s", E_AUX);}
 
 
 
@@ -154,19 +154,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define RFWARNING warning
 #define WARN0 RFWARNING
 #define WARN1(X, Y) {errorstring_type  W_MSG; \
-    SPRINTF(W_MSG, X, Y); RFWARNING(W_MSG);}
+    SPRINTF(W_MSG, X, Y); RFWARNING("%s", W_MSG);}
 #define WARN2(X, Y, Z) {errorstring_type  W_MSG; \
-    SPRINTF(W_MSG, X, Y, Z); RFWARNING(W_MSG);}
+    SPRINTF(W_MSG, X, Y, Z); RFWARNING("%s", W_MSG);}
 #define WARN3(X, Y, Z, A) {errorstring_type  W_MSG;\
-    SPRINTF(W_MSG, X, Y, Z, A); RFWARNING(W_MSG);}
+    SPRINTF(W_MSG, X, Y, Z, A); RFWARNING("%s", W_MSG);}
 #define WARN4(X, Y, Z, A, B) {errorstring_type  W_MSG;	\
-    SPRINTF(W_MSG, X, Y, Z, A, B); RFWARNING(W_MSG);}
+    SPRINTF(W_MSG, X, Y, Z, A, B); RFWARNING("%s", W_MSG);}
 #define WARN5(X, Y, Z, A, B, C) {errorstring_type  W_MSG;	\
-    SPRINTF(W_MSG, X, Y, Z, A, B, C); RFWARNING(W_MSG);}
+    SPRINTF(W_MSG, X, Y, Z, A, B, C); RFWARNING("%s", W_MSG);}
 #define WARN6(X, Y, Z, A, B,C,D) {errorstring_type  W_MSG;	\
-    SPRINTF(W_MSG, X, Y, Z, A, B, C, D); RFWARNING(W_MSG);}
+    SPRINTF(W_MSG, X, Y, Z, A, B, C, D); RFWARNING("%s", W_MSG);}
 #define WARN7(X, Y, Z,A,B,C,D,E) {errorstring_type  W_MSG;	\
-    SPRINTF(W_MSG, X, Y, Z, A, B, C, D, E); RFWARNING(W_MSG);}
+    SPRINTF(W_MSG, X, Y, Z, A, B, C, D, E); RFWARNING("%s", W_MSG);}
 
 
 

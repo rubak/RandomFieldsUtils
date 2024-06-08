@@ -72,19 +72,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define RFERROR error
 
 #define RFERROR1(M,A) {errorstring_type E_AUX; \
-    SPRINTF(E_AUX, M, A); RFERROR(E_AUX);}
+    SPRINTF(E_AUX, M, A); RFERROR("%s", E_AUX);}
 #define RFERROR2(M,A,B) {errorstring_type E_AUX; \
-    SPRINTF(E_AUX, M, A,B); RFERROR(E_AUX);}
+    SPRINTF(E_AUX, M, A,B); RFERROR("%s", E_AUX);}
 #define RFERROR3(M,A,B,C) {errorstring_type E_AUX;\
-    SPRINTF(E_AUX, M, A,B,C); RFERROR(E_AUX);}
+    SPRINTF(E_AUX, M, A,B,C); RFERROR("%s", E_AUX);}
 #define RFERROR4(M,A,B,C,D) {errorstring_type E_AUX; \
-    SPRINTF(E_AUX, M, A,B,C,D); RFERROR(E_AUX);}
+    SPRINTF(E_AUX, M, A,B,C,D); RFERROR("%s", E_AUX);}
 #define RFERROR5(M,A,B,C,D,E) {errorstring_type E_AUX; \
-    SPRINTF(E_AUX, M, A,B,C,D,E); RFERROR(E_AUX);}
+    SPRINTF(E_AUX, M, A,B,C,D,E); RFERROR("%s", E_AUX);}
 #define RFERROR6(M,A,B,C,D,E,F) {errorstring_type E_AUX;\
-    SPRINTF(E_AUX, M, A,B,C,D,E,F); RFERROR(E_AUX);}
+    SPRINTF(E_AUX, M, A,B,C,D,E,F); RFERROR("%s", E_AUX);}
 #define RFERROR7(M,A,B,C,D,E,F,G) {errorstring_type E_AUX;\
-    SPRINTF(E_AUX, M, A,B,C,D,E,F,G); RFERROR(E_AUX);}
+    SPRINTF(E_AUX, M, A,B,C,D,E,F,G); RFERROR("%s", E_AUX);}
 
 
 #define MULTIMINSIZE(S) ((S) > 20)// in omp parallel in DO_PARALLEL

@@ -711,7 +711,7 @@ bool any128(__m128i A);
 #endif
 
     
-#define ASSERT_AVAILABILITY(V,W) if ((V##Avail)) {} else {char msg[300]; SPRINTF(msg, "The program was compiled for '%.10s%.5s%.10s. %.200s'", #V, STRCMP(#V, #W) ? " && " : "", STRCMP(#V, #W) ? #W : "", ASSERT_TEXT); RFERROR(msg);}
+#define ASSERT_AVAILABILITY(V,W) if ((V##Avail)) {} else {char msg[300]; SPRINTF(msg, "The program was compiled for '%.10s%.5s%.10s. %.200s'", #V, STRCMP(#V, #W) ? " && " : "", STRCMP(#V, #W) ? #W : "", ASSERT_TEXT); RFERROR("%s", msg);}
 #define ASSERT_AVAILABILITY_AUX(V,W) ASSERT_AVAILABILITY(V,W) // expands V
 
 #define ASSERT_SIMD(FILE, WHAT)					\
